@@ -1,0 +1,248 @@
+{
+  "header": {
+    "solutions": "Soluções",
+    "cases": "Cases",
+    "whyUs": "Por que nós?",
+    "contact": "Contato"
+  },
+  "hero": {
+    "tagline": "Potencialize seu negócio com IA avançada",
+    "title": "Automatize, inove e escale com inteligência.",
+    "description": "Conte-nos sobre seu projeto e nossa IA gera uma solução completa para você.",
+    "cta": "Receber projeto inteligente gratuitamente",
+    "features": {
+      "fastImplementation": "Implementação rápida",
+      "advancedAI": "IA de última geração"
+    }
+  },
+  "technologies": {
+    "title": "Tecnologias que impulsionam nossas soluções"
+  },
+  "services": {
+    "title": "Nossas Soluções Inteligentes",
+    "subtitle": "Desenvolvemos tecnologias que transformam a maneira como as empresas operam, com foco em resultados reais e mensuráveis.",
+    "automation": {
+      "title": "Automação Inteligente",
+      "description": "Automatize processos repetitivos, integre sistemas e aumente a produtividade com bots personalizados para seu negócio.",
+      "longDescription": "Desenvolvemos soluções de automação que eliminam tarefas manuais, reduzem erros humanos e aumentam significativamente a produtividade da sua empresa. Integramos todas suas ferramentas em um fluxo contínuo.",
+      "benefits": "Reduza custos operacionais em até 40%",
+      "features": [
+        "Chatbots de atendimento 24/7",
+        "Automação de processos (RPA)",
+        "Integração entre sistemas via API",
+        "Workflows personalizados"
+      ],
+      "learnMore": "Saiba mais"
+    },
+    "ai": {
+      "title": "Soluções com IA",
+      "description": "Chatbots avançados, processamento de linguagem natural e geração de conteúdo com as tecnologias mais recentes de IA.",
+      "longDescription": "Implementamos tecnologias de inteligência artificial que transformam dados em insights valiosos, automatizam decisões complexas e personalizam a experiência dos seus clientes a um novo nível.",
+      "benefits": "Aumente a eficiência operacional em até 60%",
+      "features": [
+        "Análise preditiva de dados",
+        "Geração de textos e imagens",
+        "Recomendações inteligentes",
+        "Reconhecimento de padrões"
+      ],
+      "learnMore": "Saiba mais"
+    },
+    "custom": {
+      "title": "Sistemas Sob Medida",
+      "description": "Desenvolvimento de SaaS, plataformas internas e dashboards adaptados às necessidades específicas do seu negócio.",
+      "longDescription": "Criamos sistemas completos e personalizados que atendem exatamente às necessidades do seu negócio, desde dashboards gerenciais a plataformas complexas de e-commerce ou gestão.",
+      "benefits": "Tempo de desenvolvimento até 70% mais rápido",
+      "features": [
+        "Aplicações web e mobile",
+        "Dashboards interativos",
+        "Plataformas SaaS",
+        "Sistemas de gestão integrados"
+      ],
+      "learnMore": "Saiba mais"
+    },
+    "data": {
+      "title": "Dados + Nuvem",
+      "description": "Coleta, análise e visualização de dados com inteligência artificial para insights valiosos e tomada de decisão.",
+      "longDescription": "Oferecemos soluções completas para coletar, processar e visualizar dados em tempo real, permitindo que sua empresa tome decisões baseadas em informações concretas e não em intuição.",
+      "benefits": "Insights até 5x mais rápidos para decisões",
+      "features": [
+        "Data lakes e warehouses",
+        "Processamento em tempo real",
+        "Visualização avançada de dados",
+        "Big data e análise preditiva"
+      ],
+      "learnMore": "Saiba mais"
+    },
+    "stats": {
+      "projects": "Projetos entregues",
+      "satisfied": "Clientes satisfeitos",
+      "savings": "Economia média",
+      "support": "Suporte disponível"
+    },
+    "cta": {
+      "title": "Pronto para transformar seu negócio com soluções de IA realmente aplicáveis?",
+      "subtitle": "Agende uma consulta gratuita com nossos especialistas e descubra como podemos criar soluções personalizadas para os desafios específicos do seu negócio.",
+      "button": "Solicitar consultoria gratuita",
+      "features": {
+        "noCommitment": "Sem compromisso",
+        "personalizedService": "Atendimento personalizado"
+      }
+    }
+  },
+  "cases": {
+    "title": "Nossos Projetos Reais com Resultados Concretos",
+    "subtitle": "Conheça alguns dos projetos que desenvolvemos e os resultados mensuráveis que ajudamos nossos clientes a alcançar.",
+    "case1": {
+      "title": "Clínica Médica Automatizada",
+      "description": "Desenvolvemos um sistema de automação para uma clínica médica que reduziu o tempo de agendamento em 70% e melhorou a satisfação dos pacientes.",
+      "results": [
+        "Redução de 70% no tempo de agendamento",
+        "Aumento de 45% na satisfação dos pacientes",
+        "Economia de 25 horas semanais da equipe"
+      ]
+    },
+    "case2": {
+      "title": "Plataforma de Ensino com IA",
+      "description": "Criamos uma plataforma de ensino com IA que personaliza o conteúdo para cada aluno, resultando em melhor absorção de conhecimento e engajamento.",
+      "results": [
+        "Aumento de 60% na retenção de conteúdo",
+        "Redução de 35% na taxa de desistência",
+        "Escala para milhares de alunos sem aumento de equipe"
+      ]
+    },
+    "case3": {
+      "title": "Ecommerce com automação total",
+      "description": "Implementamos um sistema de automação completo para um e-commerce, desde o atendimento até a logística, resultando em crescimento exponencial.",
+      "results": [
+        "Aumento de 120% nas vendas em 6 meses",
+        "Redução de 50% nos custos operacionais",
+        "Atendimento 24/7 sem aumento de equipe"
+      ]
+    },
+    "viewDetails": "Ver detalhes"
+  },
+  "advantages": {
+    "title": "Por que escolher a SUAIDEN?",
+    "subtitle": "Entregamos soluções de IA e automação que realmente funcionam e geram resultados concretos para o seu negócio.",
+    "advantage1": {
+      "title": "Projetos com IA real aplicada",
+      "description": "Não apenas falamos de IA, implementamos soluções reais que geram resultados tangíveis para o seu negócio."
+    },
+    "advantage2": {
+      "title": "Desenvolvimento rápido e iterativo",
+      "description": "Metodologia ágil com entregas contínuas, permitindo que você veja resultados desde o início do projeto."
+    },
+    "advantage3": {
+      "title": "Equipe experiente e multidisciplinar",
+      "description": "Profissionais especialistas em IA, desenvolvimento e automação, prontos para resolver seus desafios."
+    },
+    "advantage4": {
+      "title": "Suporte e evolução contínuos",
+      "description": "Oferecemos suporte constante e atualizações para garantir que sua solução evolua junto com seu negócio."
+    },
+    "advantage5": {
+      "title": "Integração com suas ferramentas atuais",
+      "description": "Nossas soluções se integram perfeitamente com as ferramentas que você já utiliza, sem necessidade de mudanças drásticas."
+    }
+  },
+  "comparison": {
+    "title": "SUAIDEN vs alternativas",
+    "subtitle": "Compare e entenda por que somos a escolha certa para sua empresa.",
+    "features": {
+      "realAI": "Soluções com IA real aplicada",
+      "scalable": "Automação escalável",
+      "agile": "Desenvolvimento ágil",
+      "support": "Suporte 24/7",
+      "sourcecode": "Código fonte proprietário",
+      "experience": "Experiência comprovada",
+      "team": "Equipe multidisciplinar",
+      "integration": "Integração com sistemas existentes"
+    },
+    "options": {
+      "suaiden": "SUAIDEN",
+      "freelancer": "Freelancer",
+      "agency": "Agência Tradicional"
+    }
+  },
+  "benefits": {
+    "title": "O que sua empresa ganha com a SUAIDEN",
+    "benefit1": {
+      "title": "Produtividade imediata",
+      "description": "Implantação rápida que começa a gerar resultados desde os primeiros dias de uso."
+    },
+    "benefit2": {
+      "title": "Atendimento 24/7 com IA",
+      "description": "Nunca mais perca um cliente. Nossa IA atende a qualquer hora sem necessidade de equipe adicional."
+    },
+    "benefit3": {
+      "title": "Decisões baseadas em dados",
+      "description": "Dashboards inteligentes que transformam dados em insights acionáveis para seu negócio."
+    },
+    "benefit4": {
+      "title": "Automação escalável",
+      "description": "Sistemas que crescem com sua empresa, sem necessidade de grandes investimentos adicionais."
+    },
+    "benefit5": {
+      "title": "Segurança e personalização",
+      "description": "Toda a proteção que seus dados precisam, com soluções adaptadas exclusivamente ao seu negócio."
+    }
+  },
+  "faq": {
+    "title": "Perguntas Frequentes",
+    "subtitle": "Tire suas dúvidas sobre nossos serviços e como podemos ajudar o seu negócio.",
+    "q1": {
+      "question": "É IA de verdade?",
+      "answer": "Sim, utilizamos tecnologias de IA avançadas como GPT-4, Claude e modelos próprios. Não é apenas marketing, são aplicações reais de inteligência artificial que geram resultados tangíveis para o seu negócio."
+    },
+    "q2": {
+      "question": "Preciso saber programar?",
+      "answer": "Absolutamente não. Nossas soluções são desenvolvidas para serem intuitivas e fáceis de usar, independente do seu conhecimento técnico. Nossa equipe cuida de toda a parte técnica para você."
+    },
+    "q3": {
+      "question": "Quanto custa?",
+      "answer": "Os valores variam de acordo com a complexidade e o escopo do projeto. Oferecemos planos personalizados que se adaptam às necessidades e ao orçamento da sua empresa. Entre em contato para receber uma proposta detalhada."
+    },
+    "q4": {
+      "question": "Qual o prazo de entrega?",
+      "answer": "O prazo depende da complexidade do projeto, mas nosso processo ágil permite entregas incrementais desde as primeiras semanas. Projetos simples podem ser entregues em 2-4 semanas, enquanto projetos mais complexos podem levar de 2-3 meses."
+    },
+    "q5": {
+      "question": "Posso automatizar ferramentas que já uso?",
+      "answer": "Sim! Uma das nossas especialidades é integrar e automatizar ferramentas existentes. Podemos conectar suas ferramentas atuais (como CRM, ERP, planilhas) e automatizar fluxos de trabalho entre elas."
+    }
+  },
+  "contact": {
+    "title": "Descreva seu projeto e receba uma proposta gerada por IA",
+    "subtitle": "Conte-nos sobre seu desafio e receba gratuitamente um diagnóstico e uma proposta personalizada gerada por nossa IA.",
+    "placeholder": "Descreva brevemente seu projeto ou desafio técnico...",
+    "button": "Receber projeto inteligente gratuitamente",
+    "privacy": "Seus dados estão seguros. Nada de spam.",
+    "modal": {
+      "title": "Receba seu projeto personalizado",
+      "subtitle": "Estamos quase lá! Complete seu cadastro para receber seu projeto inteligente personalizado.",
+      "name": "Nome",
+      "email": "E-mail",
+      "whatsapp": "WhatsApp",
+      "button": "Receber projeto personalizado",
+      "privacy": "Seus dados estão seguros. Não enviamos spam."
+    }
+  },
+  "footer": {
+    "description": "Soluções inovadoras em automação, inteligência artificial e desenvolvimento de software sob medida.",
+    "quickLinks": "Links Rápidos",
+    "links": {
+      "home": "Home",
+      "solutions": "Soluções",
+      "cases": "Cases",
+      "contact": "Contato",
+      "privacy": "Política de Privacidade",
+      "terms": "Termos de Uso"
+    },
+    "contact": "Contato",
+    "rights": "Todos os direitos reservados."
+  },
+  "languageSwitcher": {
+    "en": "Inglês",
+    "pt": "Português"
+  }
+}

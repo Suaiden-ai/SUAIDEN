@@ -1,0 +1,248 @@
+{
+  "header": {
+    "solutions": "Solutions",
+    "cases": "Cases",
+    "whyUs": "Why us?",
+    "contact": "Contact"
+  },
+  "hero": {
+    "tagline": "Boost your business with advanced AI",
+    "title": "Automate, innovate and scale with intelligence.",
+    "description": "Tell us about your project and our AI generates a complete solution for you.",
+    "cta": "Receive free intelligent project",
+    "features": {
+      "fastImplementation": "Fast implementation",
+      "advancedAI": "State-of-the-art AI"
+    }
+  },
+  "technologies": {
+    "title": "Technologies that power our solutions"
+  },
+  "services": {
+    "title": "Our Intelligent Solutions",
+    "subtitle": "We develop technologies that transform the way companies operate, focusing on real and measurable results.",
+    "automation": {
+      "title": "Intelligent Automation",
+      "description": "Automate repetitive processes, integrate systems and increase productivity with custom bots for your business.",
+      "longDescription": "We develop automation solutions that eliminate manual tasks, reduce human errors and significantly increase your company's productivity. We integrate all your tools into a continuous flow.",
+      "benefits": "Reduce operational costs by up to 40%",
+      "features": [
+        "24/7 chatbots",
+        "Process automation (RPA)",
+        "API system integration",
+        "Custom workflows"
+      ],
+      "learnMore": "Learn more"
+    },
+    "ai": {
+      "title": "AI Solutions",
+      "description": "Advanced chatbots, natural language processing and content generation with the latest AI technologies.",
+      "longDescription": "We implement artificial intelligence technologies that transform data into valuable insights, automate complex decisions and personalize your customers' experience to a new level.",
+      "benefits": "Increase operational efficiency by up to 60%",
+      "features": [
+        "Predictive data analysis",
+        "Text and image generation",
+        "Intelligent recommendations",
+        "Pattern recognition"
+      ],
+      "learnMore": "Learn more"
+    },
+    "custom": {
+      "title": "Custom Systems",
+      "description": "Development of SaaS, internal platforms and dashboards adapted to the specific needs of your business.",
+      "longDescription": "We create complete and personalized systems that exactly meet the needs of your business, from management dashboards to complex e-commerce or management platforms.",
+      "benefits": "Development time up to 70% faster",
+      "features": [
+        "Web and mobile applications",
+        "Interactive dashboards",
+        "SaaS platforms",
+        "Integrated management systems"
+      ],
+      "learnMore": "Learn more"
+    },
+    "data": {
+      "title": "Data + Cloud",
+      "description": "Collection, analysis and visualization of data with artificial intelligence for valuable insights and decision making.",
+      "longDescription": "We offer complete solutions to collect, process and visualize data in real time, allowing your company to make decisions based on concrete information and not intuition.",
+      "benefits": "Insights up to 5x faster for decisions",
+      "features": [
+        "Data lakes and warehouses",
+        "Real-time processing",
+        "Advanced data visualization",
+        "Big data and predictive analysis"
+      ],
+      "learnMore": "Learn more"
+    },
+    "stats": {
+      "projects": "Projects delivered",
+      "satisfied": "Satisfied clients",
+      "savings": "Average savings",
+      "support": "Support available"
+    },
+    "cta": {
+      "title": "Ready to transform your business with truly applicable AI solutions?",
+      "subtitle": "Schedule a free consultation with our experts and discover how we can create customized solutions for your business's specific challenges.",
+      "button": "Request free consultation",
+      "features": {
+        "noCommitment": "No commitment",
+        "personalizedService": "Personalized service"
+      }
+    }
+  },
+  "cases": {
+    "title": "Our Real Projects with Concrete Results",
+    "subtitle": "Learn about some of the projects we've developed and the measurable results we've helped our clients achieve.",
+    "case1": {
+      "title": "Automated Medical Clinic",
+      "description": "We developed an automation system for a medical clinic that reduced scheduling time by 70% and improved patient satisfaction.",
+      "results": [
+        "70% reduction in scheduling time",
+        "45% increase in patient satisfaction",
+        "25 hours of team time saved weekly"
+      ]
+    },
+    "case2": {
+      "title": "AI-Powered Learning Platform",
+      "description": "We created a learning platform with AI that personalizes content for each student, resulting in better knowledge absorption and engagement.",
+      "results": [
+        "60% increase in content retention",
+        "35% reduction in dropout rate",
+        "Scale to thousands of students without increasing staff"
+      ]
+    },
+    "case3": {
+      "title": "Fully Automated E-commerce",
+      "description": "We implemented a complete automation system for an e-commerce, from customer service to logistics, resulting in exponential growth.",
+      "results": [
+        "120% increase in sales in 6 months",
+        "50% reduction in operational costs",
+        "24/7 service without increasing staff"
+      ]
+    },
+    "viewDetails": "View details"
+  },
+  "advantages": {
+    "title": "Why choose SUAIDEN?",
+    "subtitle": "We deliver AI and automation solutions that really work and generate concrete results for your business.",
+    "advantage1": {
+      "title": "Projects with real applied AI",
+      "description": "We don't just talk about AI, we implement real solutions that generate tangible results for your business."
+    },
+    "advantage2": {
+      "title": "Fast and iterative development",
+      "description": "Agile methodology with continuous deliveries, allowing you to see results from the beginning of the project."
+    },
+    "advantage3": {
+      "title": "Experienced and multidisciplinary team",
+      "description": "Professional experts in AI, development and automation, ready to solve your challenges."
+    },
+    "advantage4": {
+      "title": "Continuous support and evolution",
+      "description": "We offer constant support and updates to ensure that your solution evolves along with your business."
+    },
+    "advantage5": {
+      "title": "Integration with your current tools",
+      "description": "Our solutions integrate perfectly with the tools you already use, without the need for drastic changes."
+    }
+  },
+  "comparison": {
+    "title": "SUAIDEN vs alternatives",
+    "subtitle": "Compare and understand why we are the right choice for your company.",
+    "features": {
+      "realAI": "Solutions with real applied AI",
+      "scalable": "Scalable automation",
+      "agile": "Agile development",
+      "support": "24/7 support",
+      "sourcecode": "Proprietary source code",
+      "experience": "Proven experience",
+      "team": "Multidisciplinary team",
+      "integration": "Integration with existing systems"
+    },
+    "options": {
+      "suaiden": "SUAIDEN",
+      "freelancer": "Freelancer",
+      "agency": "Traditional Agency"
+    }
+  },
+  "benefits": {
+    "title": "What your company gains with SUAIDEN",
+    "benefit1": {
+      "title": "Immediate productivity",
+      "description": "Quick implementation that starts generating results from the first days of use."
+    },
+    "benefit2": {
+      "title": "24/7 AI service",
+      "description": "Never lose a customer again. Our AI serves at any time without the need for additional staff."
+    },
+    "benefit3": {
+      "title": "Data-driven decisions",
+      "description": "Intelligent dashboards that transform data into actionable insights for your business."
+    },
+    "benefit4": {
+      "title": "Scalable automation",
+      "description": "Systems that grow with your company, without the need for large additional investments."
+    },
+    "benefit5": {
+      "title": "Security and customization",
+      "description": "All the protection your data needs, with solutions exclusively adapted to your business."
+    }
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "subtitle": "Clear your doubts about our services and how we can help your business.",
+    "q1": {
+      "question": "Is it real AI?",
+      "answer": "Yes, we use advanced AI technologies such as GPT-4, Claude and proprietary models. It's not just marketing, they are real applications of artificial intelligence that generate tangible results for your business."
+    },
+    "q2": {
+      "question": "Do I need to know programming?",
+      "answer": "Absolutely not. Our solutions are developed to be intuitive and easy to use, regardless of your technical knowledge. Our team takes care of all the technical part for you."
+    },
+    "q3": {
+      "question": "How much does it cost?",
+      "answer": "The values vary according to the complexity and scope of the project. We offer personalized plans that adapt to your company's needs and budget. Contact us to receive a detailed proposal."
+    },
+    "q4": {
+      "question": "What is the delivery time?",
+      "answer": "The deadline depends on the complexity of the project, but our agile process allows incremental deliveries from the first weeks. Simple projects can be delivered in 2-4 weeks, while more complex projects can take 2-3 months."
+    },
+    "q5": {
+      "question": "Can I automate tools I already use?",
+      "answer": "Yes! One of our specialties is integrating and automating existing tools. We can connect your current tools (such as CRM, ERP, spreadsheets) and automate workflows between them."
+    }
+  },
+  "contact": {
+    "title": "Describe your project and receive an AI-generated proposal",
+    "subtitle": "Tell us about your challenge and receive a free personalized diagnosis and proposal generated by our AI.",
+    "placeholder": "Briefly describe your project or technical challenge...",
+    "button": "Receive free intelligent project",
+    "privacy": "Your data is safe. No spam.",
+    "modal": {
+      "title": "Receive your personalized project",
+      "subtitle": "We're almost there! Complete your registration to receive your personalized intelligent project.",
+      "name": "Name",
+      "email": "Email",
+      "whatsapp": "WhatsApp",
+      "button": "Receive personalized project",
+      "privacy": "Your data is safe. We don't send spam."
+    }
+  },
+  "footer": {
+    "description": "Innovative solutions in automation, artificial intelligence and custom software development.",
+    "quickLinks": "Quick Links",
+    "links": {
+      "home": "Home",
+      "solutions": "Solutions",
+      "cases": "Cases",
+      "contact": "Contact",
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Use"
+    },
+    "contact": "Contact",
+    "rights": "All rights reserved."
+  },
+  "languageSwitcher": {
+    "en": "English",
+    "pt": "Portuguese"
+  }
+}
