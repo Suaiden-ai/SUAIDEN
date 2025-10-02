@@ -515,8 +515,8 @@ const ProjectStudio: React.FC = () => {
             <FontAwesomeIcon icon={solidIcons.faArrowRight} size="sm" className="rotate-180" />
             <span className="font-medium text-sm">Voltar para Página inicial</span>
           </button>
-          <div className="md:hidden">
-            <button onClick={() => setMobileView('flow')} disabled={!proposal} className={`text-xs px-3 py-2 rounded-lg border transition-colors ${proposal ? 'text-white border-slate-600 hover:bg-slate-800' : 'text-slate-500 border-slate-800 opacity-60'}`}>
+          <div className="md:hidden relative z-20">
+            <button onClick={() => setMobileView('flow')} disabled={!proposal} className={`text-xs px-3 py-2 rounded-lg border transition-colors relative z-20 ${proposal ? 'text-white border-slate-600 hover:bg-slate-800' : 'text-slate-500 border-slate-800 opacity-60'}`}>
               Visualizar fluxo
             </button>
           </div>
@@ -574,10 +574,10 @@ const ProjectStudio: React.FC = () => {
       
       {/* Right: Flow + Proposal */}
       <div className={`h-screen relative ${mobileView === 'chat' ? 'hidden md:flex' : 'flex'} flex-col`}>
-        <div className="flex-none px-4 pt-4 pb-2">
+        <div className="flex-none px-4 pt-4 pb-2 relative z-20">
           <div className="w-full flex items-center justify-between">
             <span className="text-white/90 font-medium">Fluxo Proposto</span>
-            <button className="md:hidden text-xs px-3 py-2 rounded-lg border border-slate-600 text-white hover:bg-slate-800 transition-colors" onClick={() => setMobileView('chat')}>
+            <button className="md:hidden text-xs px-3 py-2 rounded-lg border border-slate-600 text-white hover:bg-slate-800 transition-colors relative z-20" onClick={() => setMobileView('chat')}>
               Voltar para chat
             </button>
           </div>
