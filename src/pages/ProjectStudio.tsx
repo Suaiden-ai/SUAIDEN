@@ -508,8 +508,9 @@ const ProjectStudio: React.FC = () => {
   return (
     <div className={`min-h-screen grid grid-cols-1 ${isChatHidden ? 'md:grid-cols-1' : 'md:grid-cols-[420px_1fr]'} bg-slate-900`}>
       {/* Left: Chat */}
-      <div className={`border-r border-slate-700 max-h-screen h-screen ${mobileView === 'flow' ? 'hidden md:flex' : 'flex'} ${isChatHidden ? 'md:hidden' : ''} flex-col relative`}>
-        <div className="flex items-center justify-between p-4 border-b border-slate-700">
+      <div className={`border-r border-slate-700 max-h-screen h-screen ${mobileView === 'flow' ? 'hidden md:flex' : 'flex'} ${isChatHidden ? 'md:hidden' : ''} flex-col relative chat-container`}>
+        {/* Fixed Header */}
+        <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-slate-700 bg-slate-900 chat-header">
           <button onClick={() => window.location.hash = ''} className="flex items-center gap-2 text-white hover:text-primary-400 transition-colors">
             <FontAwesomeIcon icon={solidIcons.faArrowRight} size="sm" className="rotate-180" />
             <span className="font-medium text-sm">Voltar para Página inicial</span>
@@ -534,7 +535,7 @@ const ProjectStudio: React.FC = () => {
           </button>
         )}
         
-        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 custom-scrollbar min-h-0 chat-messages">
           {messages.map((m, i) => (
             <div key={i} className={`${m.role === 'user' ? 'ml-12' : ''}`}>
               <div className={`px-4 py-3 whitespace-pre-line text-sm leading-relaxed ${m.role === 'user' ? 'bg-slate-700 text-white rounded-xl border border-slate-600' : 'text-white/90 w-full'}`}>
@@ -565,7 +566,7 @@ const ProjectStudio: React.FC = () => {
           {messages.length === 0 && <div className="text-slate-500 text-xs text-center mt-8">Comece descrevendo seu projeto</div>}
         </div>
         
-        <div className="p-6">
+        <div className="flex-shrink-0 p-6 bg-slate-900 border-t border-slate-700 chat-input">
           <ChatInput value={input} onChange={setInput} onSend={send} loading={loading} placeholder="Ask Suaiden..." />
         </div>
         

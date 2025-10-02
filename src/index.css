@@ -339,6 +339,35 @@
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
+  
+  /* Fix chat layout on mobile */
+  .chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    max-height: 100vh;
+  }
+  
+  .chat-header {
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  
+  .chat-messages {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .chat-input {
+    flex-shrink: 0;
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+  }
 }
 
 /* Infinite scroll animation */
