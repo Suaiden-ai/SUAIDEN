@@ -506,9 +506,9 @@ const ProjectStudio: React.FC = () => {
   }, []);
 
   return (
-    <div className={`min-h-screen grid grid-cols-1 ${isChatHidden ? 'md:grid-cols-1' : 'md:grid-cols-[420px_1fr]'} bg-slate-900`}>
+    <div className={`min-h-screen md:grid md:grid-cols-1 ${isChatHidden ? 'md:grid-cols-1' : 'md:grid-cols-[420px_1fr]'} bg-slate-900`}>
       {/* Left: Chat */}
-      <div className={`border-r border-slate-700 max-h-screen h-screen ${mobileView === 'flow' ? 'hidden md:flex' : 'flex'} ${isChatHidden ? 'md:hidden' : ''} flex-col relative chat-container`}>
+      <div className={`border-r border-slate-700 max-h-screen h-screen ${mobileView === 'flow' ? 'hidden md:flex' : 'flex md:flex'} ${isChatHidden ? 'md:hidden' : ''} flex-col relative chat-container`}>
         {/* Fixed Header */}
         <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-slate-700 bg-slate-900 chat-header">
           <button onClick={() => window.location.hash = ''} className="flex items-center gap-2 text-white hover:text-primary-400 transition-colors">
@@ -573,7 +573,7 @@ const ProjectStudio: React.FC = () => {
       </div>
       
       {/* Right: Flow + Proposal */}
-      <div className={`h-screen relative ${mobileView === 'chat' ? 'hidden md:flex' : 'flex'} flex-col`}>
+      <div className={`h-screen relative ${mobileView === 'chat' ? 'hidden md:flex' : 'flex md:flex'} flex-col`}>
         <div className="flex-none px-4 pt-4 pb-2 relative z-20">
           <div className="w-full flex items-center justify-between">
             <span className="text-white/90 font-medium">Fluxo Proposto</span>

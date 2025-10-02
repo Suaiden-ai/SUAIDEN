@@ -1,4 +1,4 @@
-import React from 'react';
+git import React from 'react';
 import SectionTitle from '../ui/SectionTitle';
 import { useLanguage } from '../../context/LanguageContext';
 
