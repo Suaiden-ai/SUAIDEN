@@ -350,6 +350,7 @@
     position: fixed;
     top: 0;
     left: 0;
+    overflow: hidden;
   }
   
   .chat-header {
@@ -361,9 +362,10 @@
   
   .chat-messages {
     flex: 1;
-    min-height: 0;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    padding-bottom: 1rem;
+    height: calc(100vh - 140px); /* Subtract header and input height */
   }
   
   .chat-input {
@@ -371,6 +373,8 @@
     position: sticky;
     bottom: 0;
     z-index: 10;
+    background: #0f172a;
+    border-top: 1px solid #334155;
   }
   
   /* Ensure only one view is visible on mobile */

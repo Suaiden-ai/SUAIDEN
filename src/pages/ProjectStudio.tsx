@@ -169,6 +169,7 @@ const ProjectStudio: React.FC = () => {
   const [isChatHidden, setIsChatHidden] = useState(false);
   const [edgeHintPulse, setEdgeHintPulse] = useState(true);
   const [aiFeedback, setAiFeedback] = useState<Record<number, 'up' | 'down' | undefined>>({});
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isSchedulingModalOpen, setIsSchedulingModalOpen] = useState(false);
 
   // Constrói a descrição completa usando o histórico do chat e o estado atual
@@ -200,6 +201,13 @@ const ProjectStudio: React.FC = () => {
     const t = setTimeout(() => setEdgeHintPulse(false), 3000);
     return () => clearTimeout(t);
   }, []);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
 
   useEffect(() => {
     if (!initialDesc || didInitRef.current || hasGenerated) return;
@@ -535,7 +543,7 @@ const ProjectStudio: React.FC = () => {
           </button>
         )}
         
-        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 custom-scrollbar min-h-0 chat-messages">
+        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 custom-scrollbar chat-messages">
           {messages.map((m, i) => (
             <div key={i} className={`${m.role === 'user' ? 'ml-12' : ''}`}>
               <div className={`px-4 py-3 whitespace-pre-line text-sm leading-relaxed ${m.role === 'user' ? 'bg-slate-700 text-white rounded-xl border border-slate-600' : 'text-white/90 w-full'}`}>
@@ -564,6 +572,7 @@ const ProjectStudio: React.FC = () => {
             </div>
           ))}
           {messages.length === 0 && <div className="text-slate-500 text-xs text-center mt-8">Comece descrevendo seu projeto</div>}
+          <div ref={messagesEndRef} />
         </div>
         
         <div className="flex-shrink-0 p-6 bg-slate-900 border-t border-slate-700 chat-input">
