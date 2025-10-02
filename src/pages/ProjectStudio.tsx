@@ -575,24 +575,24 @@ const ProjectStudio: React.FC = () => {
           <div ref={messagesEndRef} />
         </div>
         
-        <div className="flex-shrink-0 p-6 bg-slate-900 border-t border-slate-700 chat-input">
+        <div className="flex-shrink-0 p-6 bg-slate-900 border-t border-slate-700 chat-input relative z-30">
           <ChatInput value={input} onChange={setInput} onSend={send} loading={loading} placeholder="Ask Suaiden..." />
         </div>
         
       </div>
       
       {/* Right: Flow + Proposal */}
-      <div className={`h-screen relative ${mobileView === 'chat' ? 'hidden md:flex' : 'flex md:flex'} flex-col`}>
-        <div className="flex-none px-4 pt-4 pb-2 relative z-20">
+      <div className={`h-screen relative ${mobileView === 'chat' ? 'hidden md:flex' : 'flex md:flex'} flex-col flow-container`}>
+        <div className="flex-none px-4 pt-4 pb-2 relative z-20 flow-header">
           <div className="w-full flex items-center justify-between">
             <span className="text-white/90 font-medium">Fluxo Proposto</span>
-            <button className="md:hidden text-xs px-3 py-2 rounded-lg border border-slate-600 text-white hover:bg-slate-800 transition-colors relative z-20" onClick={() => setMobileView('chat')}>
+            <button className="md:hidden text-xs px-3 py-2 rounded-lg border border-slate-600 text-white hover:bg-slate-800 transition-colors relative z-40" onClick={() => setMobileView('chat')}>
               Voltar para chat
             </button>
           </div>
         </div>
         
-        <div id="flow-canvas-container" className="flex-1 flex flex-col min-h-0 overflow-auto rounded-2xl">
+        <div id="flow-canvas-container" className="flex-1 flex flex-col min-h-0 overflow-auto rounded-2xl flow-canvas">
           {flowData && <FlowCanvas ref={flowRef} nodes={flowData.nodes} edges={flowData.edges} height={flowData.height} />}
         </div>
         
