@@ -48,6 +48,7 @@ const FlowCanvas = forwardRef<FlowCanvasHandle, FlowCanvasProps>(({ nodes, edges
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const panRef = useRef<{ x: number; y: number } | null>(null);
   const isPanning = useRef(false);
+  const pinchRef = useRef<{ initialDistance: number; initialScale: number; centerX: number; centerY: number } | null>(null);
   const dragging = useRef<{ id: string; offsetX: number; offsetY: number } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -75,6 +76,21 @@ const FlowCanvas = forwardRef<FlowCanvasHandle, FlowCanvasProps>(({ nodes, edges
     pt.y = clientY;
     const svgP = pt.matrixTransform(svgRef.current.getScreenCTM()?.inverse());
     return { x: svgP.x, y: svgP.y };
+  };
+
+  // Calculate distance between two touch points
+  const getDistance = (touch1: Touch, touch2: Touch) => {
+    const dx = touch1.clientX - touch2.clientX;
+    const dy = touch1.clientY - touch2.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  // Get center point between two touches
+  const getCenter = (touch1: Touch, touch2: Touch) => {
+    return {
+      x: (touch1.clientX + touch2.clientX) / 2,
+      y: (touch1.clientY + touch2.clientY) / 2
+    };
   };
 
   const onNodeMouseDown = (e: React.MouseEvent, id: string) => {
@@ -150,17 +166,37 @@ const FlowCanvas = forwardRef<FlowCanvasHandle, FlowCanvasProps>(({ nodes, edges
     window.addEventListener('mouseup', onPanEnd as any);
   };
 
-  // Touch pan (mobile)
+  // Touch pan and pinch (mobile)
   const onPanTouchStart = (e: React.TouchEvent) => {
     const target = e.target as HTMLElement;
     if (target.closest('[data-node-id]')) return;
-    if (e.touches.length !== 1) return;
-    const t = e.touches[0];
-    e.preventDefault();
-    isPanning.current = true;
-    panRef.current = { x: t.clientX - offset.x, y: t.clientY - offset.y };
-    window.addEventListener('touchmove', onPanTouchMove as any, { passive: false } as any);
-    window.addEventListener('touchend', onPanTouchEnd as any);
+    
+    if (e.touches.length === 1) {
+      // Single touch - pan
+      const t = e.touches[0];
+      e.preventDefault();
+      isPanning.current = true;
+      panRef.current = { x: t.clientX - offset.x, y: t.clientY - offset.y };
+      window.addEventListener('touchmove', onPanTouchMove as any, { passive: false } as any);
+      window.addEventListener('touchend', onPanTouchEnd as any);
+    } else if (e.touches.length === 2) {
+      // Two touches - pinch to zoom
+      e.preventDefault();
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const distance = getDistance(touch1, touch2);
+      const center = getCenter(touch1, touch2);
+      
+      pinchRef.current = {
+        initialDistance: distance,
+        initialScale: scale,
+        centerX: center.x,
+        centerY: center.y
+      };
+      
+      window.addEventListener('touchmove', onPinchTouchMove as any, { passive: false } as any);
+      window.addEventListener('touchend', onPinchTouchEnd as any);
+    }
   };
   const onPanTouchMove = (e: TouchEvent) => {
     if (!isPanning.current || !panRef.current) return;
@@ -173,6 +209,42 @@ const FlowCanvas = forwardRef<FlowCanvasHandle, FlowCanvasProps>(({ nodes, edges
     isPanning.current = false;
     window.removeEventListener('touchmove', onPanTouchMove as any);
     window.removeEventListener('touchend', onPanTouchEnd as any);
+  };
+
+  // Pinch zoom handlers
+  const onPinchTouchMove = (e: TouchEvent) => {
+    if (!pinchRef.current || e.touches.length !== 2) return;
+    e.preventDefault();
+    
+    const touch1 = e.touches[0];
+    const touch2 = e.touches[1];
+    const currentDistance = getDistance(touch1, touch2);
+    const currentCenter = getCenter(touch1, touch2);
+    
+    const { initialDistance, initialScale, centerX, centerY } = pinchRef.current;
+    const scaleChange = currentDistance / initialDistance;
+    const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, initialScale * scaleChange));
+    
+    // Calculate the point to zoom around (center of pinch)
+    if (svgRef.current) {
+      const rect = svgRef.current.getBoundingClientRect();
+      const centerXInSvg = centerX - rect.left;
+      const centerYInSvg = centerY - rect.top;
+      
+      // Calculate the offset to keep the pinch center in the same place
+      const scaleRatio = newScale / scale;
+      const newOffsetX = centerXInSvg - (centerXInSvg - offset.x) * scaleRatio;
+      const newOffsetY = centerYInSvg - (centerYInSvg - offset.y) * scaleRatio;
+      
+      setScale(newScale);
+      setOffset({ x: newOffsetX, y: newOffsetY });
+    }
+  };
+
+  const onPinchTouchEnd = () => {
+    pinchRef.current = null;
+    window.removeEventListener('touchmove', onPinchTouchMove as any);
+    window.removeEventListener('touchend', onPinchTouchEnd as any);
   };
 
   const onPanMove = (e: MouseEvent) => {

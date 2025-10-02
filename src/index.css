@@ -425,6 +425,26 @@
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     min-height: 0;
+    position: relative;
+  }
+  
+  /* Fix zoom buttons positioning on mobile */
+  .flow-canvas [data-export-ignore="true"] {
+    position: fixed !important;
+    bottom: 80px !important;
+    left: 20px !important;
+    right: 20px !important;
+    z-index: 40 !important;
+    max-width: calc(100vw - 40px) !important;
+    width: auto !important;
+  }
+  
+  /* Ensure zoom buttons are not hidden behind browser UI */
+  .flow-canvas [data-export-ignore="true"] > div {
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(226, 232, 240, 0.8) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
   }
   
   /* Ensure ChatInput is visible on mobile */
@@ -455,6 +475,36 @@
     bottom: 0 !important;
     left: 0 !important;
     right: 0 !important;
+  }
+  
+  /* Additional mobile flow fixes */
+  .flow-container {
+    position: relative !important;
+    overflow: hidden !important;
+  }gi
+  
+  /* Make zoom buttons more mobile-friendly */
+  .flow-canvas [data-export-ignore="true"] button {
+    min-height: 44px !important;
+    min-width: 44px !important;
+    font-size: 18px !important;
+    font-weight: 600 !important;
+  }
+  
+  /* Improve touch experience for flow canvas */
+  .flow-canvas svg {
+    touch-action: none !important;
+    -webkit-touch-callout: none !important;
+    -webkit-user-select: none !important;
+    -khtml-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    user-select: none !important;
+  }
+  
+  /* Smooth zoom transitions */
+  .flow-canvas svg {
+    transition: transform 0.1s ease-out !important;
   }
 }
 
