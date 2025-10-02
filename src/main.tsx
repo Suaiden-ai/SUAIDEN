@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import ProjectStudio from './pages/ProjectStudio';
 import { useEffect, useState } from 'react';
+import { ModalProvider } from './context/ModalContext';
 import './index.css';
 
 function Router() {
@@ -20,6 +21,8 @@ function Router() {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Router />
+    <ModalProvider>
+      <Router />
+    </ModalProvider>
   </StrictMode>
 );
