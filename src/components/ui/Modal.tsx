@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
+import { useModal } from '../../context/ModalContext';
 
 interface ModalProps {
   isOpen: boolean;
@@ -12,6 +13,24 @@ interface ModalProps {
 
 const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 'md' }) => {
   const modalRef = useRef<HTMLDivElement>(null);
+  const { setIsModalOpen } = useModal();
+
+  // Update modal context when modal opens/closes
+  useEffect(() => {
+    setIsModalOpen(isOpen);
+  }, [isOpen, setIsModalOpen]);
+
+  // Additional cleanup when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      // Force cleanup when modal closes
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      document.body.style.overflow = '';
+      document.body.classList.remove('modal-open');
+    }
+  }, [isOpen]);
 
   // Close modal when clicking outside
   useEffect(() => {
@@ -23,30 +42,29 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
 
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
-      // Prevent scrolling when modal is open (lock page scroll robustly)
-      const originalOverflow = document.body.style.overflow;
-      const originalTouchAction = document.body.style.touchAction as string;
-      const originalHtmlOverflow = document.documentElement.style.overflow;
+      
+      // Store original scroll position
+      const scrollY = window.scrollY;
+      
+      // Lock scroll with position fixed approach
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
       document.body.style.overflow = 'hidden';
-      document.body.style.touchAction = 'none';
-      document.documentElement.style.overflow = 'hidden';
-      const preventScroll = (e: Event) => { 
-        // Allow scrolling inside the modal
-        if (modalRef.current && modalRef.current.contains(e.target as Node)) {
-          return;
-        }
-        e.preventDefault(); 
-      };
-      window.addEventListener('wheel', preventScroll, { passive: false });
-      window.addEventListener('touchmove', preventScroll, { passive: false });
+      document.body.classList.add('modal-open');
 
       return () => {
         document.removeEventListener('mousedown', handleClickOutside);
-        document.body.style.overflow = originalOverflow || '';
-        document.body.style.touchAction = originalTouchAction || '';
-        document.documentElement.style.overflow = originalHtmlOverflow || '';
-        window.removeEventListener('wheel', preventScroll as any);
-        window.removeEventListener('touchmove', preventScroll as any);
+        
+        // Restore scroll
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        document.body.style.overflow = '';
+        document.body.classList.remove('modal-open');
+        
+        // Restore scroll position
+        window.scrollTo(0, scrollY);
       };
     }
 
@@ -75,7 +93,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center pt-8 sm:pt-0">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -90,19 +108,19 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
             exit={{ opacity: 0, y: 16 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
             layout={false}
-            className={`relative bg-dark-900 rounded-2xl shadow-[0_0_50px_rgba(255,255,255,0.18)] ${size === 'lg' ? 'max-w-3xl' : 'max-w-md'} w-full mx-4 min-h-[55vh] sm:min-h-[400px] max-h-[80vh] sm:max-h-[85vh] overflow-y-auto custom-scrollbar will-change-transform`}
+            className={`relative bg-dark-900 rounded-2xl shadow-[0_0_50px_rgba(255,255,255,0.18)] ${size === 'lg' ? 'max-w-3xl' : 'max-w-md'} w-full mx-4 max-h-[85vh] sm:max-h-[85vh] overflow-y-auto custom-scrollbar will-change-transform`}
             style={{ transform: 'translateZ(0)' }}
           >
-            <div className="p-4 sm:p-6">
+            <div className="p-3 sm:p-6 pt-12 sm:pt-6 modal-content">
               {title && (
-                <div className="mb-4 pb-3 sm:mb-6 sm:pb-4 border-b border-dark-700">
-                  <h3 className="text-xl font-display font-medium">{title}</h3>
+                <div className="mb-3 pb-2 sm:mb-6 sm:pb-4 border-b border-dark-700">
+                  <h3 className="text-lg sm:text-xl font-display font-medium">{title}</h3>
                 </div>
               )}
               
               <button 
                 onClick={onClose} 
-                className="absolute top-4 right-4 text-white/60 hover:text-white transition-colors"
+                className="absolute top-6 right-4 text-white/60 hover:text-white transition-colors z-10"
                 aria-label="Fechar"
               >
                 <X size={18} />

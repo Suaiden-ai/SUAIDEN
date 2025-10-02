@@ -128,13 +128,13 @@ const SchedulingModal: React.FC<SchedulingModalProps> = ({ isOpen, onClose, onSc
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Agendar Consultoria" size="md">
-      <form onSubmit={handleSubmit} className="space-y-6">
-         {/* Texto persuasivo */}
-         <div className="bg-gradient-to-r from-primary-500/10 to-accent-500/10 border border-primary-500/20 rounded-lg p-4">
-           <div className="flex items-start space-x-3">
+      <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-6">
+         {/* Texto persuasivo - mais compacto no mobile */}
+         <div className="bg-gradient-to-r from-primary-500/10 to-accent-500/10 border border-primary-500/20 rounded-lg p-2 sm:p-4">
+           <div className="flex items-start space-x-2 sm:space-x-3">
              
              <div className="text-left">
-               <h4 className="text-primary-300 font-semibold text-sm mb-1">Transforme sua ideia em realidade!</h4>
+               <h4 className="text-primary-300 font-semibold text-xs sm:text-sm mb-1">Transforme sua ideia em realidade!</h4>
                <p className="text-gray-300 text-xs leading-relaxed">
                  Nossa consultoria gratuita de 60 minutos vai te ajudar a validar seu projeto, 
                  definir estratégias e acelerar o desenvolvimento. <strong className="text-white">Não perca esta oportunidade </strong> 
@@ -145,52 +145,52 @@ const SchedulingModal: React.FC<SchedulingModalProps> = ({ isOpen, onClose, onSc
          </div>
 
          <div className="text-center">
-           <h3 className="text-lg font-semibold text-white mb-2">Escolha data e horário</h3>
-           <p className="text-gray-400 text-sm mb-4">Selecione quando deseja agendar sua consultoria</p>
+           <h3 className="text-sm sm:text-lg font-semibold text-white mb-1 sm:mb-2">Escolha data e horário</h3>
+           <p className="text-gray-400 text-xs sm:text-sm mb-2 sm:mb-4">Selecione quando deseja agendar sua consultoria</p>
          </div>
 
         {/* Informações de contato */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-3">Nome *</label>
+            <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-3">Nome *</label>
             <input
               type="text"
               required
               value={formData.name}
               onChange={(e) => handleInputChange('name', e.target.value)}
               placeholder="Seu nome"
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent"
+              className="w-full px-2 sm:px-3 py-0 sm:py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent text-xs sm:text-sm"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-3">E-mail *</label>
+            <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-3">E-mail *</label>
             <input
               type="email"
               required
               value={formData.email}
               onChange={(e) => handleInputChange('email', e.target.value)}
               placeholder="voce@exemplo.com"
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent"
+              className="w-full px-2 sm:px-3 py-0 sm:py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent text-xs sm:text-sm"
             />
           </div>
           <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-gray-300 mb-3">Telefone (opcional)</label>
+            <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-3">Telefone (opcional)</label>
             <input
               type="tel"
               value={formData.phone}
               onChange={(e) => handleInputChange('phone', e.target.value)}
               placeholder="+5511999999999"
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent"
+              className="w-full px-2 sm:px-3 py-0 sm:py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent text-xs sm:text-sm"
             />
           </div>
         </div>
 
         {/* Campos lado a lado: Data e Horário */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
           {/* Campo de Data */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-3">
-              <FontAwesomeIcon icon={solidIcons.faCalendar} size="sm" className="inline mr-2" />
+            <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-3">
+              <FontAwesomeIcon icon={solidIcons.faCalendar} size="sm" className="inline mr-1 sm:mr-2" />
               Data *
             </label>
             <input
@@ -199,21 +199,21 @@ const SchedulingModal: React.FC<SchedulingModalProps> = ({ isOpen, onClose, onSc
               value={formData.date}
               onChange={(e) => handleInputChange('date', e.target.value)}
               min={new Date().toISOString().split('T')[0]}
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent date-picker-white"
+              className="w-full px-2 sm:px-3 py-0 sm:py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent date-picker-white text-xs sm:text-sm mobile-touch-target mobile-date-input"
             />
           </div>
 
           {/* Campo de Horário (Select) */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-3">
-              <FontAwesomeIcon icon={solidIcons.faClock} size="sm" className="inline mr-2" />
+            <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-3">
+              <FontAwesomeIcon icon={solidIcons.faClock} size="sm" className="inline mr-1 sm:mr-2" />
               Horário *
             </label>
             <select
               required
               value={formData.time}
               onChange={(e) => handleInputChange('time', e.target.value)}
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent"
+              className="w-full px-2 sm:px-3 py-0 sm:py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent text-xs sm:text-sm mobile-touch-target"
             >
               <option value="" disabled>Selecione um horário</option>
               {availableTimes.map((time) => (
@@ -225,9 +225,9 @@ const SchedulingModal: React.FC<SchedulingModalProps> = ({ isOpen, onClose, onSc
 
         {/* Resumo do Agendamento */}
         {formData.date && formData.time && (
-          <div className="bg-gray-800/50 rounded-lg p-4">
-            <h4 className="text-sm font-medium text-white mb-2">Resumo do Agendamento</h4>
-            <div className="text-sm text-gray-300 space-y-1">
+          <div className="bg-gray-800/50 rounded-lg p-2 sm:p-4">
+            <h4 className="text-xs sm:text-sm font-medium text-white mb-1 sm:mb-2">Resumo do Agendamento</h4>
+            <div className="text-xs text-gray-300 space-y-0.5 sm:space-y-1">
               <div><strong>Data:</strong> {new Date(formData.date).toLocaleDateString('pt-BR', {
                 weekday: 'long',
                 year: 'numeric',
@@ -242,9 +242,9 @@ const SchedulingModal: React.FC<SchedulingModalProps> = ({ isOpen, onClose, onSc
         )}
 
          {/* Botões - sempre visíveis */}
-         <div className="pt-4 border-t border-gray-700">
+         <div className="pt-2 sm:pt-4 border-t border-gray-700">
            {feedback && (
-             <div className={`${feedback.type === 'success' ? 'text-emerald-400' : feedback.type === 'error' ? 'text-red-400' : 'text-gray-300'} text-sm mb-3`}>
+             <div className={`${feedback.type === 'success' ? 'text-emerald-400' : feedback.type === 'error' ? 'text-red-400' : 'text-gray-300'} text-xs sm:text-sm mb-2 sm:mb-3`}>
                {feedback.text}
              </div>
            )}
@@ -253,14 +253,14 @@ const SchedulingModal: React.FC<SchedulingModalProps> = ({ isOpen, onClose, onSc
              type="button"
              variant="outline"
              onClick={onClose}
-             className="text-gray-400 border-gray-600 hover:border-gray-500 w-full sm:w-auto"
+             className="text-gray-400 border-gray-600 hover:border-gray-500 w-full sm:w-auto text-xs sm:text-sm py-1.5 sm:py-2 mobile-touch-target"
            >
              Cancelar
            </Button>
            <Button
              type="submit"
             disabled={!canSubmit || submitting}
-             className="bg-primary-600 hover:bg-primary-500 text-white px-6 w-full sm:w-auto"
+             className="bg-primary-600 hover:bg-primary-500 text-white px-3 sm:px-6 w-full sm:w-auto text-xs sm:text-sm py-1.5 sm:py-2 mobile-touch-target"
            >
             {submitting ? 'Agendando...' : '🚀 Agendar'}
            </Button>

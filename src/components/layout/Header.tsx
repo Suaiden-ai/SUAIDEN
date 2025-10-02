@@ -4,11 +4,13 @@ import { solidIcons } from '../../lib/icons';
 import Logo from '../ui/Logo';
 import LanguageSwitcher from '../ui/LanguageSwitcher';
 import { useLanguage } from '../../context/LanguageContext';
+import { useModal } from '../../context/ModalContext';
 
 const Header: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { t } = useLanguage();
+  const { isModalOpen } = useModal();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -27,6 +29,8 @@ const Header: React.FC = () => {
   return (
     <header 
       className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
+        isModalOpen ? 'hidden md:block' : 'block'
+      } ${
         isScrolled ? 'bg-dark-950/90 backdrop-blur-md py-3 shadow-lg' : 'bg-transparent py-5'
       }`}
     >

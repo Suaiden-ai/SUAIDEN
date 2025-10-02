@@ -1,4 +1,5 @@
 import { LanguageProvider } from './context/LanguageContext';
+import { ModalProvider } from './context/ModalContext';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import HeroSection from './components/sections/HeroSection';
@@ -14,31 +15,33 @@ import AnimatedGradientBackground from './components/ui/AnimatedGradientBackgrou
 function App() {
   return (
     <LanguageProvider>
-      {/* Root layout keeps relative stacking; background is a single fixed layer for all sections */}
-      <div className="relative flex flex-col min-h-screen">
-        {/* Animated gradient background across the entire app */}
-        <div className="pointer-events-none fixed inset-0 -z-10">
-          <AnimatedGradientBackground 
-            Breathing 
-            startingGap={125} 
-            topOffset={0}
-            gradientColors={["#000000", "#000000", "#000000", "#1E0B3A", "#6D28D9", "#A78BFA", "#FFFFFF"]}
-            gradientStops={[0, 30, 50, 65, 75, 85, 100]}
-          />
+      <ModalProvider>
+        {/* Root layout keeps relative stacking; background is a single fixed layer for all sections */}
+        <div className="relative flex flex-col min-h-screen">
+          {/* Animated gradient background across the entire app */}
+          <div className="pointer-events-none fixed inset-0 -z-10">
+            <AnimatedGradientBackground 
+              Breathing 
+              startingGap={125} 
+              topOffset={0}
+              gradientColors={["#000000", "#000000", "#000000", "#1E0B3A", "#6D28D9", "#A78BFA", "#FFFFFF"]}
+              gradientStops={[0, 30, 50, 65, 75, 85, 100]}
+            />
+          </div>
+          <Header />
+          <main className="relative z-10">
+            <HeroSection />
+            <ServicesSection />
+            <CasesSection />
+            <AdvantagesSection />
+            <ComparisonSection />
+            <BenefitsSection />
+            <FaqSection />
+            <TechnologiesSection />
+          </main>
+          <Footer />
         </div>
-        <Header />
-        <main className="relative z-10">
-          <HeroSection />
-          <ServicesSection />
-          <CasesSection />
-          <AdvantagesSection />
-          <ComparisonSection />
-          <BenefitsSection />
-          <FaqSection />
-          <TechnologiesSection />
-        </main>
-        <Footer />
-      </div>
+      </ModalProvider>
     </LanguageProvider>
   );
 }
