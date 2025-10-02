@@ -171,6 +171,31 @@ const ProjectStudio: React.FC = () => {
   const [aiFeedback, setAiFeedback] = useState<Record<number, 'up' | 'down' | undefined>>({});
   const [isSchedulingModalOpen, setIsSchedulingModalOpen] = useState(false);
 
+  // Constrói a descrição completa usando o histórico do chat e o estado atual
+  const buildDescriptionFromHistory = useCallback((newUserText?: string) => {
+    const userMessages = messages.filter(m => m.role === 'user').map(m => m.content);
+    const refinements = [...userMessages.slice(initialDesc ? 1 : 0), ...(newUserText ? [newUserText] : [])]
+      .filter(Boolean);
+
+    let description = initialDesc || userMessages[0] || '';
+    if (refinements.length) {
+      description += '\n\nRefinamentos solicitados pelo usuário:' +
+        '\n- ' + refinements.join('\n- ');
+    }
+
+    if (proposal) {
+      const timelineText = proposal.timeline?.map(t => `${t.phase} — ${t.duration}: ${t.details}`).join('\n- ');
+      if (timelineText) {
+        description += `\n\nContexto do cronograma atual (para manter continuidade):\n- ${timelineText}`;
+      }
+      if (proposal.summary) {
+        description += `\n\nResumo atual do projeto:\n${proposal.summary}`;
+      }
+    }
+
+    return description.trim();
+  }, [messages, initialDesc, proposal]);
+
   useEffect(() => {
     const t = setTimeout(() => setEdgeHintPulse(false), 3000);
     return () => clearTimeout(t);
@@ -236,7 +261,7 @@ const ProjectStudio: React.FC = () => {
       
       const { generateProposal: aiGenerateProposal } = await import('../services/ai');
       const locale = (document.documentElement.lang || 'pt') as 'pt' | 'en';
-      const combinedDescription = `${initialDesc}\n\nRefinamento: ${text}`;
+      const combinedDescription = buildDescriptionFromHistory(text);
       
       const aiProposal = await aiGenerateProposal(combinedDescription, locale);
       
@@ -262,7 +287,7 @@ const ProjectStudio: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [input, messages, initialDesc]);
+  }, [input, messages, initialDesc, buildDescriptionFromHistory]);
 
   // ANOTAÇÃO: useMemo para evitar recalcular o fluxo em cada renderização, a menos que a proposta mude.
   const flowData = useMemo(() => {
