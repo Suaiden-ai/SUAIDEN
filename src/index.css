@@ -506,6 +506,19 @@
   .flow-canvas svg {
     transition: transform 0.1s ease-out !important;
   }
+  
+  /* Fix chat input send button alignment on mobile */
+  .chat-container .chat-input button {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  
+  .chat-container .chat-input button svg {
+    margin: 0 !important;
+    padding: 0 !important;
+    transform: none !important;
+  }
 }
 
 /* Infinite scroll animation */
