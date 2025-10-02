@@ -25,9 +25,9 @@ const ContactSection: React.FC = () => {
   return (
     <section id="contato" className="py-20 relative overflow-hidden">
       {/* Background elements */}
-      <div className="absolute inset-0 bg-gradient-to-b from-dark-950 via-dark-900 to-dark-950 pointer-events-none"></div>
-      <div className="absolute -top-40 -left-40 w-96 h-96 bg-primary-500/10 rounded-full blur-3xl"></div>
-      <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-accent-500/10 rounded-full blur-3xl"></div>
+      <div className="absolute inset-0 pointer-events-none -z-10"></div>
+      <div className="absolute -top-40 -left-40 w-96 h-96 bg-primary-500/10 rounded-full blur-3xl -z-10"></div>
+      <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-accent-500/10 rounded-full blur-3xl -z-10"></div>
       
       <div className="container relative">
         <motion.div

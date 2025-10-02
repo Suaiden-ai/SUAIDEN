@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Brain, Sparkles, Zap } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { solidIcons } from '../../lib/icons';
 import LeadForm from '../ui/LeadForm';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -9,126 +10,6 @@ const HeroSection: React.FC = () => {
 
   return (
     <section className="relative pt-28 pb-20 md:pt-32 md:pb-24 overflow-hidden flex items-center min-h-[90vh]">
-      {/* Animated gradient background */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <motion.div 
-          className="absolute inset-0 bg-gradient-to-b from-primary-900/30 via-dark-950 to-dark-950"
-          animate={{
-            opacity: [0.7, 0.9, 0.7],
-          }}
-          transition={{
-            duration: 5,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
-        <motion.div 
-          className="absolute inset-0 bg-gradient-to-tr from-primary-800/20 via-accent-800/10 to-transparent"
-          animate={{
-            opacity: [0.4, 0.6, 0.4],
-          }}
-          transition={{
-            duration: 7,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 0.5
-          }}
-        />
-        <motion.div 
-          className="absolute inset-0 bg-gradient-to-bl from-transparent via-primary-900/10 to-accent-900/20"
-          animate={{
-            opacity: [0.3, 0.5, 0.3],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 1
-          }}
-        />
-      </div>
-
-      {/* Animated background grid */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        {/* Grid lines */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="h-full w-full grid grid-cols-6 gap-4">
-            {[...Array(7)].map((_, i) => (
-              <div key={`v-${i}`} className="h-full w-px bg-primary-400/20" style={{transform: `translateX(${i * 16.67}%)`}}></div>
-            ))}
-          </div>
-          <div className="h-full w-full grid grid-rows-6 gap-4">
-            {[...Array(7)].map((_, i) => (
-              <div key={`h-${i}`} className="w-full h-px bg-primary-400/20" style={{transform: `translateY(${i * 16.67}%)`}}></div>
-            ))}
-          </div>
-        </div>
-
-        {/* Animated circles */}
-        <motion.div
-          className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-primary-500/5 mix-blend-screen"
-          animate={{ 
-            scale: [1, 1.2, 1],
-            opacity: [0.3, 0.5, 0.3],
-          }}
-          transition={{ 
-            duration: 8, 
-            repeat: Infinity,
-            ease: "easeInOut" 
-          }}
-        />
-        <motion.div
-          className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-accent-500/5 mix-blend-screen"
-          animate={{ 
-            scale: [1.2, 1, 1.2],
-            opacity: [0.5, 0.3, 0.5],
-          }}
-          transition={{ 
-            duration: 8, 
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 1
-          }}
-        />
-        <motion.div
-          className="absolute top-1/3 right-1/3 w-48 h-48 rounded-full bg-secondary-500/5 mix-blend-screen"
-          animate={{ 
-            scale: [1, 1.3, 1],
-            opacity: [0.2, 0.4, 0.2],
-          }}
-          transition={{ 
-            duration: 10, 
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 2
-          }}
-        />
-      </div>
-
-      {/* Floating particles */}
-      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        {[...Array(12)].map((_, i) => (
-          <motion.div
-            key={`particle-${i}`}
-            className="absolute rounded-full bg-primary-400/20"
-            style={{
-              width: Math.random() * 6 + 2,
-              height: Math.random() * 6 + 2,
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-            animate={{
-              y: [0, -20, 0],
-              opacity: [0, 0.5, 0],
-            }}
-            transition={{
-              duration: Math.random() * 5 + 10,
-              repeat: Infinity,
-              delay: Math.random() * 5,
-            }}
-          />
-        ))}
-      </div>
       
       <div className="container relative z-10">
         <div className="flex flex-col items-center text-center">
@@ -144,7 +25,7 @@ const HeroSection: React.FC = () => {
               transition={{ duration: 0.4, delay: 0.2 }}
               className="inline-flex items-center px-4 py-2 bg-dark-800/60 backdrop-blur-sm rounded-full text-sm text-white/80"
             >
-              <Sparkles size={16} className="mr-2 text-primary-400" />
+              <FontAwesomeIcon icon={solidIcons.faStar} size="sm" className="mr-2 text-primary-400" />
               {t('hero.tagline')}
             </motion.div>
             
@@ -190,7 +71,7 @@ const HeroSection: React.FC = () => {
               transition={{ duration: 0.4, delay: 0.6 }}
               className="flex items-center"
             >
-              <Zap size={18} className="mr-2 text-primary-400" />
+              <FontAwesomeIcon icon={solidIcons.faBolt} size="sm" className="mr-2 text-primary-400" />
               <span className="text-white/70">{t('hero.features.fastImplementation')}</span>
             </motion.div>
             <motion.div 
@@ -199,7 +80,7 @@ const HeroSection: React.FC = () => {
               transition={{ duration: 0.4, delay: 0.7 }}
               className="flex items-center"
             >
-              <Brain size={18} className="mr-2 text-primary-400" />
+              <FontAwesomeIcon icon={solidIcons.faBrain} size="sm" className="mr-2 text-primary-400" />
               <span className="text-white/70">{t('hero.features.advancedAI')}</span>
             </motion.div>
           </div>

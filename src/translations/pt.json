@@ -19,10 +19,10 @@
     "title": "Tecnologias que impulsionam nossas soluções"
   },
   "services": {
-    "title": "Nossas Soluções Inteligentes",
+    "title": "NOSSAS SOLUÇÕES INTELIGENTES",
     "subtitle": "Desenvolvemos tecnologias que transformam a maneira como as empresas operam, com foco em resultados reais e mensuráveis.",
     "automation": {
-      "title": "Automação Inteligente",
+      "title": "AUTOMAÇÃO INTELIGENTE",
       "description": "Automatize processos repetitivos, integre sistemas e aumente a produtividade com bots personalizados para seu negócio.",
       "longDescription": "Desenvolvemos soluções de automação que eliminam tarefas manuais, reduzem erros humanos e aumentam significativamente a produtividade da sua empresa. Integramos todas suas ferramentas em um fluxo contínuo.",
       "benefits": "Reduza custos operacionais em até 40%",
@@ -35,7 +35,7 @@
       "learnMore": "Saiba mais"
     },
     "ai": {
-      "title": "Soluções com IA",
+      "title": "SOLUÇÕES COM IA",
       "description": "Chatbots avançados, processamento de linguagem natural e geração de conteúdo com as tecnologias mais recentes de IA.",
       "longDescription": "Implementamos tecnologias de inteligência artificial que transformam dados em insights valiosos, automatizam decisões complexas e personalizam a experiência dos seus clientes a um novo nível.",
       "benefits": "Aumente a eficiência operacional em até 60%",
@@ -48,7 +48,7 @@
       "learnMore": "Saiba mais"
     },
     "custom": {
-      "title": "Sistemas Sob Medida",
+      "title": "SISTEMAS SOB MEDIDA",
       "description": "Desenvolvimento de SaaS, plataformas internas e dashboards adaptados às necessidades específicas do seu negócio.",
       "longDescription": "Criamos sistemas completos e personalizados que atendem exatamente às necessidades do seu negócio, desde dashboards gerenciais a plataformas complexas de e-commerce ou gestão.",
       "benefits": "Tempo de desenvolvimento até 70% mais rápido",
@@ -61,7 +61,7 @@
       "learnMore": "Saiba mais"
     },
     "data": {
-      "title": "Dados + Nuvem",
+      "title": "DADOS + NUVEM",
       "description": "Coleta, análise e visualização de dados com inteligência artificial para insights valiosos e tomada de decisão.",
       "longDescription": "Oferecemos soluções completas para coletar, processar e visualizar dados em tempo real, permitindo que sua empresa tome decisões baseadas em informações concretas e não em intuição.",
       "benefits": "Insights até 5x mais rápidos para decisões",
@@ -90,33 +90,33 @@
     }
   },
   "cases": {
-    "title": "Nossos Projetos Reais com Resultados Concretos",
+    "title": "NOSSOS PROJETOS REAIS COM RESULTADOS CONCRETOS",
     "subtitle": "Conheça alguns dos projetos que desenvolvemos e os resultados mensuráveis que ajudamos nossos clientes a alcançar.",
     "case1": {
-      "title": "Clínica Médica Automatizada",
-      "description": "Desenvolvemos um sistema de automação para uma clínica médica que reduziu o tempo de agendamento em 70% e melhorou a satisfação dos pacientes.",
+      "title": "The Future of English",
+      "description": "Desenvolvemos uma plataforma digital inovadora para facilitar a tradução de documentos em diferentes idiomas com o apoio da Inteligência Artificial, oferecendo uma experiência simples, rápida e confiável para pessoas e empresas.",
       "results": [
-        "Redução de 70% no tempo de agendamento",
-        "Aumento de 45% na satisfação dos pacientes",
-        "Economia de 25 horas semanais da equipe"
+        "Redução de 85% no tempo de tradução",
+        "Aumento de 90% na precisão das traduções",
+        "Atendimento a mais de 2.000 usuários mensalmente"
       ]
     },
     "case2": {
-      "title": "Plataforma de Ensino com IA",
-      "description": "Criamos uma plataforma de ensino com IA que personaliza o conteúdo para cada aluno, resultando em melhor absorção de conhecimento e engajamento.",
+      "title": "Lush America Translations",
+      "description": "Desenvolvemos uma plataforma inovadora de tradução de documentos oficiais e acadêmicos utilizando Inteligência Artificial de ponta, garantindo traduções rápidas, consistentes e seguras para diversos idiomas.",
       "results": [
-        "Aumento de 60% na retenção de conteúdo",
-        "Redução de 35% na taxa de desistência",
-        "Escala para milhares de alunos sem aumento de equipe"
+        "Redução de 80% no tempo de tradução",
+        "Aumento de 95% na precisão das traduções",
+        "Atendimento a mais de 1.000 usuários mensalmente"
       ]
     },
     "case3": {
-      "title": "Ecommerce com automação total",
-      "description": "Implementamos um sistema de automação completo para um e-commerce, desde o atendimento até a logística, resultando em crescimento exponencial.",
+      "title": "Plataforma de Orientação Educacional",
+      "description": "Desenvolvemos a plataforma Matrícula USA, uma solução completa para estudantes internacionais que buscam oportunidades de estudo nos Estados Unidos, simplificando todo o processo de admissão.",
       "results": [
-        "Aumento de 120% nas vendas em 6 meses",
-        "Redução de 50% nos custos operacionais",
-        "Atendimento 24/7 sem aumento de equipe"
+        "Redução de 80% no tempo de pesquisa de bolsas",
+        "Aumento de 65% na taxa de aplicações bem-sucedidas",
+        "Atendimento a mais de 10.000 estudantes mensalmente"
       ]
     },
     "viewDetails": "Ver detalhes"

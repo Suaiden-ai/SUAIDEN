@@ -44,11 +44,10 @@ const SectionTitle: React.FC<SectionTitleProps> = ({
         {title}
       </h2>
       {subtitle && (
-        <p className="text-white/70 max-w-2xl">
+        <p className={`text-white/70 max-w-2xl ${center ? 'mx-auto' : ''}`}>
           {subtitle}
         </p>
       )}
-      <div className={`h-1 w-16 bg-gradient-to-r from-primary-500 to-accent-500 rounded-full ${center ? 'mx-auto' : ''}`}></div>
     </motion.div>
   );
 };

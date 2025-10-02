@@ -34,10 +34,8 @@ const ComparisonSection: React.FC = () => {
   };
 
   return (
-    <section className="py-20 bg-dark-900 relative overflow-hidden">
+    <section className="py-20 relative overflow-hidden">
       {/* Background elements */}
-      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary-500/20 to-transparent"></div>
-      <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary-500/20 to-transparent"></div>
       
       <div className="container relative">
         <SectionTitle

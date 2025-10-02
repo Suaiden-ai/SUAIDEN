@@ -1,32 +1,35 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
-import { ArrowRight, Building2, Gauge, ShoppingBag } from 'lucide-react';
+import { ArrowRight, BookOpen, GraduationCap, Globe } from 'lucide-react';
 import SectionTitle from '../ui/SectionTitle';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 
 const cases = [
   {
-    title: 'Clínica Médica Automatizada',
-    description: 'Desenvolvemos um sistema de automação para uma clínica médica que reduziu o tempo de agendamento em 70% e melhorou a satisfação dos pacientes.',
-    icon: Building2,
-    results: ['Redução de 70% no tempo de agendamento', 'Aumento de 45% na satisfação dos pacientes', 'Economia de 25 horas semanais da equipe'],
-    image: 'https://images.pexels.com/photos/7579831/pexels-photo-7579831.jpeg?auto=compress&cs=tinysrgb&w=600'
+    title: 'The Future of English',
+    description: 'Desenvolvemos uma plataforma digital inovadora para facilitar a tradução de documentos em diferentes idiomas com o apoio da Inteligência Artificial, oferecendo uma experiência simples, rápida e confiável para pessoas e empresas.',
+    icon: BookOpen,
+    results: ['Redução de 85% no tempo de tradução', 'Aumento de 90% na precisão das traduções', 'Atendimento a mais de 2.000 usuários mensalmente'],
+    image: '/the-futur.png',
+    url: 'https://thefutureofenglish.com/' // Link direto para o projeto real
   },
   {
-    title: 'Plataforma de Ensino com IA',
-    description: 'Criamos uma plataforma de ensino com IA que personaliza o conteúdo para cada aluno, resultando em melhor absorção de conhecimento e engajamento.',
-    icon: Gauge,
-    results: ['Aumento de 60% na retenção de conteúdo', 'Redução de 35% na taxa de desistência', 'Escala para milhares de alunos sem aumento de equipe'],
-    image: 'https://images.pexels.com/photos/8581496/pexels-photo-8581496.jpeg?auto=compress&cs=tinysrgb&w=600'
+    title: 'Lush America Translations',
+    description: 'Desenvolvemos uma plataforma inovadora de tradução de documentos oficiais e acadêmicos utilizando Inteligência Artificial de ponta, garantindo traduções rápidas, consistentes e seguras para diversos idiomas.',
+    icon: Globe,
+    results: ['Redução de 80% no tempo de tradução', 'Aumento de 95% na precisão das traduções', 'Atendimento a mais de 1.000 usuários mensalmente'],
+    image: '/lush-america.jpg',
+    url: 'https://lushamerica.com/' // Link direto para o projeto real
   },
   {
-    title: 'Ecommerce com automação total',
-    description: 'Implementamos um sistema de automação completo para um e-commerce, desde o atendimento até a logística, resultando em crescimento exponencial.',
-    icon: ShoppingBag,
-    results: ['Aumento de 120% nas vendas em 6 meses', 'Redução de 50% nos custos operacionais', 'Atendimento 24/7 sem aumento de equipe'],
-    image: 'https://images.pexels.com/photos/8347499/pexels-photo-8347499.jpeg?auto=compress&cs=tinysrgb&w=600'
+    title: 'Matricula USA',
+    description: 'Desenvolvemos a plataforma Matrícula USA, uma solução completa para estudantes internacionais que buscam oportunidades de estudo nos Estados Unidos, simplificando todo o processo de admissão.',
+    icon: GraduationCap,
+    results: ['Redução de 80% no tempo de pesquisa de bolsas', 'Aumento de 65% na taxa de aplicações bem-sucedidas', 'Atendimento a mais de 10.000 estudantes mensalmente'],
+    image: '/matricula-usa.png',
+    url: 'https://matriculausa.com/' // Link direto para o projeto real
   }
 ];
 
@@ -35,6 +38,19 @@ const CasesSection: React.FC = () => {
     triggerOnce: true,
     threshold: 0.1,
   });
+
+  const handleViewDetails = (url: string) => {
+    if (url.startsWith('#')) {
+      // Navegação interna para seções da página
+      const element = document.querySelector(url);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    } else {
+      // Link externo - abrir em nova aba
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -56,14 +72,12 @@ const CasesSection: React.FC = () => {
   };
 
   return (
-    <section id="cases" className="py-20 bg-dark-900 relative overflow-hidden">
+    <section id="cases" className="py-20 relative overflow-hidden">
       {/* Background elements */}
-      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary-500/20 to-transparent"></div>
-      <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary-500/20 to-transparent"></div>
       
       <div className="container relative">
         <SectionTitle
-          title="Nossos Projetos Reais com Resultados Concretos"
+          title="NOSSOS PROJETOS REAIS COM RESULTADOS CONCRETOS"
           subtitle="Conheça alguns dos projetos que desenvolvemos e os resultados mensuráveis que ajudamos nossos clientes a alcançar."
           center
           className="mb-16"
@@ -114,6 +128,7 @@ const CasesSection: React.FC = () => {
                       variant="outline" 
                       size="sm" 
                       className="mt-2 group"
+                      onClick={() => handleViewDetails(caseItem.url)}
                     >
                       Ver detalhes
                       <ArrowRight size={16} className="ml-2 transition-transform group-hover:translate-x-1" />

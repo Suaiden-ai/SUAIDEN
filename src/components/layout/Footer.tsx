@@ -1,6 +1,7 @@
 import React from 'react';
 import Logo from '../ui/Logo';
-import { Mail, Phone, Linkedin, Instagram, Github } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { solidIcons, brandIcons } from '../../lib/icons';
 import { useLanguage } from '../../context/LanguageContext';
 
 const Footer: React.FC = () => {
@@ -22,21 +23,21 @@ const Footer: React.FC = () => {
                 className="text-white/60 hover:text-primary-400 transition-colors"
                 aria-label="LinkedIn"
               >
-                <Linkedin size={20} />
+                <FontAwesomeIcon icon={brandIcons.faLinkedin} size="lg" />
               </a>
               <a 
                 href="#" 
                 className="text-white/60 hover:text-primary-400 transition-colors"
                 aria-label="Instagram"
               >
-                <Instagram size={20} />
+                <FontAwesomeIcon icon={brandIcons.faInstagram} size="lg" />
               </a>
               <a 
                 href="#" 
                 className="text-white/60 hover:text-primary-400 transition-colors"
                 aria-label="GitHub"
               >
-                <Github size={20} />
+                <FontAwesomeIcon icon={brandIcons.faGithub} size="lg" />
               </a>
             </div>
           </div>
@@ -57,11 +58,11 @@ const Footer: React.FC = () => {
             <h3 className="text-lg font-medium">{t('footer.contact')}</h3>
             <div className="space-y-3">
               <a href="mailto:contato@suaiden.com" className="flex items-center text-white/70 hover:text-white transition-colors">
-                <Mail size={16} className="mr-2" />
+                <FontAwesomeIcon icon={solidIcons.faEnvelope} size="sm" className="mr-2" />
                 contato@suaiden.com
               </a>
               <a href="tel:+5500000000000" className="flex items-center text-white/70 hover:text-white transition-colors">
-                <Phone size={16} className="mr-2" />
+                <FontAwesomeIcon icon={solidIcons.faPhone} size="sm" className="mr-2" />
                 +55 00 00000-0000
               </a>
             </div>

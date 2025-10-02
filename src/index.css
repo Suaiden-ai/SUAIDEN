@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -9,6 +11,7 @@
   
   body {
     @apply bg-dark-950 text-white font-sans;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
   }
   
   h1, h2, h3, h4, h5, h6 {
@@ -73,6 +76,105 @@
   }
 }
 
+@layer utilities {
+  /*
+    Background gradient image layer
+    - Use CSS var --bg-image to customize the image URL
+    - Defaults to '/img/background/gradients-v2.png'
+  */
+  .site-gradient-bg {
+    /* Only image background, no fallback */
+    background-image: var(--bg-image, url('/generated-image (1).png'));
+    background-color: #000000;
+    background-attachment: fixed;
+    background-size: var(--bg-size, contain);
+    background-repeat: no-repeat;
+    background-position: center var(--bg-y, bottom);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    -webkit-perspective: 1000px;
+    perspective: 1000px;
+    will-change: transform;
+  }
+
+  /* Ensure background aligns consistently across devices */
+  @media (max-width: 1024px) {
+    .site-gradient-bg {
+      /* iPad/tablet: crop more to avoid showing full image */
+      background-attachment: scroll; /* iOS Safari fix */
+      background-size: 200% auto; /* stronger zoom for parity with desktop */
+      background-position: center -10%;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .site-gradient-bg {
+      background-attachment: scroll; /* iOS Safari fix */
+      background-size: 260% auto; /* strongest zoom on phones */
+      background-position: center -30%;
+    }
+  }
+
+  /* Optional: flip background vertically when needed */
+  .bg-flip-y {
+    transform: scaleY(-1);
+    transform-origin: center;
+    will-change: transform;
+  }
+
+  /*
+    Mask utilities (Chrome + Firefox):
+    - Customize stops with CSS vars
+      --mask-c1 (start color), --mask-c2 (mid color), --mask-c3 (end color)
+      Defaults: transparent -> black -> black
+    - Direction variants available
+  */
+  .mask-vars {
+    --mask-c1: transparent;
+    --mask-c2: black;
+    --mask-c3: black;
+  }
+
+  /* Vertical bottom fade (top transparent -> bottom opaque) */
+  .mask-fade-b {
+    -webkit-mask: linear-gradient(to bottom, var(--mask-c1) 0%, var(--mask-c2) 5%, var(--mask-c3) 100%);
+    mask: linear-gradient(to bottom, var(--mask-c1) 0%, var(--mask-c2) 5%, var(--mask-c3) 100%);
+  }
+
+  /* Vertical top fade (bottom transparent) */
+  .mask-fade-t {
+    -webkit-mask: linear-gradient(to top, var(--mask-c1) 0%, var(--mask-c2) 5%, var(--mask-c3) 100%);
+    mask: linear-gradient(to top, var(--mask-c1) 0%, var(--mask-c2) 5%, var(--mask-c3) 100%);
+  }
+
+  /* Horizontal left-to-right fade */
+  .mask-fade-r {
+    -webkit-mask: linear-gradient(to right, var(--mask-c1) 0%, var(--mask-c2) 5%, var(--mask-c3) 100%);
+    mask: linear-gradient(to right, var(--mask-c1) 0%, var(--mask-c2) 5%, var(--mask-c3) 100%);
+  }
+
+  /* Horizontal right-to-left fade */
+  .mask-fade-l {
+    -webkit-mask: linear-gradient(to left, var(--mask-c1) 0%, var(--mask-c2) 5%, var(--mask-c3) 100%);
+    mask: linear-gradient(to left, var(--mask-c1) 0%, var(--mask-c2) 5%, var(--mask-c3) 100%);
+  }
+
+  /* Diagonal fade (top-left to bottom-right) */
+  .mask-fade-diag {
+    -webkit-mask: linear-gradient(45deg, var(--mask-c1) 0%, var(--mask-c2) 20%, var(--mask-c3) 80%);
+    mask: linear-gradient(45deg, var(--mask-c1) 0%, var(--mask-c2) 20%, var(--mask-c3) 80%);
+  }
+
+  /* GPU rendering hint (optional) */
+  .gpu-hint {
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    -webkit-perspective: 1000px;
+    perspective: 1000px;
+    will-change: transform;
+  }
+}
+
 /* Pulse animation */
 @keyframes pulse {
   0%, 100% { opacity: 0.5; }
@@ -109,4 +211,28 @@
 .animated-gradient {
   background-size: 200% 200%;
   animation: gradientAnimation 15s ease infinite;
+}
+
+/* Custom scrollbar styles */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #4a5568 transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #4a5568;
+  border-radius: 3px;
+  transition: background-color 0.2s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #6b7280;
 }

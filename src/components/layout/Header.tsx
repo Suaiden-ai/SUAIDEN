@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Brain, Menu, X } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { solidIcons } from '../../lib/icons';
 import Logo from '../ui/Logo';
 import LanguageSwitcher from '../ui/LanguageSwitcher';
 import { useLanguage } from '../../context/LanguageContext';
@@ -63,7 +64,7 @@ const Header: React.FC = () => {
             onClick={toggleMobileMenu}
             aria-label="Menu"
           >
-            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            {isMobileMenuOpen ? <FontAwesomeIcon icon={solidIcons.faX} size="lg" /> : <FontAwesomeIcon icon={solidIcons.faBars} size="lg" />}
           </button>
         </div>
       </div>

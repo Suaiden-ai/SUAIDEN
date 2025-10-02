@@ -93,30 +93,30 @@
     "title": "Our Real Projects with Concrete Results",
     "subtitle": "Learn about some of the projects we've developed and the measurable results we've helped our clients achieve.",
     "case1": {
-      "title": "Automated Medical Clinic",
-      "description": "We developed an automation system for a medical clinic that reduced scheduling time by 70% and improved patient satisfaction.",
+      "title": "The Future of English",
+      "description": "We developed an innovative digital platform to facilitate document translation in different languages with Artificial Intelligence support, offering a simple, fast, and reliable experience for individuals and companies.",
       "results": [
-        "70% reduction in scheduling time",
-        "45% increase in patient satisfaction",
-        "25 hours of team time saved weekly"
+        "85% reduction in translation time",
+        "90% increase in translation accuracy",
+        "Serving over 2,000 users monthly"
       ]
     },
     "case2": {
-      "title": "AI-Powered Learning Platform",
-      "description": "We created a learning platform with AI that personalizes content for each student, resulting in better knowledge absorption and engagement.",
+      "title": "Lush America Translations",
+      "description": "We developed an innovative platform for translating official and academic documents using cutting-edge Artificial Intelligence, ensuring fast, consistent, and secure translations for multiple languages.",
       "results": [
-        "60% increase in content retention",
-        "35% reduction in dropout rate",
-        "Scale to thousands of students without increasing staff"
+        "80% reduction in translation time",
+        "95% increase in translation accuracy",
+        "Serving over 1,000 users monthly"
       ]
     },
     "case3": {
-      "title": "Fully Automated E-commerce",
-      "description": "We implemented a complete automation system for an e-commerce, from customer service to logistics, resulting in exponential growth.",
+      "title": "Educational Guidance Platform",
+      "description": "We developed the Matrícula USA platform, a complete solution for international students seeking study opportunities in the United States, simplifying the entire admission process.",
       "results": [
-        "120% increase in sales in 6 months",
-        "50% reduction in operational costs",
-        "24/7 service without increasing staff"
+        "80% reduction in scholarship research time",
+        "65% increase in successful application rate",
+        "Serving over 10,000 students monthly"
       ]
     },
     "viewDetails": "View details"

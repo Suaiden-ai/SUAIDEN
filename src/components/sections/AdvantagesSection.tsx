@@ -76,29 +76,62 @@ const AdvantagesSection: React.FC = () => {
           variants={containerVariants}
           initial="hidden"
           animate={inView ? 'visible' : 'hidden'}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
         >
-          {advantages.map((advantage, index) => {
+          {/* Primeiros 3 cards */}
+          {advantages.slice(0, 3).map((advantage, index) => {
             const Icon = advantage.icon;
             
             return (
               <motion.div 
                 key={index} 
                 variants={itemVariants}
-                className="bg-dark-900/50 backdrop-blur-sm border border-dark-800 rounded-xl p-6 hover:border-primary-700/50 transition-colors duration-300"
+                className="bg-dark-900/50 backdrop-blur-sm border border-dark-800 rounded-xl p-6 hover:border-primary-700/50 hover:bg-dark-900/70 transition-all duration-300 group"
               >
-                <div className="flex">
-                  <div className="mr-4 p-3 rounded-lg bg-gradient-to-br from-primary-500/20 to-accent-500/20 h-fit">
-                    <Icon size={20} className="text-primary-400" />
+                <div className="flex flex-col h-full">
+                  <div className="flex items-start mb-4">
+                    <div className="mr-4 p-3 rounded-lg bg-gradient-to-br from-primary-500/20 to-accent-500/20 h-fit group-hover:from-primary-500/30 group-hover:to-accent-500/30 transition-all duration-300">
+                      <Icon size={20} className="text-primary-400 group-hover:text-primary-300 transition-colors duration-300" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-display font-medium mb-2 text-white group-hover:text-primary-100 transition-colors duration-300">{advantage.title}</h3>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-lg font-display font-medium mb-2">{advantage.title}</h3>
-                    <p className="text-white/70 text-sm">{advantage.description}</p>
-                  </div>
+                  <p className="text-white/70 text-sm leading-relaxed group-hover:text-white/80 transition-colors duration-300">{advantage.description}</p>
                 </div>
               </motion.div>
             );
           })}
+          
+          {/* Container centralizado para os últimos 2 cards */}
+          <div className="lg:col-span-3 flex justify-center">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
+              {advantages.slice(3).map((advantage, index) => {
+                const Icon = advantage.icon;
+                const actualIndex = index + 3; // Ajustar índice para animação
+                
+                return (
+                  <motion.div 
+                    key={actualIndex} 
+                    variants={itemVariants}
+                    className="bg-dark-900/50 backdrop-blur-sm border border-dark-800 rounded-xl p-6 hover:border-primary-700/50 hover:bg-dark-900/70 transition-all duration-300 group"
+                  >
+                    <div className="flex flex-col h-full">
+                      <div className="flex items-start mb-4">
+                        <div className="mr-4 p-3 rounded-lg bg-gradient-to-br from-primary-500/20 to-accent-500/20 h-fit group-hover:from-primary-500/30 group-hover:to-accent-500/30 transition-all duration-300">
+                          <Icon size={20} className="text-primary-400 group-hover:text-primary-300 transition-colors duration-300" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-lg font-display font-medium mb-2 text-white group-hover:text-primary-100 transition-colors duration-300">{advantage.title}</h3>
+                        </div>
+                      </div>
+                      <p className="text-white/70 text-sm leading-relaxed group-hover:text-white/80 transition-colors duration-300">{advantage.description}</p>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
         </motion.div>
       </div>
     </section>

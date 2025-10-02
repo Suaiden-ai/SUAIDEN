@@ -41,27 +41,6 @@ const TechnologiesSection: React.FC = () => {
 
   return (
     <section className="py-16 relative overflow-hidden">
-      {/* Background elements to match hero */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-b from-primary-900/20 via-dark-950 to-dark-950 opacity-80" />
-        <div className="absolute inset-0 bg-gradient-to-tr from-primary-800/10 via-accent-800/5 to-transparent" />
-      </div>
-      
-      {/* Background grid similar to hero */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <div className="absolute inset-0 opacity-5">
-          <div className="h-full w-full grid grid-cols-6 gap-4">
-            {[...Array(7)].map((_, i) => (
-              <div key={`v-${i}`} className="h-full w-px bg-primary-400/20" style={{transform: `translateX(${i * 16.67}%)`}}></div>
-            ))}
-          </div>
-          <div className="h-full w-full grid grid-rows-6 gap-4">
-            {[...Array(7)].map((_, i) => (
-              <div key={`h-${i}`} className="w-full h-px bg-primary-400/20" style={{transform: `translateY(${i * 16.67}%)`}}></div>
-            ))}
-          </div>
-        </div>
-      </div>
       
       <div className="container relative z-10">
         <div ref={inViewRef}>
