@@ -30,7 +30,13 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
       document.body.style.overflow = 'hidden';
       document.body.style.touchAction = 'none';
       document.documentElement.style.overflow = 'hidden';
-      const preventScroll = (e: Event) => { e.preventDefault(); };
+      const preventScroll = (e: Event) => { 
+        // Allow scrolling inside the modal
+        if (modalRef.current && modalRef.current.contains(e.target as Node)) {
+          return;
+        }
+        e.preventDefault(); 
+      };
       window.addEventListener('wheel', preventScroll, { passive: false });
       window.addEventListener('touchmove', preventScroll, { passive: false });
 
@@ -84,12 +90,12 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
             exit={{ opacity: 0, y: 16 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
             layout={false}
-            className={`relative bg-dark-900 rounded-2xl shadow-[0_0_50px_rgba(154,103,255,0.2)] ${size === 'lg' ? 'max-w-3xl' : 'max-w-md'} w-full mx-4 min-h-[400px] max-h-[95vh] sm:max-h-[85vh] overflow-y-auto will-change-transform`}
+            className={`relative bg-dark-900 rounded-2xl shadow-[0_0_50px_rgba(255,255,255,0.18)] ${size === 'lg' ? 'max-w-3xl' : 'max-w-md'} w-full mx-4 min-h-[55vh] sm:min-h-[400px] max-h-[80vh] sm:max-h-[85vh] overflow-y-auto custom-scrollbar will-change-transform`}
             style={{ transform: 'translateZ(0)' }}
           >
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               {title && (
-                <div className="mb-6 pb-4 border-b border-dark-700">
+                <div className="mb-4 pb-3 sm:mb-6 sm:pb-4 border-b border-dark-700">
                   <h3 className="text-xl font-display font-medium">{title}</h3>
                 </div>
               )}

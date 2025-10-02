@@ -5,6 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { solidIcons } from '../../lib/icons';
 import SectionTitle from '../ui/SectionTitle';
 import Button from '../ui/Button';
+import SchedulingModal from '../ui/SchedulingModal';
 
 const services = [
   {
@@ -231,11 +232,17 @@ const ServicesSection: React.FC = () => {
     threshold: 0.1,
   });
 
+  const [isSchedulingModalOpen, setIsSchedulingModalOpen] = useState(false);
+
+  const handleScheduleConsultation = (data: any) => {
+    console.log('Agendamento solicitado:', data);
+    // Feedback inline é exibido dentro do próprio modal; nada a fazer aqui.
+  };
+
   return (
     <section id="servicos" className="py-20 relative overflow-hidden">
       {/* Background elements */}
-      <div className="absolute -top-40 -right-40 w-96 h-96 bg-primary-500/5 rounded-full blur-3xl -z-10"></div>
-      <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-accent-500/5 rounded-full blur-3xl -z-10"></div>
+      
       
       <div className="container relative max-w-8xl mx-auto px-4">
         <SectionTitle
@@ -298,7 +305,7 @@ const ServicesSection: React.FC = () => {
           <Button 
             size="lg"
             className="group"
-            onClick={() => document.getElementById('contato')?.scrollIntoView({ behavior: 'smooth' })}
+            onClick={() => setIsSchedulingModalOpen(true)}
           >
             Solicitar consultoria gratuita
             <FontAwesomeIcon icon={solidIcons.faArrowRight} size="sm" className="ml-2 transition-transform group-hover:translate-x-1" />
@@ -315,6 +322,12 @@ const ServicesSection: React.FC = () => {
             </div>
           </div>
         </motion.div>
+        {/* Scheduling Modal (mesmo da página Studio) */}
+        <SchedulingModal
+          isOpen={isSchedulingModalOpen}
+          onClose={() => setIsSchedulingModalOpen(false)}
+          onSchedule={handleScheduleConsultation}
+        />
       </div>
     </section>
   );

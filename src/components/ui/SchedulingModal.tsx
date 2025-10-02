@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Modal from './Modal';
 import Button from './Button';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -8,18 +8,43 @@ interface SchedulingModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSchedule: (data: SchedulingData) => void;
+  initialName?: string;
+  initialEmail?: string;
+  initialPhone?: string;
 }
 
 interface SchedulingData {
+  name: string;
+  email: string;
+  phone?: string;
   date: string;
   time: string;
 }
 
-const SchedulingModal: React.FC<SchedulingModalProps> = ({ isOpen, onClose, onSchedule }) => {
+const SchedulingModal: React.FC<SchedulingModalProps> = ({ isOpen, onClose, onSchedule, initialName, initialEmail, initialPhone }) => {
   const [formData, setFormData] = useState<SchedulingData>({
+    name: '',
+    email: '',
+    phone: '',
     date: '',
     time: ''
   });
+  const [submitting, setSubmitting] = useState(false);
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
+
+  // Prefill when modal opens
+  useEffect(() => {
+    if (!isOpen) return;
+    try {
+      const leadInfoRaw = localStorage.getItem('leadInfo');
+      let leadInfo: any = null;
+      try { leadInfo = leadInfoRaw ? JSON.parse(leadInfoRaw) : null; } catch {}
+      const storedName = initialName || (leadInfo?.name as string) || localStorage.getItem('lead_name') || localStorage.getItem('user_name') || '';
+      const storedEmail = initialEmail || (leadInfo?.email as string) || localStorage.getItem('lead_email') || localStorage.getItem('user_email') || '';
+      const storedPhone = initialPhone || (leadInfo?.whatsapp as string) || localStorage.getItem('lead_phone') || localStorage.getItem('user_phone') || '';
+      setFormData(prev => ({ ...prev, name: storedName || prev.name, email: storedEmail || prev.email, phone: storedPhone || prev.phone }));
+    } catch {}
+  }, [isOpen, initialName, initialEmail, initialPhone]);
 
   const availableTimes = [
     '09:00', '10:00', '11:00', '13:00',
@@ -30,33 +55,89 @@ const SchedulingModal: React.FC<SchedulingModalProps> = ({ isOpen, onClose, onSc
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSchedule(formData);
-    onClose();
-    // Reset form
-    setFormData({
-      date: '',
-      time: ''
-    });
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      onSchedule(formData);
+      // Monta payload com conversões de horário
+      const userTimezone = (Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC');
+      const localDateTime = new Date(`${formData.date}T${formData.time}:00`);
+      const fmt = (tz: string) => new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: tz }).format(localDateTime);
+      const brazilTime = fmt('America/Sao_Paulo');
+      const utcTime = fmt('UTC');
+      const preferredDatetimeIso = localDateTime.toISOString();
+
+      const explanation = `${formData.time} ${userTimezone} → ${brazilTime} Brasil`;
+
+      // Envia ao webhook (melhor esforço; erros não bloqueiam fechamento)
+      const { sendConsultationSchedule } = await import('../../services/webhook');
+      const res = await sendConsultationSchedule({
+        name: formData.name,
+        contact_email: formData.email,
+        phone_number: formData.phone || undefined,
+        preferred_datetime: preferredDatetimeIso,
+        preferred_date: formData.date,
+        preferred_time: formData.time,
+        brazil_time: brazilTime,
+        utc_time: utcTime,
+        user_timezone: userTimezone,
+        debug_datetime_utc: new Date(localDateTime.getTime() - localDateTime.getTimezoneOffset() * 60000).toISOString().replace(/\.\d{3}Z$/, 'Z'),
+        debug_timezone_info: {
+          user_timezone: userTimezone,
+          brazil_offset: 'auto',
+          conversion_explanation: explanation
+        },
+        source: 'services-section-modal'
+      } as any);
+
+      let message: any = null;
+      try { message = await res.json(); } catch {}
+
+      if (message?.response === 'Appointment created successfully.') {
+        setFeedback({ type: 'success', text: 'Agendamento confirmado! Enviaremos os detalhes no seu e-mail.' });
+        // Persist contact for future prefill
+        try {
+          localStorage.setItem('lead_name', formData.name);
+          localStorage.setItem('lead_email', formData.email);
+          if (formData.phone) localStorage.setItem('lead_phone', formData.phone);
+        } catch {}
+        // Fecha após breve confirmação visual
+        setTimeout(() => {
+          onClose();
+          setFormData({ name: '', email: '', phone: '', date: '', time: '' });
+          setFeedback(null);
+        }, 3000);
+      } else if (message?.response === 'Please try another appointment time, this one is busy.') {
+        setFeedback({ type: 'error', text: 'Este horário já está ocupado. Por favor, escolha outro horário.' });
+        return; // mantém modal aberto
+      } else {
+        setFeedback({ type: 'error', text: 'Não foi possível confirmar o agendamento agora. Tente novamente.' });
+        return; // mantém modal aberto
+      }
+    } catch (err) {
+      setFeedback({ type: 'error', text: 'Ocorreu um erro ao enviar o agendamento. Tente novamente.' });
+      return;
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const canSubmit = formData.date !== '' && formData.time !== '';
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Agendar Consultoria" size="md">
-       <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6">
          {/* Texto persuasivo */}
          <div className="bg-gradient-to-r from-primary-500/10 to-accent-500/10 border border-primary-500/20 rounded-lg p-4">
            <div className="flex items-start space-x-3">
-             <div className="flex-shrink-0 w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center">
-               <span className="text-white text-sm font-bold">💡</span>
-             </div>
+             
              <div className="text-left">
                <h4 className="text-primary-300 font-semibold text-sm mb-1">Transforme sua ideia em realidade!</h4>
                <p className="text-gray-300 text-xs leading-relaxed">
                  Nossa consultoria gratuita de 60 minutos vai te ajudar a validar seu projeto, 
-                 definir estratégias e acelerar o desenvolvimento. <strong className="text-white">Não perca esta oportunidade</strong> 
+                 definir estratégias e acelerar o desenvolvimento. <strong className="text-white">Não perca esta oportunidade </strong> 
                  de dar o próximo passo com especialistas em IA e tecnologia.
                </p>
              </div>
@@ -68,43 +149,77 @@ const SchedulingModal: React.FC<SchedulingModalProps> = ({ isOpen, onClose, onSc
            <p className="text-gray-400 text-sm mb-4">Selecione quando deseja agendar sua consultoria</p>
          </div>
 
-        {/* Campo de Data */}
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-3">
-            <FontAwesomeIcon icon={solidIcons.faCalendar} size="sm" className="inline mr-2" />
-            Data *
-          </label>
-          <input
-            type="date"
-            required
-            value={formData.date}
-            onChange={(e) => handleInputChange('date', e.target.value)}
-            min={new Date().toISOString().split('T')[0]}
-            className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent"
-          />
+        {/* Informações de contato */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-3">Nome *</label>
+            <input
+              type="text"
+              required
+              value={formData.name}
+              onChange={(e) => handleInputChange('name', e.target.value)}
+              placeholder="Seu nome"
+              className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-3">E-mail *</label>
+            <input
+              type="email"
+              required
+              value={formData.email}
+              onChange={(e) => handleInputChange('email', e.target.value)}
+              placeholder="voce@exemplo.com"
+              className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent"
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-medium text-gray-300 mb-3">Telefone (opcional)</label>
+            <input
+              type="tel"
+              value={formData.phone}
+              onChange={(e) => handleInputChange('phone', e.target.value)}
+              placeholder="+5511999999999"
+              className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent"
+            />
+          </div>
         </div>
 
-        {/* Campo de Horário */}
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-3">
-            <FontAwesomeIcon icon={solidIcons.faClock} size="sm" className="inline mr-2" />
-            Horário *
-          </label>
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-            {availableTimes.map((time) => (
-              <button
-                key={time}
-                type="button"
-                onClick={() => handleInputChange('time', time)}
-                className={`p-2 text-center border rounded-lg transition-colors text-sm ${
-                  formData.time === time
-                    ? 'border-primary-400 bg-primary-400/20 text-primary-400'
-                    : 'border-gray-600 hover:border-primary-400 hover:bg-primary-400/10 text-white'
-                }`}
-              >
-                {time}
-              </button>
-            ))}
+        {/* Campos lado a lado: Data e Horário */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Campo de Data */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-3">
+              <FontAwesomeIcon icon={solidIcons.faCalendar} size="sm" className="inline mr-2" />
+              Data *
+            </label>
+            <input
+              type="date"
+              required
+              value={formData.date}
+              onChange={(e) => handleInputChange('date', e.target.value)}
+              min={new Date().toISOString().split('T')[0]}
+              className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent date-picker-white"
+            />
+          </div>
+
+          {/* Campo de Horário (Select) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-3">
+              <FontAwesomeIcon icon={solidIcons.faClock} size="sm" className="inline mr-2" />
+              Horário *
+            </label>
+            <select
+              required
+              value={formData.time}
+              onChange={(e) => handleInputChange('time', e.target.value)}
+              className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent"
+            >
+              <option value="" disabled>Selecione um horário</option>
+              {availableTimes.map((time) => (
+                <option key={time} value={time}>{time}</option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -127,8 +242,14 @@ const SchedulingModal: React.FC<SchedulingModalProps> = ({ isOpen, onClose, onSc
         )}
 
          {/* Botões - sempre visíveis */}
-         <div className="flex flex-col-reverse sm:flex-row justify-end space-y-2 space-y-reverse sm:space-y-0 sm:space-x-3 pt-4 border-t border-gray-700">
-           <Button
+         <div className="pt-4 border-t border-gray-700">
+           {feedback && (
+             <div className={`${feedback.type === 'success' ? 'text-emerald-400' : feedback.type === 'error' ? 'text-red-400' : 'text-gray-300'} text-sm mb-3`}>
+               {feedback.text}
+             </div>
+           )}
+           <div className="flex flex-col-reverse sm:flex-row justify-end space-y-2 space-y-reverse sm:space-y-0 sm:space-x-3">
+          <Button
              type="button"
              variant="outline"
              onClick={onClose}
@@ -138,11 +259,12 @@ const SchedulingModal: React.FC<SchedulingModalProps> = ({ isOpen, onClose, onSc
            </Button>
            <Button
              type="submit"
-             disabled={!canSubmit}
+            disabled={!canSubmit || submitting}
              className="bg-primary-600 hover:bg-primary-500 text-white px-6 w-full sm:w-auto"
            >
-             🚀 Agendar
+            {submitting ? 'Agendando...' : '🚀 Agendar'}
            </Button>
+           </div>
          </div>
       </form>
     </Modal>

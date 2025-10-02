@@ -60,8 +60,6 @@ const AdvantagesSection: React.FC = () => {
   return (
     <section id="vantagens" className="py-20 relative overflow-hidden">
       {/* Background elements */}
-      <div className="absolute -top-40 left-20 w-96 h-96 bg-primary-500/5 rounded-full blur-3xl"></div>
-      <div className="absolute -bottom-40 right-20 w-96 h-96 bg-accent-500/5 rounded-full blur-3xl"></div>
       
       <div className="container relative">
         <SectionTitle

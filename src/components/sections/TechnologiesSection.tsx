@@ -1,90 +1,72 @@
-import React, { useEffect, useRef } from 'react';
-import { motion, useAnimation, useInView } from 'framer-motion';
+import React from 'react';
 import SectionTitle from '../ui/SectionTitle';
 import { useLanguage } from '../../context/LanguageContext';
 
 const technologies = [
-  { name: 'OpenAI', logo: 'https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg' },
-  { name: 'LangChain', logo: 'https://avatars.githubusercontent.com/u/126733545?s=200&v=4' },
+  { name: 'OpenAI', logo: '/Logos/openai.svg', needsWhiteFilter: true },
+  { name: 'LangChain', logo: '/Logos/langchain-text.svg', needsWhiteFilter: true },
+  { name: 'Anthropic', logo: '/Logos/anthropic.svg', needsWhiteFilter: true },
   { name: 'React', logo: 'https://upload.wikimedia.org/wikipedia/commons/a/a7/React-icon.svg' },
-  { name: 'Next.js', logo: 'https://seeklogo.com/images/N/next-js-logo-8FCFF51DD2-seeklogo.com.png' },
-  { name: 'Node.js', logo: 'https://nodejs.org/static/images/logos/nodejs-new-pantone-white.svg' },
+  { name: 'Next.js', logo: '/Logos/Next.js.svg', needsWhiteFilter: true },
+  { name: 'Node.js', logo: '/Logos/icons8-nodejs.svg', needsWhiteFilter: true },
   { name: 'Python', logo: 'https://upload.wikimedia.org/wikipedia/commons/c/c3/Python-logo-notext.svg' },
-  { name: 'Supabase', logo: 'https://seeklogo.com/images/S/supabase-logo-DCC676FFE2-seeklogo.com.png' },
+  { name: 'Supabase', logo: '/Logos/icons8-supabase.svg' },
   { name: 'PostgreSQL', logo: 'https://upload.wikimedia.org/wikipedia/commons/2/29/Postgresql_elephant.svg' },
   { name: 'Firebase', logo: 'https://firebase.google.com/static/downloads/brand-guidelines/PNG/logo-logomark.png' },
   { name: 'Stripe', logo: 'https://upload.wikimedia.org/wikipedia/commons/b/ba/Stripe_Logo%2C_revised_2016.svg' },
   { name: 'TailwindCSS', logo: 'https://upload.wikimedia.org/wikipedia/commons/d/d5/Tailwind_CSS_Logo.svg' },
   { name: 'AWS', logo: 'https://upload.wikimedia.org/wikipedia/commons/9/93/Amazon_Web_Services_Logo.svg' },
-  // Duplicating to ensure continuous scrolling effect
-  { name: 'OpenAI', logo: 'https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg' },
-  { name: 'LangChain', logo: 'https://avatars.githubusercontent.com/u/126733545?s=200&v=4' },
-  { name: 'React', logo: 'https://upload.wikimedia.org/wikipedia/commons/a/a7/React-icon.svg' },
-  { name: 'Next.js', logo: 'https://seeklogo.com/images/N/next-js-logo-8FCFF51DD2-seeklogo.com.png' },
-  { name: 'Node.js', logo: 'https://nodejs.org/static/images/logos/nodejs-new-pantone-white.svg' },
-  { name: 'Python', logo: 'https://upload.wikimedia.org/wikipedia/commons/c/c3/Python-logo-notext.svg' },
+  { name: 'TypeScript', logo: '/Logos/TypeScript.svg' },
+  { name: 'Vue.js', logo: 'https://upload.wikimedia.org/wikipedia/commons/9/95/Vue.js_Logo_2.svg' },
+  { name: 'Docker', logo: 'https://upload.wikimedia.org/wikipedia/commons/4/4e/Docker_%28container_engine%29_logo.svg' },
+  { name: 'MongoDB', logo: 'https://upload.wikimedia.org/wikipedia/commons/9/93/MongoDB_Logo.svg' },
+  { name: 'Redis', logo: '/Logos/icons8-redis.svg' },
+  { name: 'GraphQL', logo: 'https://upload.wikimedia.org/wikipedia/commons/1/17/GraphQL_Logo.svg' },
+  { name: 'GitHub', logo: 'https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg' },
 ];
 
 const TechnologiesSection: React.FC = () => {
   const { t } = useLanguage();
-  const carouselRef = useRef<HTMLDivElement>(null);
-  const controls = useAnimation();
-  const inViewRef = useRef(null);
-  const inView = useInView(inViewRef, { once: false });
-
-  // Start animation when section is in view
-  useEffect(() => {
-    if (inView) {
-      controls.start("visible");
-    }
-  }, [controls, inView]);
 
   return (
     <section className="py-16 relative overflow-hidden">
-      
       <div className="container relative z-10">
-        <div ref={inViewRef}>
-          <SectionTitle 
-            title={t('technologies.title')}
-            center
-            className="mb-12"
-          />
-        </div>
-        
-        {/* Single row carousel */}
-        <div className="relative overflow-hidden mx-auto px-4 py-6">
-          <div className="mb-10" ref={carouselRef}>
-            <motion.div
-              className="flex space-x-12"
-              animate={{
-                x: [0, -2400],
-              }}
-              transition={{
-                x: {
-                  repeat: Infinity,
-                  repeatType: "loop",
-                  duration: 40,
-                  ease: "linear"
-                }
-              }}
+        <SectionTitle 
+          title={t('technologies.title')}
+          center
+          className="mb-12"
+        />
+      </div>
+      
+      {/* Full width carousel */}
+      <div className="relative overflow-hidden w-full">
+        <div 
+          className="flex space-x-16 items-center py-6"
+          style={{
+            animation: `scroll ${40}s linear infinite`,
+            width: 'max-content'
+          }}
+        >
+          {/* Duplicate the technologies array for seamless loop */}
+          {[...technologies, ...technologies].map((tech, index) => (
+            <div
+              key={`tech-${index}`}
+              className="flex flex-col items-center w-[140px] flex-shrink-0"
             >
-              {technologies.map((tech, index) => (
-                <div
-                  key={`tech-${index}`}
-                  className="flex flex-col items-center min-w-[120px]"
-                >
-                  <div className="h-14 flex items-center justify-center mb-2">
-                    <img 
-                      src={tech.logo} 
-                      alt={tech.name} 
-                      className="tech-icon h-10 md:h-12 object-contain" 
-                    />
-                  </div>
-                  <span className="text-white/60 text-sm">{tech.name}</span>
-                </div>
-              ))}
-            </motion.div>
-          </div>
+              <div className="h-16 flex items-center justify-center mb-3">
+                <img 
+                  src={tech.logo} 
+                  alt={tech.name} 
+                  className={`h-12 md:h-14 object-contain transition-opacity ${
+                    tech.needsWhiteFilter 
+                      ? 'filter brightness-0 invert opacity-80 hover:opacity-100' 
+                      : 'opacity-80 hover:opacity-100'
+                  }`}
+                />
+              </div>
+              <span className="text-white/60 text-sm font-medium text-center">{tech.name}</span>
+            </div>
+          ))}
         </div>
       </div>
     </section>

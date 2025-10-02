@@ -501,12 +501,8 @@ const ProjectStudio: React.FC = () => {
   }, [proposal]);
 
   const handleScheduleConsultation = useCallback((data: any) => {
-    // Aqui você pode implementar a lógica para salvar o agendamento
-    // Por exemplo, enviar para uma API, salvar no Supabase, etc.
     console.log('Agendamento solicitado:', data);
-    
-    // Por enquanto, apenas mostra um alerta de sucesso
-    alert(`Agendamento confirmado!\n\nData: ${new Date(data.date).toLocaleDateString('pt-BR')}\nHorário: ${data.time}\n\nEntraremos em contato em breve para confirmar os detalhes.`);
+    // Feedback inline é exibido dentro do próprio modal; nada a fazer aqui.
   }, []);
 
   return (
@@ -610,6 +606,9 @@ const ProjectStudio: React.FC = () => {
         isOpen={isSchedulingModalOpen}
         onClose={() => setIsSchedulingModalOpen(false)}
         onSchedule={handleScheduleConsultation}
+        initialName={(localStorage.getItem('lead_name') || localStorage.getItem('user_name') || '') as string}
+        initialEmail={(localStorage.getItem('lead_email') || localStorage.getItem('user_email') || '') as string}
+        initialPhone={(localStorage.getItem('lead_phone') || localStorage.getItem('user_phone') || '') as string}
       />
     </div>
   );
