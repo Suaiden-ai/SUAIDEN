@@ -66,15 +66,60 @@ export async function sendConsultationSchedule(payload: ConsultationSchedulePayl
  * Sends a new lead to the N8N webhook defined by VITE_N8N_URL.
  * The final URL is `${VITE_N8N_URL}novo-lead`.
  */
-export async function sendNewLead(payload: NewLeadPayload): Promise<Response> {
-  const baseUrl = import.meta.env.VITE_N8N_URL as string | undefined;
-  if (!baseUrl) {
-    throw new Error('VITE_N8N_URL não configurado');
+/**
+ * Captura informações de sessão como fallback
+ */
+function getSessionInfo() {
+  if (typeof window === 'undefined') {
+    return {
+      session_id: 'unknown',
+      landing_page: 'unknown',
+      entry_timestamp: 'unknown',
+      page_views: 0
+    };
   }
 
-  const url = `${baseUrl.replace(/\/?$/, '/')}novo-lead`;
+  // Gerar ou recuperar session ID
+  let sessionId = sessionStorage.getItem('suaiden_session_id');
+  if (!sessionId) {
+    sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    sessionStorage.setItem('suaiden_session_id', sessionId);
+  }
 
-  // Extrair parâmetros UTM da URL
+  // Contar visualizações de página
+  const pageViews = parseInt(sessionStorage.getItem('suaiden_page_views') || '0') + 1;
+  sessionStorage.setItem('suaiden_page_views', pageViews.toString());
+
+  // Timestamp de entrada na sessão
+  let entryTimestamp = sessionStorage.getItem('suaiden_entry_timestamp');
+  if (!entryTimestamp) {
+    entryTimestamp = new Date().toISOString();
+    sessionStorage.setItem('suaiden_entry_timestamp', entryTimestamp);
+  }
+
+  return {
+    session_id: sessionId,
+    landing_page: window.location.href,
+    entry_timestamp: entryTimestamp,
+    page_views: pageViews
+  };
+}
+
+/**
+ * Captura parâmetros UTM de forma mais robusta
+ */
+function getUtmInfo() {
+  if (typeof window === 'undefined') {
+    return {
+      utm_source: undefined,
+      utm_medium: undefined,
+      utm_campaign: undefined,
+      utm_term: undefined,
+      utm_content: undefined,
+      has_utm: false
+    };
+  }
+
   const urlParams = new URLSearchParams(window.location.search);
   const utmParams = {
     utm_source: urlParams.get('utm_source') || undefined,
@@ -84,6 +129,91 @@ export async function sendNewLead(payload: NewLeadPayload): Promise<Response> {
     utm_content: urlParams.get('utm_content') || undefined,
   };
 
+  const hasUtm = Object.values(utmParams).some(value => value !== undefined);
+
+  return {
+    ...utmParams,
+    has_utm: hasUtm
+  };
+}
+
+/**
+ * Captura informações de referência de forma mais robusta
+ */
+function getReferrerInfo() {
+  if (typeof document === 'undefined') {
+    return {
+      referrer: 'unknown',
+      referrer_domain: 'unknown',
+      has_referrer: false,
+      referrer_source: 'none'
+    };
+  }
+
+  const referrer = document.referrer;
+  const hasReferrer = referrer && referrer.length > 0;
+  
+  let referrerDomain = 'unknown';
+  let referrerSource = 'none';
+  
+  if (hasReferrer) {
+    try {
+      const referrerUrl = new URL(referrer);
+      referrerDomain = referrerUrl.hostname;
+      
+      // Classificar o tipo de referrer
+      if (referrerDomain.includes('google')) {
+        referrerSource = 'google';
+      } else if (referrerDomain.includes('facebook')) {
+        referrerSource = 'facebook';
+      } else if (referrerDomain.includes('instagram')) {
+        referrerSource = 'instagram';
+      } else if (referrerDomain.includes('linkedin')) {
+        referrerSource = 'linkedin';
+      } else if (referrerDomain.includes('twitter') || referrerDomain.includes('x.com')) {
+        referrerSource = 'twitter';
+      } else if (referrerDomain.includes('youtube')) {
+        referrerSource = 'youtube';
+      } else if (referrerDomain.includes('tiktok')) {
+        referrerSource = 'tiktok';
+      } else if (referrerDomain === window.location.hostname) {
+        referrerSource = 'internal';
+      } else {
+        referrerSource = 'external';
+      }
+    } catch (error) {
+      console.warn('Erro ao processar referrer:', error);
+      referrerDomain = 'invalid';
+      referrerSource = 'invalid';
+    }
+  }
+
+  return {
+    referrer: referrer || 'none',
+    referrer_domain: referrerDomain,
+    has_referrer: hasReferrer,
+    referrer_source: referrerSource
+  };
+}
+
+export async function sendNewLead(payload: NewLeadPayload): Promise<Response> {
+  const baseUrl = import.meta.env.VITE_N8N_URL as string | undefined;
+  if (!baseUrl) {
+    throw new Error('VITE_N8N_URL não configurado');
+  }
+
+  const url = `${baseUrl.replace(/\/?$/, '/')}novo-lead`;
+
+  // Capturar informações de UTM, referrer e sessão de forma robusta
+  const utmInfo = getUtmInfo();
+  const referrerInfo = getReferrerInfo();
+  const sessionInfo = getSessionInfo();
+
+  // Log para debug (remover em produção)
+  console.log('UTM Info:', utmInfo);
+  console.log('Referrer Info:', referrerInfo);
+  console.log('Session Info:', sessionInfo);
+
   const res = await fetch(url, {
     method: 'POST',
     headers: {
@@ -91,11 +221,14 @@ export async function sendNewLead(payload: NewLeadPayload): Promise<Response> {
     },
     body: JSON.stringify({
       ...payload,
-      ...utmParams,
+      ...utmInfo,
       submittedAt: new Date().toISOString(),
       userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
-      referrer: typeof document !== 'undefined' ? document.referrer : 'unknown',
       pageUrl: typeof window !== 'undefined' ? window.location.href : 'unknown',
+      // Informações de referência melhoradas
+      ...referrerInfo,
+      // Informações de sessão como fallback
+      ...sessionInfo,
     }),
   });
 

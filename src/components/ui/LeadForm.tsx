@@ -118,7 +118,12 @@ const LeadForm: React.FC<LeadFormProps> = ({ variant = 'default', className = ''
     console.log('Form submitted:', formData);
     try {
       const ua = navigator.userAgent;
-      const referrer = document.referrer || null;
+      
+      // Captura melhorada do referrer com validação
+      const referrer = document.referrer;
+      const hasReferrer = referrer && referrer.length > 0;
+      console.log('Referrer capturado:', { referrer, hasReferrer });
+      
       // Attempt to fetch public IP (best-effort, non-blocking)
       let ip: string | null = null;
       try {
@@ -136,7 +141,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ variant = 'default', className = ''
         project_description: formData.projectDescription,
         ip_address: ip,
         user_agent: ua,
-        referrer,
+        referrer: hasReferrer ? referrer : null,
       });
       try { localStorage.setItem('leadId', leadId); } catch {}
 
