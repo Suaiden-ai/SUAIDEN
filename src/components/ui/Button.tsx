@@ -16,9 +16,9 @@ const Button: React.FC<ButtonProps> = ({
   const baseStyles = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-300';
   
   const variantStyles = {
-    primary: 'bg-gradient-to-r from-primary-600 to-accent-600 text-white hover:shadow-[0_0_15px_rgba(154,103,255,0.5)]',
-    secondary: 'bg-dark-800 text-white hover:bg-dark-700',
-    outline: 'border border-primary-500 text-primary-500 hover:bg-primary-500/10'
+    primary: 'bg-gradient-to-r from-primary-600 to-accent-600 text-white hover:from-primary-500 hover:to-accent-500 hover:shadow-lg hover:shadow-primary-500/25 transition-all duration-300',
+    secondary: 'bg-slate-700/80 text-white hover:bg-slate-600/80 backdrop-blur-sm',
+    outline: 'border border-primary-500 text-primary-500 hover:bg-primary-500/10 hover:border-primary-400'
   };
   
   const sizeStyles = {

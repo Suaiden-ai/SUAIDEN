@@ -8,7 +8,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { solidIcons } from '../lib/icons';
 import FlowCanvas, { type NodeData, type FlowCanvasHandle } from '../components/ui/FlowCanvas';
 import { jsPDF } from 'jspdf';
-import * as htmlToImage from 'html-to-image';
 import { useLanguage } from '../context/LanguageContext';
 
 // Safe UUID generator: tries crypto.randomUUID, then getRandomValues, then Math.random
@@ -495,145 +494,190 @@ const ProjectStudio: React.FC = () => {
              
              try {
                const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+               
+               // Função para adicionar rodapé em todas as páginas
+               const addFooter = () => {
+                 const pageHeight = doc.internal.pageSize.getHeight();
+                 const pageWidth = doc.internal.pageSize.getWidth();
+                 const footerY = pageHeight - 20;
+                 
+                 doc.setFont('helvetica', 'normal');
+                 doc.setFontSize(10);
+                 doc.setTextColor(100, 100, 100);
+                 
+                 // Centralizar o texto do rodapé
+                 const footerText = t('studio.pdfSubtitle');
+                 const textWidth = doc.getTextWidth(footerText);
+                 const textX = (pageWidth - textWidth) / 2;
+                 doc.text(footerText, textX, footerY);
+               };
+               
+               // Adicionar rodapé na primeira página
+               addFooter();
+               
       // ... (O conteúdo da função de PDF permanece o mesmo, pois é bem procedural)
       // O código original para gerar o PDF está correto e foi mantido aqui.
                const margin = 32;
                let y = margin;
 
-               doc.setFont('helvetica', 'bold');
-               doc.setFontSize(24);
-      doc.setTextColor(139, 92, 246);
-               doc.text('SUAIDEN AI', margin, y);
-               y += 30;
-
-               doc.setFont('helvetica', 'normal');
-               doc.setFontSize(14);
-      doc.setTextColor(100, 100, 100);
-      doc.text('Relatório gerado pela SUAIDEN AI', margin, y);
-               y += 25;
+               // Adicionar logo da SUAIDEN melhorada
+               try {
+                 // Criar um canvas temporário para converter a logo
+                 const canvas = document.createElement('canvas');
+                 const ctx = canvas.getContext('2d');
+                 const img = new Image();
+                 
+                 // Aguardar o carregamento da imagem
+                 await new Promise((resolve, reject) => {
+                   img.onload = () => {
+                     // Calcular proporção correta da logo
+                     const maxWidth = 120;
+                     const aspectRatio = img.width / img.height;
+                     const logoWidth = maxWidth;
+                     const logoHeight = maxWidth / aspectRatio;
+                     
+                     canvas.width = logoWidth;
+                     canvas.height = logoHeight;
+                     
+                     if (ctx) {
+                       // Melhorar a qualidade da imagem
+                       ctx.imageSmoothingEnabled = true;
+                       ctx.imageSmoothingQuality = 'high';
+                       ctx.drawImage(img, 0, 0, logoWidth, logoHeight);
+                       const logoDataUrl = canvas.toDataURL('image/png', 1.0);
+                       
+                       // Adicionar logo no PDF centralizada
+                       const pageWidth = doc.internal.pageSize.getWidth();
+                       const logoX = (pageWidth - logoWidth) / 2;
+                       doc.addImage(logoDataUrl, 'PNG', logoX, y, logoWidth, logoHeight);
+                     }
+                     resolve(true);
+                   };
+                   img.onerror = reject;
+                   img.src = '/logo-suaiden.png';
+                 });
+                 
+                 y += 100;
+               } catch (logoError) {
+                 console.warn('Erro ao carregar logo, usando texto:', logoError);
+                 // Fallback para texto se a logo não carregar
+                 doc.setFont('helvetica', 'bold');
+                 doc.setFontSize(28);
+                 doc.setTextColor(139, 92, 246);
+                 const pageWidth = doc.internal.pageSize.getWidth();
+                 const textWidth = doc.getTextWidth(t('studio.pdfTitle'));
+                 const textX = (pageWidth - textWidth) / 2;
+                 doc.text(t('studio.pdfTitle'), textX, y);
+                 y += 40;
+               }
 
                doc.setDrawColor(200, 200, 200);
                doc.line(margin, y, doc.internal.pageSize.getWidth() - margin, y);
-               y += 20;
+               y += 60;
 
       if (proposal.summary) {
         doc.setTextColor(0, 0, 0);
                  doc.setFont('helvetica', 'bold');
-                 doc.setFontSize(16);
-                 doc.text('Resumo do Projeto', margin, y);
-                 y += 20;
-                 const summaryHeight = 60;
-                 doc.setFillColor(248, 250, 252);
-                 doc.roundedRect(margin, y - 5, doc.internal.pageSize.getWidth() - margin * 2, summaryHeight, 5, 5, 'F');
+                 doc.setFontSize(18);
+                 doc.text(t('studio.pdfProjectSummary'), margin, y);
+                 y += 25;
+                 
                  doc.setFont('helvetica', 'normal');
                  doc.setFontSize(12);
-                 doc.setTextColor(50, 50, 50);
+                 doc.setTextColor(60, 60, 60);
                  const summary = doc.splitTextToSize(proposal.summary, 520);
-                 doc.text(summary, margin + 10, y + 15);
-                 y += summaryHeight + 15;
+                 doc.text(summary, margin, y);
+                 y += summary.length * 15 + 25;
                }
 
       if (proposal.timeline?.length) {
                  if (y > doc.internal.pageSize.getHeight() - 150) {
                    doc.addPage();
+                   addFooter();
                    y = margin;
                  }
                  doc.setTextColor(0, 0, 0);
                  doc.setFont('helvetica', 'bold');
-                 doc.setFontSize(16);
-                 doc.text('Cronograma Sugerido', margin, y);
-                 y += 20;
+                 doc.setFontSize(18);
+                 doc.text(t('studio.pdfSuggestedTimeline'), margin, y);
+                 y += 25;
                  doc.setFont('helvetica', 'normal');
                  doc.setFontSize(11);
                  proposal.timeline.forEach((t, index) => {
                    if (y > doc.internal.pageSize.getHeight() - 80) {
                      doc.addPage();
+                     addFooter();
                      y = margin;
                    }
-                   const itemHeight = 35;
-                   doc.setFillColor(240, 248, 255);
-                   doc.roundedRect(margin, y - 5, doc.internal.pageSize.getWidth() - margin * 2, itemHeight, 3, 3, 'F');
+                   // Número da fase
                    doc.setFillColor(139, 92, 246);
-                   doc.circle(margin + 15, y + 8, 8, 'F');
+                   doc.circle(margin + 10, y + 8, 8, 'F');
                    doc.setTextColor(255, 255, 255);
                    doc.setFont('helvetica', 'bold');
                    doc.setFontSize(10);
-                   doc.text(String(index + 1), margin + 15, y + 12);
+                   doc.text(String(index + 1), margin + 10, y + 12);
+                   
+                   // Conteúdo da fase
                    doc.setTextColor(0, 0, 0);
                    doc.setFont('helvetica', 'bold');
-                   doc.setFontSize(11);
-                   doc.text(t.phase, margin + 35, y + 8);
+                   doc.setFontSize(12);
+                   doc.text(t.phase, margin + 30, y + 8);
                    doc.setFont('helvetica', 'normal');
                    doc.setFontSize(10);
                    doc.setTextColor(100, 100, 100);
-                   doc.text(t.duration, margin + 35, y + 18);
+                   doc.text(t.duration, margin + 30, y + 20);
                    const details = doc.splitTextToSize(t.details, 480);
-                   doc.setTextColor(50, 50, 50);
-                   doc.text(details, margin + 35, y + 28);
-                   y += itemHeight + 10;
+                   doc.setTextColor(60, 60, 60);
+                   doc.text(details, margin + 30, y + 30);
+                   y += details.length * 12 + 25;
                  });
-                 y += 10;
+                 y += 30;
                }
 
-               const flowContainer = document.getElementById('flow-canvas-container');
-               if (flowContainer) {
-        if (y > doc.internal.pageSize.getHeight() - 300) { doc.addPage(); y = margin; }
+               // Adicionar informações dos nós do fluxo em formato de texto
+               if (flowData) {
+        if (y > doc.internal.pageSize.getHeight() - 200) { doc.addPage(); addFooter(); y = margin; }
                  doc.setFont('helvetica', 'bold');
-                 doc.setFontSize(13);
-                 doc.text(t('studio.proposedFlow'), margin, y);
-                 y += 16;
-                 
-        try {
-          const dataUrl = await htmlToImage.toPng(flowContainer, { backgroundColor: '#f1f5f9', pixelRatio: 1, quality: 0.8, skipFonts: true, cacheBust: true });
-                   const pageWidth = doc.internal.pageSize.getWidth() - margin * 2;
-                   const imgProps = (doc as any).getImageProperties(dataUrl);
-          const imgHeight = (imgProps.height * pageWidth) / imgProps.width;
-                   const maxHeight = Math.min(500, doc.internal.pageSize.getHeight() - y - margin - 50);
-                   const finalHeight = Math.min(imgHeight, maxHeight);
-                   const finalWidth = (imgProps.width * finalHeight) / imgProps.height;
-                   const xOffset = margin + (pageWidth - finalWidth) / 2;
-          if (y + finalHeight > doc.internal.pageSize.getHeight() - margin) { doc.addPage(); y = margin; }
-                   doc.addImage(dataUrl, 'PNG', xOffset, y, finalWidth, finalHeight);
-                   y += finalHeight + 20;
-        } catch (imgError) {
-            console.error("Erro ao converter fluxo para imagem:", imgError)
-        }
-      }
-
-      if (proposal.sections?.length) {
-                 doc.addPage();
-                 y = margin;
+                 doc.setFontSize(18);
                  doc.setTextColor(0, 0, 0);
-                 doc.setFont('helvetica', 'bold');
-                 doc.setFontSize(16);
-                 doc.text('Textos do Fluxo', margin, y);
-                 y += 25;
-                 doc.setFont('helvetica', 'normal');
-                 doc.setFontSize(11);
-                 proposal.sections.forEach((s) => {
-          if (y > doc.internal.pageSize.getHeight() - 100) { doc.addPage(); y = margin; }
-                   const sectionHeight = 25;
+                 doc.text(t('studio.pdfFlowDetails'), margin, y);
+                 y += 40;
+                 
+                 // Adicionar informações de cada nó
+                 flowData.nodes.forEach((node, index) => {
+          if (y > doc.internal.pageSize.getHeight() - 100) { doc.addPage(); addFooter(); y = margin; }
+                   
+                   // Cabeçalho do nó com design melhorado
+                   const nodeHeight = 30;
                    doc.setFillColor(139, 92, 246);
-                   doc.roundedRect(margin, y - 5, doc.internal.pageSize.getWidth() - margin * 2, sectionHeight, 3, 3, 'F');
+                   doc.roundedRect(margin, y - 8, doc.internal.pageSize.getWidth() - margin * 2, nodeHeight, 6, 6, 'F');
                    doc.setTextColor(255, 255, 255);
                    doc.setFont('helvetica', 'bold');
-                   doc.setFontSize(12);
-                   doc.text(s.heading, margin + 10, y + 10);
-                   y += sectionHeight + 10;
+                   doc.setFontSize(13);
+                   doc.text(`${index + 1}. ${node.title}`, margin + 15, y + 12);
+                   y += nodeHeight + 15;
+                   
+                   // Conteúdo do nó
                    doc.setTextColor(0, 0, 0);
                    doc.setFont('helvetica', 'normal');
                    doc.setFontSize(10);
-                   s.content.forEach((c) => {
-            if (y > doc.internal.pageSize.getHeight() - 40) { doc.addPage(); y = margin; }
-                     doc.setFillColor(139, 92, 246);
-                     doc.circle(margin + 8, y + 4, 2, 'F');
-                     const wrapped = doc.splitTextToSize(c, 500);
-                     doc.text(wrapped, margin + 20, y + 6);
-                     y += wrapped.length * 12 + 8;
-                   });
-                   y += 15;
+                   
+                   if (node.subtitleLines && node.subtitleLines.length > 0) {
+                     node.subtitleLines.forEach((line) => {
+            if (y > doc.internal.pageSize.getHeight() - 40) { doc.addPage(); addFooter(); y = margin; }
+                       doc.setFillColor(139, 92, 246);
+                       doc.circle(margin + 10, y + 6, 3, 'F');
+                       const wrapped = doc.splitTextToSize(line, 480);
+                       doc.setTextColor(60, 60, 60);
+                       doc.text(wrapped, margin + 20, y + 8);
+                       y += wrapped.length * 12 + 10;
+                     });
+                     y += 15;
+                   }
                  });
+                 
                }
+
 
       // Detectar Safari mobile e usar abordagem diferente
       const isSafariMobileDownload = /iPad|iPhone|iPod/.test(navigator.userAgent) && /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
@@ -681,7 +725,7 @@ const ProjectStudio: React.FC = () => {
              } finally {
                console.error = originalConsoleError;
              }
-  }, [proposal]);
+  }, [proposal, flowData, t]);
 
   const handleScheduleConsultation = useCallback((data: any) => {
     console.log('Agendamento solicitado:', data);
@@ -764,7 +808,11 @@ const ProjectStudio: React.FC = () => {
                 {m.role === 'assistant' ? (
                   <>
                     <div className="flex items-center gap-2 mb-2">
-                      <div className="bg-purple-500 p-0.5 rounded"><FontAwesomeIcon icon={solidIcons.faBrain} size="sm" className="text-white" /></div>
+                      <img 
+                        src="/Logo_Suaiden.png" 
+                        alt="Suaiden Logo" 
+                        className="h-4 w-auto"
+                      />
                       <span className="font-semibold text-violet-400 text-sm">{t('studio.suaidenAI')}</span>
                     </div>
                     <div className="leading-relaxed text-gray-200">
@@ -815,14 +863,27 @@ const ProjectStudio: React.FC = () => {
             <FontAwesomeIcon icon={solidIcons.faChevronRight} size="sm" />
           </button>
         )}
-        <div className="absolute bottom-20 md:bottom-4 left-1/2 transform -translate-x-1/2 z-20 flex gap-3">
-          <Button className="bg-primary-600 hover:bg-primary-500 text-white px-4 py-2 rounded-lg text-sm shadow-lg" onClick={() => setIsSchedulingModalOpen(true)}>
+        <div className="absolute bottom-6 md:bottom-6 left-1/2 transform -translate-x-1/2 z-20 flex gap-3 px-4">
+          <Button 
+            variant="secondary" 
+            size="md"
+            className="bg-slate-800/90 hover:bg-slate-700 text-white px-6 py-3 rounded-2xl text-sm font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 border-0 ring-1 ring-slate-700/50 backdrop-blur-sm" 
+            onClick={() => setIsSchedulingModalOpen(true)}
+          >
+            <FontAwesomeIcon icon={solidIcons.faCalendar} className="mr-2" size="sm" />
             {t('studio.requestConsultation')}
           </Button>
-          <Button className="bg-accent-700 text-white px-4 py-2 rounded-lg text-sm shadow-lg" onClick={exportPdf} disabled={!proposal}>
+          <Button 
+            variant="outline" 
+            size="md"
+            className="!bg-white !text-slate-800 hover:!bg-slate-50 !border-slate-200/50 px-6 py-3 rounded-2xl text-sm font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 ring-1 ring-slate-200/50" 
+            onClick={exportPdf} 
+            disabled={!proposal}
+          >
+            <FontAwesomeIcon icon={solidIcons.faDownload} className="mr-2" size="sm" />
             {t('studio.savePDF')}
           </Button>
-         </div>
+        </div>
       </div>
 
       {/* Scheduling Modal */}
