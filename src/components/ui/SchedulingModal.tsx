@@ -193,14 +193,22 @@ const SchedulingModal: React.FC<SchedulingModalProps> = ({ isOpen, onClose, onSc
               <FontAwesomeIcon icon={solidIcons.faCalendar} size="sm" className="inline mr-1 sm:mr-2" />
               Data *
             </label>
-            <input
-              type="date"
-              required
-              value={formData.date}
-              onChange={(e) => handleInputChange('date', e.target.value)}
-              min={new Date().toISOString().split('T')[0]}
-              className="w-full px-2 sm:px-3 py-0 sm:py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent date-picker-white text-xs sm:text-sm mobile-touch-target mobile-date-input"
-            />
+            <div className="relative">
+              {!formData.date && (
+                <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-white/70">
+                  Selecione uma data
+                </span>
+              )}
+              <input
+                type="date"
+                required
+                value={formData.date}
+                onChange={(e) => handleInputChange('date', e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+                className="w-full px-2 sm:px-3 py-0 sm:py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent date-picker-white mobile-touch-target mobile-date-input"
+                aria-label="Selecione uma data"
+              />
+            </div>
           </div>
 
           {/* Campo de Horário (Select) */}
@@ -213,7 +221,7 @@ const SchedulingModal: React.FC<SchedulingModalProps> = ({ isOpen, onClose, onSc
               required
               value={formData.time}
               onChange={(e) => handleInputChange('time', e.target.value)}
-              className="w-full px-2 sm:px-3 py-0 sm:py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent text-xs sm:text-sm mobile-touch-target"
+              className="w-full px-2 sm:px-3 py-0 sm:py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent mobile-touch-target"
             >
               <option value="" disabled>Selecione um horário</option>
               {availableTimes.map((time) => (

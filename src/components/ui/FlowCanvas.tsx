@@ -54,9 +54,11 @@ const FlowCanvas = forwardRef<FlowCanvasHandle, FlowCanvasProps>(({ nodes, edges
 
   useEffect(() => { setLocalNodes(nodes); }, [nodes]);
 
-  const NODE_W = 280;
-  const NODE_H = 140;
-  const pad = 60;
+  // Tamanho responsivo dos nós
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const NODE_W = isMobile ? 180 : 280;
+  const NODE_H = isMobile ? 90 : 140;
+  const pad = isMobile ? 30 : 60;
 
   const xs = localNodes.map(n => n.x);
   const ys = localNodes.map(n => n.y);
@@ -377,8 +379,8 @@ const FlowCanvas = forwardRef<FlowCanvasHandle, FlowCanvasProps>(({ nodes, edges
                     background: colorMap[n.color].head,
                     color: "#ffffff",
                     fontWeight: 600,
-                    padding: "8px 12px",
-                    fontSize: "0.8rem",
+                    padding: isMobile ? "4px 6px" : "8px 12px",
+                    fontSize: isMobile ? "0.65rem" : "0.8rem",
                     borderBottom: "1px solid rgba(0,0,0,0.1)"
                   }}>
                     {n.title}
@@ -386,8 +388,9 @@ const FlowCanvas = forwardRef<FlowCanvasHandle, FlowCanvasProps>(({ nodes, edges
                   <div style={{
                     background: colorMap[n.color].body,
                     color: "#334155",
-                    fontSize: "0.75rem",
-                    padding: "10px 12px"
+                    fontSize: isMobile ? "0.6rem" : "0.75rem",
+                    padding: isMobile ? "4px 6px" : "10px 12px",
+                    lineHeight: isMobile ? "1.2" : "1.4"
                   }}>
                     {n.subtitleLines && n.subtitleLines.length > 0
                       ? n.subtitleLines.map((line, idx) => <div key={idx}>{line}</div>)

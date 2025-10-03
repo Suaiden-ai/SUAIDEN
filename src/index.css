@@ -237,6 +237,22 @@
   background-color: #6b7280;
 }
 
+/* Improve mobile modal scroll performance and prevent lock */
+.modal-scroll {
+  -webkit-overflow-scrolling: touch; /* momentum scrolling on iOS */
+  overscroll-behavior: contain; /* prevent body scroll chaining */
+  contain: layout style paint; /* isolate for performance */
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* Prevent body scroll when modal is open, but allow modal content to scroll */
+body.modal-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+}
+
 /* Force white calendar icon in dark inputs */
 .date-picker-white::-webkit-calendar-picker-indicator {
   filter: invert(1) brightness(1.2);
@@ -245,7 +261,7 @@
 
   /* Mobile modal improvements */
   @media (max-width: 640px) {
-    /* Prevent zoom on all modal inputs */
+    /* Prevent zoom on all inputs */
     input[type="text"],
     input[type="email"],
     input[type="tel"],
@@ -256,30 +272,42 @@
       font-size: 16px !important;
     }
     
-    /* Force consistent height for all form elements */
+    /* Larger, touch-friendly fields in modals */
     .modal-content input,
-    .modal-content select {
-      height: 28px !important;
-      min-height: 28px !important;
-      max-height: 28px !important;
+    .modal-content select,
+    .modal-content textarea {
+      height: 44px !important;
+      min-height: 44px !important;
+      max-height: none !important;
       font-size: 16px !important;
-      padding: 2px 6px !important;
+      padding: 10px 12px !important;
       line-height: 1.2 !important;
       box-sizing: border-box !important;
+      border-radius: 10px !important;
     }
   
   /* Specific overrides for date inputs */
   .modal-content input[type="date"] {
-    height: 28px !important;
-    min-height: 28px !important;
-    max-height: 28px !important;
-    font-size: 12px !important;
-    padding: 2px 6px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: none !important;
+    font-size: 16px !important;
+    padding: 10px 12px !important;
     line-height: 1.2 !important;
     box-sizing: border-box !important;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important; /* iOS Safari */
     -webkit-appearance: none !important;
     -moz-appearance: none !important;
     appearance: none !important;
+  }
+
+  /* Placeholder styling for select (e.g., "Selecione um horário") */
+  .modal-content select:invalid {
+    color: #9ca3af !important; /* text-gray-400 */
+  }
+  .modal-content select option[disabled][value=""] {
+    color: #9ca3af !important; /* ensure placeholder option stays gray */
   }
   
   /* Override browser default date input styling */
@@ -292,10 +320,11 @@
   
   /* Ensure date input container doesn't add extra height */
   .modal-content input[type="date"]::-webkit-datetime-edit {
-    padding: 0 !important;
+    padding: 6px 0 !important;
     margin: 0 !important;
-    height: 24px !important;
-    line-height: 24px !important;
+    height: 28px !important;
+    line-height: 28px !important;
+    color: #ffffff !important;
   }
   
   .modal-content input[type="date"]::-webkit-datetime-edit-fields-wrapper {
@@ -304,8 +333,9 @@
   }
   
   .modal-content input[type="date"]::-webkit-datetime-edit-text {
-    padding: 0 2px !important;
+    padding: 0 4px !important;
     margin: 0 !important;
+    color: #ffffff !important;
   }
   
   .modal-content input[type="date"]::-webkit-datetime-edit-month-field,
@@ -313,6 +343,7 @@
   .modal-content input[type="date"]::-webkit-datetime-edit-year-field {
     padding: 0 !important;
     margin: 0 !important;
+    color: #ffffff !important;
   }
   
   /* Specific class for mobile date input */
@@ -491,6 +522,23 @@
     -moz-user-select: none !important;
     -ms-user-select: none !important;
     user-select: none !important;
+  }
+  
+  /* Mobile flow canvas optimizations */
+  .flow-canvas {
+    background: #f1f5f9 !important;
+    min-height: 400px !important;
+  }
+  
+  /* Better node visibility on mobile */
+  .flow-canvas foreignObject {
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)) !important;
+  }
+  
+  /* Improve text readability in nodes */
+  .flow-canvas foreignObject div {
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
   }
   
   /* Smooth zoom transitions */

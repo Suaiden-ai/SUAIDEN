@@ -108,7 +108,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
             exit={{ opacity: 0, y: 16 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
             layout={false}
-            className={`relative bg-dark-900 rounded-2xl shadow-[0_0_50px_rgba(255,255,255,0.18)] ${size === 'lg' ? 'max-w-3xl' : 'max-w-md'} w-full mx-4 max-h-[85vh] sm:max-h-[85vh] overflow-y-auto custom-scrollbar will-change-transform`}
+            className={`relative bg-dark-900 rounded-2xl shadow-[0_0_50px_rgba(255,255,255,0.18)] ${size === 'lg' ? 'max-w-3xl' : 'max-w-md'} w-full mx-4 max-h-[85vh] sm:max-h-[85vh] overflow-y-auto custom-scrollbar will-change-transform modal-scroll`}
             style={{ transform: 'translateZ(0)' }}
           >
             <div className="p-3 sm:p-6 pt-12 sm:pt-6 modal-content">

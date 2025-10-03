@@ -326,32 +326,53 @@ const ProjectStudio: React.FC = () => {
     }
   }, [input, messages, initialDesc, buildDescriptionFromHistory]);
 
+  // Hook para detectar mudanças de tamanho da tela
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
+  
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // ANOTAÇÃO: useMemo para evitar recalcular o fluxo em cada renderização, a menos que a proposta mude.
   const flowData = useMemo(() => {
     if (!proposal) return null;
 
-    const baseX = 220, stepX = 420, baseY = 220, stepY = 180, maxRowsPerColumn = 4;
+    // Layout responsivo: 1 coluna no mobile, múltiplas no desktop
+    const baseX = isMobile ? 100 : 220;
+    const stepX = isMobile ? 0 : 420; // 1 coluna no mobile (stepX = 0)
+    const baseY = isMobile ? 100 : 220;
+    const stepY = isMobile ? 120 : 180;
+    const maxRowsPerColumn = isMobile ? 20 : 4; // Muitos nós na mesma coluna no mobile
+    
     const colors: NodeData['color'][] = ['lime','sky','accent','primary','slate'];
+    // Input sempre na primeira coluna, junto com o fluxo
     const nodes: NodeData[] = [{ id: 'input', title: 'Input', subtitleLines: [proposal.summary], color: 'lime', x: baseX, y: baseY }];
     const edges: Array<{ from: string; to: string }> = [];
 
-    let col = 1, row = 0, lastNodeId = 'input', totalNodesInCurrentColumn = 0;
+    let col = 0, row = 1, lastNodeId = 'input', totalNodesInCurrentColumn = 1; // col = 0 para começar na primeira coluna
     
     proposal.sections.forEach((s, idx) => {
       const contentChunks = splitContentIntoNodes(s.content);
       contentChunks.forEach((chunk, chunkIdx) => {
         const nodeId = `sec-${idx}-${chunkIdx}`;
-      const x = baseX + col * stepX;
-      const y = baseY + row * stepY - 60;
+        // No mobile, todos os nós ficam na mesma coluna (baseX)
+        const x = isMobile ? baseX : baseX + col * stepX;
+        const y = isMobile ? baseY + row * stepY : baseY + row * stepY;
         const title = chunkIdx === 0 ? s.heading : `${s.heading} (${chunkIdx + 1})`;
         
         nodes.push({ id: nodeId, title, subtitleLines: chunk, color: colors[idx % colors.length], x, y });
         edges.push({ from: lastNodeId, to: nodeId });
         lastNodeId = nodeId;
-      row++;
+        row++;
         totalNodesInCurrentColumn++;
         
-        if (row >= maxRowsPerColumn) { 
+        // No mobile, não quebra coluna - todos ficam empilhados
+        if (!isMobile && row >= maxRowsPerColumn) { 
           row = 0; 
           col++; 
           totalNodesInCurrentColumn = 0;
@@ -359,25 +380,75 @@ const ProjectStudio: React.FC = () => {
       });
     });
     
-    const outputX = baseX + (col + 1) * stepX;
-    const outputY = baseY + Math.max(0, (totalNodesInCurrentColumn - 1) * stepY / 2);
+    // Posicionamento do Output: na mesma coluna no mobile, última coluna no desktop
+    const outputX = isMobile ? baseX : baseX + col * stepX;
+    // No mobile, fica no final da pilha vertical
+    const outputY = isMobile ? baseY + row * stepY : baseY + row * stepY;
     
-    nodes.push({ id: 'output', title: 'Output', subtitleLines: ['Resumo e próximos passos'], color: 'accent', x: outputX, y: outputY });
+    // Gerar conteúdo dinâmico para o nó Output
+    const outputContent = [];
+    
+    // Adicionar resumo se disponível
+    if (proposal.summary) {
+      const summaryPreview = proposal.summary.length > 100 
+        ? proposal.summary.substring(0, 100) + '...' 
+        : proposal.summary;
+      outputContent.push(`Resumo: ${summaryPreview}`);
+    }
+    
+    // Adicionar informações do cronograma
+    if (proposal.timeline && proposal.timeline.length > 0) {
+      const totalDuration = proposal.timeline.reduce((acc, phase) => {
+        const duration = phase.duration.match(/\d+/);
+        return acc + (duration ? parseInt(duration[0]) : 0);
+      }, 0);
+      outputContent.push(`Cronograma: ${proposal.timeline.length} fases`);
+      if (totalDuration > 0) {
+        outputContent.push(`Duração estimada: ${totalDuration} dias`);
+      }
+    }
+    
+    // Adicionar informações das seções
+    if (proposal.sections && proposal.sections.length > 0) {
+      outputContent.push(`${proposal.sections.length} seções técnicas`);
+    }
+    
+    // Adicionar próximos passos
+    outputContent.push('Próximos passos: Implementação');
+    
+    nodes.push({ id: 'output', title: 'Output', subtitleLines: outputContent, color: 'accent', x: outputX, y: outputY });
     edges.push({ from: lastNodeId, to: 'output' });
     
-    const totalColumns = col + 2;
-    const maxNodesInColumn = Math.max(...Array.from({length: totalColumns}, (_, i) => {
-      if (i === 0 || i === totalColumns - 1) return 1;
-      return Math.ceil(proposal.sections.length / (totalColumns - 2));
-    }));
-    
-    const h = Math.max(650, maxNodesInColumn * stepY + 400);
+    // Altura baseada no número de nós empilhados
+    const h = isMobile ? Math.max(400, (row + 1) * stepY + 200) : Math.max(650, (row + 1) * stepY + 400);
     return { nodes, edges, height: h };
-  }, [proposal]);
+  }, [proposal, isMobile]);
 
   // ANOTAÇÃO: useCallback para memoizar a função e evitar recriações desnecessárias.
   const exportPdf = useCallback(async () => {
     if (!proposal) return;
+    
+    // Detectar Safari mobile para mostrar feedback
+    const isSafariMobile = /iPad|iPhone|iPod/.test(navigator.userAgent) && /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+    const isMobileDevice = window.innerWidth < 768;
+    
+    if (isSafariMobile || isMobileDevice) {
+      // Mostrar feedback para Safari mobile e mobile
+      const originalText = document.querySelector('.flow-container .absolute.bottom-20 button.bg-accent-700')?.textContent;
+      const button = document.querySelector('.flow-container .absolute.bottom-20 button.bg-accent-700') as HTMLButtonElement;
+      if (button) {
+        button.textContent = 'Gerando PDF...';
+        button.disabled = true;
+      }
+      
+      // Restaurar botão após um tempo
+      setTimeout(() => {
+        if (button && originalText) {
+          button.textContent = originalText;
+          button.disabled = false;
+        }
+      }, 4000);
+    }
     
              const originalConsoleError = console.error;
     // ANOTAÇÃO: Suprimir um erro específico e conhecido da biblioteca de imagem.
@@ -529,7 +600,47 @@ const ProjectStudio: React.FC = () => {
                  });
                }
 
-      doc.save('relatorio-suaiden-ai.pdf');
+      // Detectar Safari mobile e usar abordagem diferente
+      const isSafariMobileDownload = /iPad|iPhone|iPod/.test(navigator.userAgent) && /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+      const isMobileDownload = window.innerWidth < 768;
+      
+      if (isSafariMobileDownload || isMobileDownload) {
+        // Para Safari mobile e mobile em geral, usar blob com fallback
+        try {
+          const pdfBlob = doc.output('blob');
+          const url = URL.createObjectURL(pdfBlob);
+          
+          // Criar link temporário
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = 'relatorio-suaiden-ai.pdf';
+          link.style.display = 'none';
+          document.body.appendChild(link);
+          
+          // Forçar download
+          const clickEvent = new MouseEvent('click', {
+            view: window,
+            bubbles: true,
+            cancelable: true
+          });
+          link.dispatchEvent(clickEvent);
+          
+          // Limpar após download
+          setTimeout(() => {
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+          }, 2000);
+          
+        } catch (error) {
+          // Fallback: abrir em nova aba
+          console.warn('Download direto falhou, abrindo em nova aba:', error);
+          const pdfDataUri = doc.output('datauristring');
+          window.open(pdfDataUri, '_blank');
+        }
+      } else {
+        // Para desktop, usar o método padrão
+        doc.save('relatorio-suaiden-ai.pdf');
+      }
              } catch (error) {
                console.error('Erro ao gerar PDF:', error);
              } finally {

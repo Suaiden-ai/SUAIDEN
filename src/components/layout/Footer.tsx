@@ -19,7 +19,7 @@ const Footer: React.FC = () => {
             </p>
             <div className="flex space-x-4 pt-2">
               <a 
-                href="#" 
+                href="https://www.linkedin.com/company/suaiden-ai" 
                 className="text-white/60 hover:text-primary-400 transition-colors"
                 aria-label="LinkedIn"
               >
@@ -32,13 +32,6 @@ const Footer: React.FC = () => {
               >
                 <FontAwesomeIcon icon={brandIcons.faInstagram} size="lg" />
               </a>
-              <a 
-                href="#" 
-                className="text-white/60 hover:text-primary-400 transition-colors"
-                aria-label="GitHub"
-              >
-                <FontAwesomeIcon icon={brandIcons.faGithub} size="lg" />
-              </a>
             </div>
           </div>
 
@@ -49,17 +42,15 @@ const Footer: React.FC = () => {
               <a href="#servicos" className="text-white/70 hover:text-white transition-colors">{t('footer.links.solutions')}</a>
               <a href="#cases" className="text-white/70 hover:text-white transition-colors">{t('footer.links.cases')}</a>
               <a href="#contato" className="text-white/70 hover:text-white transition-colors">{t('footer.links.contact')}</a>
-              <a href="#" className="text-white/70 hover:text-white transition-colors">{t('footer.links.privacy')}</a>
-              <a href="#" className="text-white/70 hover:text-white transition-colors">{t('footer.links.terms')}</a>
             </nav>
           </div>
 
           <div className="space-y-4">
             <h3 className="text-lg font-medium">{t('footer.contact')}</h3>
             <div className="space-y-3">
-              <a href="mailto:contato@suaiden.com" className="flex items-center text-white/70 hover:text-white transition-colors">
+              <a href="mailto:admin@suaiden.com" className="flex items-center text-white/70 hover:text-white transition-colors">
                 <FontAwesomeIcon icon={solidIcons.faEnvelope} size="sm" className="mr-2" />
-                contato@suaiden.com
+                admin@suaiden.com
               </a>
               <a href="tel:+5500000000000" className="flex items-center text-white/70 hover:text-white transition-colors">
                 <FontAwesomeIcon icon={solidIcons.faPhone} size="sm" className="mr-2" />
