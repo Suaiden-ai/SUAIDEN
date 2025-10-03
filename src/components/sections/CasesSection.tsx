@@ -22,7 +22,7 @@ const CasesSection: React.FC = () => {
       description: t('cases.case1.description'),
       icon: BookOpen,
       results: t('cases.case1.results', { returnObjects: true }),
-      image: '/the-futur.png',
+      image: '/the-future.png',
       url: 'https://thefutureofenglish.com/'
     },
     {
@@ -30,7 +30,7 @@ const CasesSection: React.FC = () => {
       description: t('cases.case2.description'),
       icon: Globe,
       results: t('cases.case2.results', { returnObjects: true }),
-      image: '/lush-america.jpg',
+      image: '/lush-america.png',
       url: 'https://lushamerica.com/'
     },
     {
