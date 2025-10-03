@@ -5,39 +5,43 @@ import { ArrowRight, BookOpen, GraduationCap, Globe } from 'lucide-react';
 import SectionTitle from '../ui/SectionTitle';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
+import { useLanguage } from '../../context/LanguageContext';
 
-const cases = [
-  {
-    title: 'The Future of English',
-    description: 'Desenvolvemos uma plataforma digital inovadora para facilitar a tradução de documentos em diferentes idiomas com o apoio da Inteligência Artificial, oferecendo uma experiência simples, rápida e confiável para pessoas e empresas.',
-    icon: BookOpen,
-    results: ['Redução de 85% no tempo de tradução', 'Aumento de 90% na precisão das traduções', 'Atendimento a mais de 2.000 usuários mensalmente'],
-    image: '/the-futur.png',
-    url: 'https://thefutureofenglish.com/' // Link direto para o projeto real
-  },
-  {
-    title: 'Lush America Translations',
-    description: 'Desenvolvemos uma plataforma inovadora de tradução de documentos oficiais e acadêmicos utilizando Inteligência Artificial de ponta, garantindo traduções rápidas, consistentes e seguras para diversos idiomas.',
-    icon: Globe,
-    results: ['Redução de 80% no tempo de tradução', 'Aumento de 95% na precisão das traduções', 'Atendimento a mais de 1.000 usuários mensalmente'],
-    image: '/lush-america.jpg',
-    url: 'https://lushamerica.com/' // Link direto para o projeto real
-  },
-  {
-    title: 'Matricula USA',
-    description: 'Desenvolvemos a plataforma Matrícula USA, uma solução completa para estudantes internacionais que buscam oportunidades de estudo nos Estados Unidos, simplificando todo o processo de admissão.',
-    icon: GraduationCap,
-    results: ['Redução de 80% no tempo de pesquisa de bolsas', 'Aumento de 65% na taxa de aplicações bem-sucedidas', 'Atendimento a mais de 10.000 estudantes mensalmente'],
-    image: '/matricula-usa.png',
-    url: 'https://matriculausa.com/' // Link direto para o projeto real
-  }
-];
+// Cases data will be generated from translations
 
 const CasesSection: React.FC = () => {
+  const { t } = useLanguage();
   const [ref, inView] = useInView({
     triggerOnce: true,
     threshold: 0.1,
   });
+
+  const cases = [
+    {
+      title: t('cases.case1.title'),
+      description: t('cases.case1.description'),
+      icon: BookOpen,
+      results: t('cases.case1.results', { returnObjects: true }),
+      image: '/the-futur.png',
+      url: 'https://thefutureofenglish.com/'
+    },
+    {
+      title: t('cases.case2.title'),
+      description: t('cases.case2.description'),
+      icon: Globe,
+      results: t('cases.case2.results', { returnObjects: true }),
+      image: '/lush-america.jpg',
+      url: 'https://lushamerica.com/'
+    },
+    {
+      title: t('cases.case3.title'),
+      description: t('cases.case3.description'),
+      icon: GraduationCap,
+      results: t('cases.case3.results', { returnObjects: true }),
+      image: '/matricula-usa.png',
+      url: 'https://matriculausa.com/'
+    }
+  ];
 
   const handleViewDetails = (url: string) => {
     if (url.startsWith('#')) {
@@ -77,8 +81,8 @@ const CasesSection: React.FC = () => {
       
       <div className="container relative">
         <SectionTitle
-          title="NOSSOS PROJETOS REAIS COM RESULTADOS CONCRETOS"
-          subtitle="Conheça alguns dos projetos que desenvolvemos e os resultados mensuráveis que ajudamos nossos clientes a alcançar."
+          title={t('cases.title')}
+          subtitle={t('cases.subtitle')}
           center
           className="mb-16"
         />
@@ -130,7 +134,7 @@ const CasesSection: React.FC = () => {
                       className="mt-2 group"
                       onClick={() => handleViewDetails(caseItem.url)}
                     >
-                      Ver detalhes
+                      {t('cases.viewDetails')}
                       <ArrowRight size={16} className="ml-2 transition-transform group-hover:translate-x-1" />
                     </Button>
                   </div>

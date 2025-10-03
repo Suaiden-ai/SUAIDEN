@@ -13,7 +13,14 @@
     "features": {
       "fastImplementation": "Implementação rápida",
       "advancedAI": "IA de última geração"
-    }
+    },
+    "welcomeMessage": "Bem vindo a SU AI DEN",
+    "demoPrompts": [
+      "Descreva seu projeto à SU AI DEN",
+      "Quero um chatbot para suporte com WhatsApp e site",
+      "Quero automatizar relatórios do meu ERP e enviar no Slack",
+      "Quero um app para agendar consultas e lembrar por SMS"
+    ]
   },
   "technologies": {
     "title": "Tecnologias que impulsionam nossas soluções"
@@ -244,5 +251,33 @@
   "languageSwitcher": {
     "en": "Inglês",
     "pt": "Português"
+  },
+  "studio": {
+    "backToHome": "Voltar para Página inicial",
+    "viewFlow": "Visualizar fluxo",
+    "hideChat": "Esconder chat",
+    "showChat": "Mostrar chat",
+    "generatingFlow": "Gerando Fluxo",
+    "creatingFlow": "Criando seu fluxo personalizado...",
+    "thinking": "Pensando...",
+    "suaidenAI": "Suaiden AI",
+    "like": "Gostei",
+    "dislike": "Não gostei",
+    "copy": "Copiar resposta",
+    "startDescribing": "Comece descrevendo seu projeto",
+    "askSuaiden": "Ask Suaiden...",
+    "proposedFlow": "Fluxo Proposto",
+    "backToChat": "Voltar para chat",
+    "savePDF": "Salvar PDF",
+    "requestConsultation": "Solicitar Consultoria",
+    "suggestedSchedule": "Cronograma sugerido",
+    "scheduleUpdated": "Cronograma atualizado",
+    "proposalUpdated": "Proposta atualizada",
+    "projectSummary": "Resumo do Projeto",
+    "generatingPDF": "Gerando PDF...",
+    "error": {
+      "communication": "Erro: Falha na comunicação com a IA. Verifique sua conexão e configurações.",
+      "updateFailed": "Erro: Não foi possível atualizar a proposta. Verifique a configuração da IA."
+    }
   }
 }

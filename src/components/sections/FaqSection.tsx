@@ -3,29 +3,9 @@ import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { ChevronDown } from 'lucide-react';
 import SectionTitle from '../ui/SectionTitle';
+import { useLanguage } from '../../context/LanguageContext';
 
-const faqs = [
-  {
-    question: 'É IA de verdade?',
-    answer: 'Sim, utilizamos tecnologias de IA avançadas como GPT-4, Claude e modelos próprios. Não é apenas marketing, são aplicações reais de inteligência artificial que geram resultados tangíveis para o seu negócio.'
-  },
-  {
-    question: 'Preciso saber programar?',
-    answer: 'Absolutamente não. Nossas soluções são desenvolvidas para serem intuitivas e fáceis de usar, independente do seu conhecimento técnico. Nossa equipe cuida de toda a parte técnica para você.'
-  },
-  {
-    question: 'Quanto custa?',
-    answer: 'Os valores variam de acordo com a complexidade e o escopo do projeto. Oferecemos planos personalizados que se adaptam às necessidades e ao orçamento da sua empresa. Entre em contato para receber uma proposta detalhada.'
-  },
-  {
-    question: 'Qual o prazo de entrega?',
-    answer: 'O prazo depende da complexidade do projeto, mas nosso processo ágil permite entregas incrementais desde as primeiras semanas. Projetos simples podem ser entregues em 2-4 semanas, enquanto projetos mais complexos podem levar de 2-3 meses.'
-  },
-  {
-    question: 'Posso automatizar ferramentas que já uso?',
-    answer: 'Sim! Uma das nossas especialidades é integrar e automatizar ferramentas existentes. Podemos conectar suas ferramentas atuais (como CRM, ERP, planilhas) e automatizar fluxos de trabalho entre elas.'
-  }
-];
+// FAQs data will be generated from translations
 
 const FaqItem: React.FC<{ question: string; answer: string }> = ({ question, answer }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -54,6 +34,30 @@ const FaqItem: React.FC<{ question: string; answer: string }> = ({ question, ans
 };
 
 const FaqSection: React.FC = () => {
+  const { t } = useLanguage();
+  
+  const faqs = [
+    {
+      question: t('faq.q1.question'),
+      answer: t('faq.q1.answer')
+    },
+    {
+      question: t('faq.q2.question'),
+      answer: t('faq.q2.answer')
+    },
+    {
+      question: t('faq.q3.question'),
+      answer: t('faq.q3.answer')
+    },
+    {
+      question: t('faq.q4.question'),
+      answer: t('faq.q4.answer')
+    },
+    {
+      question: t('faq.q5.question'),
+      answer: t('faq.q5.answer')
+    }
+  ];
   const [ref, inView] = useInView({
     triggerOnce: true,
     threshold: 0.1,
@@ -77,8 +81,8 @@ const FaqSection: React.FC = () => {
       
       <div className="container relative">
         <SectionTitle
-          title="Perguntas Frequentes"
-          subtitle="Tire suas dúvidas sobre nossos serviços e como podemos ajudar o seu negócio."
+          title={t('faq.title')}
+          subtitle={t('faq.subtitle')}
           center
           className="mb-16"
         />

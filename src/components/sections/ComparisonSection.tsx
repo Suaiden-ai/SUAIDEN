@@ -3,23 +3,27 @@ import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { Check, X } from 'lucide-react';
 import SectionTitle from '../ui/SectionTitle';
+import { useLanguage } from '../../context/LanguageContext';
 
-const features = [
-  'Soluções com IA real aplicada',
-  'Automação escalável',
-  'Desenvolvimento ágil',
-  'Suporte 24/7',
-  'Código fonte proprietário',
-  'Experiência comprovada',
-  'Equipe multidisciplinar',
-  'Integração com sistemas existentes',
-];
+// Features data will be generated from translations
 
 const ComparisonSection: React.FC = () => {
+  const { t } = useLanguage();
   const [ref, inView] = useInView({
     triggerOnce: true,
     threshold: 0.1,
   });
+
+  const features = [
+    t('comparison.features.realAI'),
+    t('comparison.features.scalable'),
+    t('comparison.features.agile'),
+    t('comparison.features.support'),
+    t('comparison.features.sourcecode'),
+    t('comparison.features.experience'),
+    t('comparison.features.team'),
+    t('comparison.features.integration'),
+  ];
 
   const variants = {
     hidden: { opacity: 0, y: 30 },
@@ -39,8 +43,8 @@ const ComparisonSection: React.FC = () => {
       
       <div className="container relative">
         <SectionTitle
-          title="SUAIDEN vs alternativas"
-          subtitle="Compare e entenda por que somos a escolha certa para sua empresa."
+          title={t('comparison.title')}
+          subtitle={t('comparison.subtitle')}
           center
           className="mb-16"
         />
@@ -55,12 +59,12 @@ const ComparisonSection: React.FC = () => {
           <table className="min-w-full bg-dark-800 rounded-xl overflow-hidden">
             <thead>
               <tr className="text-left border-b border-dark-700">
-                <th className="p-4 md:p-6">Características</th>
+                <th className="p-4 md:p-6">{t('comparison.features.title')}</th>
                 <th className="p-4 md:p-6 text-center bg-gradient-to-r from-primary-900/40 to-accent-900/40">
-                  <span className="text-primary-400 font-display font-medium">SUAIDEN</span>
+                  <span className="text-primary-400 font-display font-medium">{t('comparison.options.suaiden')}</span>
                 </th>
-                <th className="p-4 md:p-6 text-center">Freelancer</th>
-                <th className="p-4 md:p-6 text-center">Agência Tradicional</th>
+                <th className="p-4 md:p-6 text-center">{t('comparison.options.freelancer')}</th>
+                <th className="p-4 md:p-6 text-center">{t('comparison.options.agency')}</th>
               </tr>
             </thead>
             <tbody>

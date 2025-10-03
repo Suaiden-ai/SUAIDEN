@@ -9,6 +9,7 @@ import { solidIcons } from '../lib/icons';
 import FlowCanvas, { type NodeData, type FlowCanvasHandle } from '../components/ui/FlowCanvas';
 import { jsPDF } from 'jspdf';
 import * as htmlToImage from 'html-to-image';
+import { useLanguage } from '../context/LanguageContext';
 
 // Safe UUID generator: tries crypto.randomUUID, then getRandomValues, then Math.random
 function generateSafeUUID(): string {
@@ -88,20 +89,20 @@ function splitContentIntoNodes(content: string[], maxItemsPerNode?: number): str
 }
 
 // ANOTAÇÃO: Componente para o indicador "Thinking..." para limpar o JSX principal.
-const ThinkingIndicator: React.FC = () => (
+const ThinkingIndicator: React.FC<{ t: (key: string) => string }> = ({ t }) => (
   <div className="flex items-center gap-2 text-gray-400">
     <div className="flex space-x-1">
       <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
       <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
       <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
     </div>
-    <span className="text-sm">Thinking...</span>
+    <span className="text-sm">{t('studio.thinking')}</span>
   </div>
 );
 
 // ANOTAÇÃO: Componente dedicado para renderizar o conteúdo da mensagem do assistente.
 // Isso torna o componente principal muito mais limpo e a lógica de renderização mais fácil de gerenciar.
-const AssistantMessage: React.FC<{ content: string }> = ({ content }) => {
+const AssistantMessage: React.FC<{ content: string; t: (key: string) => string }> = ({ content, t }) => {
   return (
     <div className="space-y-3">
       {content.split('\n').map((line, idx) => {
@@ -124,7 +125,7 @@ const AssistantMessage: React.FC<{ content: string }> = ({ content }) => {
             </div>
           );
         }
-        if (line.includes('Cronograma sugerido:') || line.includes('Cronograma atualizado:') || line.includes('Proposta atualizada')) {
+        if (line.includes(t('studio.suggestedSchedule') + ':') || line.includes(t('studio.scheduleUpdated') + ':') || line.includes(t('studio.proposalUpdated'))) {
           return <div key={idx} className="font-bold text-white text-base mb-4">{line}</div>;
         }
         if (line.trim().startsWith('•') || line.trim().startsWith('-') || line.trim().startsWith('*') || line.trim().startsWith('–')) {
@@ -170,6 +171,18 @@ function useHashQuery(): URLSearchParams {
 }
 
 const ProjectStudio: React.FC = () => {
+  const { t, language, setLanguage } = useLanguage();
+  console.log('🎨 ProjectStudio loaded with language:', language);
+  
+  // Sync language with localStorage on mount
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem('language') as 'pt' | 'en';
+    if (savedLanguage && savedLanguage !== language) {
+      console.log('🔄 Syncing language from localStorage:', savedLanguage);
+      setLanguage(savedLanguage);
+    }
+  }, [language, setLanguage]);
+  
   const params = useHashQuery();
   const flowRef = useRef<FlowCanvasHandle>(null);
   const initialDesc = useMemo(() => params.get('desc') ? decodeURIComponent(params.get('desc') as string) : '', [params]);
@@ -200,6 +213,7 @@ const ProjectStudio: React.FC = () => {
   const [aiFeedback, setAiFeedback] = useState<Record<number, 'up' | 'down' | undefined>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isSchedulingModalOpen, setIsSchedulingModalOpen] = useState(false);
+  const [isGeneratingFlow, setIsGeneratingFlow] = useState(false);
 
   // Constrói a descrição completa usando o histórico do chat e o estado atual
   const buildDescriptionFromHistory = useCallback((newUserText?: string) => {
@@ -231,6 +245,27 @@ const ProjectStudio: React.FC = () => {
     return () => clearTimeout(t);
   }, []);
 
+  // ANOTAÇÃO: useEffect para detectar quando uma proposta está sendo gerada
+  useEffect(() => {
+    if (proposal) {
+      setHasGenerated(true);
+      setEdgeHintPulse(false);
+      // Loading termina quando a proposta está pronta
+      setIsGeneratingFlow(false);
+    }
+  }, [proposal]);
+
+  // ANOTAÇÃO: useEffect para detectar quando está gerando (quando não há proposta ainda)
+  useEffect(() => {
+    if (!proposal && messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      // Se a última mensagem é do usuário, está aguardando resposta da IA
+      if (lastMessage.role === 'user') {
+        setIsGeneratingFlow(true);
+      }
+    }
+  }, [proposal, messages]);
+
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -258,15 +293,15 @@ const ProjectStudio: React.FC = () => {
           console.log('✅ IA gerou proposta com sucesso!', aiProposal);
           setProposal(aiProposal);
           const timelineText = aiProposal.timeline.map(t => `${t.phase} — ${t.duration}: ${t.details}`).join('\n');
-          const projectSummary = `\n\nResumo do Projeto:\n${aiProposal.summary}`;
-          setMessages(prev => [...prev, { role: 'assistant', content: `Cronograma sugerido:\n${timelineText}${projectSummary}` }]);
+          const projectSummary = `\n\n${t('studio.projectSummary')}:\n${aiProposal.summary}`;
+          setMessages(prev => [...prev, { role: 'assistant', content: `${t('studio.suggestedSchedule')}:\n${timelineText}${projectSummary}` }]);
         } else {
           console.log('❌ IA retornou null - sem proposta gerada');
           setMessages(prev => [...prev, { role: 'assistant', content: '⚠️ Cota da API excedida. Você já usou as 50 requisições gratuitas do dia. Aguarde 24h ou configure billing no Google Cloud Console.' }]);
         }
       } catch (error) {
         console.error('❌ Erro na geração com IA:', error);
-        setMessages(prev => [...prev, { role: 'assistant', content: 'Erro: Falha na comunicação com a IA. Verifique sua conexão e configurações.' }]);
+        setMessages(prev => [...prev, { role: 'assistant', content: t('studio.error.communication') }]);
       } finally {
         setLoading(false);
       }
@@ -288,7 +323,7 @@ const ProjectStudio: React.FC = () => {
   const send = useCallback(async () => {
     if (!input.trim()) return;
     const text = input.trim();
-    const newMessages = [...messages, { role: 'user' as const, content: text }, { role: 'assistant' as const, content: 'Thinking...' }];
+    const newMessages = [...messages, { role: 'user' as const, content: text }, { role: 'assistant' as const, content: t('studio.thinking') }];
     setMessages(newMessages);
     setInput('');
     setLoading(true);
@@ -308,18 +343,18 @@ const ProjectStudio: React.FC = () => {
         console.log('✅ IA atualizou proposta com sucesso!', aiProposal);
         setProposal(aiProposal);
         const timelineText = aiProposal.timeline.map(t => `${t.phase} — ${t.duration}: ${t.details}`).join('\n');
-        const projectSummary = `\n\nResumo do Projeto:\n${aiProposal.summary}`;
-            return [...withoutThinking, { role: 'assistant', content: `Cronograma atualizado:\n${timelineText}${projectSummary}` }];
+        const projectSummary = `\n\n${t('studio.projectSummary')}:\n${aiProposal.summary}`;
+            return [...withoutThinking, { role: 'assistant', content: `${t('studio.scheduleUpdated')}:\n${timelineText}${projectSummary}` }];
       } else {
         console.log('❌ IA retornou null - sem atualização');
-            return [...withoutThinking, { role: 'assistant', content: 'Erro: Não foi possível atualizar a proposta. Verifique a configuração da IA.' }];
+            return [...withoutThinking, { role: 'assistant', content: t('studio.error.updateFailed') }];
           }
         });
     } catch (error) {
       console.error('❌ Erro na atualização com IA:', error);
       setMessages(prev => {
         const withoutThinking = prev.slice(0, -1);
-        return [...withoutThinking, { role: 'assistant', content: 'Erro: Falha na comunicação com a IA. Verifique sua conexão e configurações.' }];
+        return [...withoutThinking, { role: 'assistant', content: t('studio.error.communication') }];
       });
     } finally {
       setLoading(false);
@@ -437,7 +472,7 @@ const ProjectStudio: React.FC = () => {
       const originalText = document.querySelector('.flow-container .absolute.bottom-20 button.bg-accent-700')?.textContent;
       const button = document.querySelector('.flow-container .absolute.bottom-20 button.bg-accent-700') as HTMLButtonElement;
       if (button) {
-        button.textContent = 'Gerando PDF...';
+        button.textContent = t('studio.generatingPDF') || 'Gerando PDF...';
         button.disabled = true;
       }
       
@@ -545,7 +580,7 @@ const ProjectStudio: React.FC = () => {
         if (y > doc.internal.pageSize.getHeight() - 300) { doc.addPage(); y = margin; }
                  doc.setFont('helvetica', 'bold');
                  doc.setFontSize(13);
-                 doc.text('Fluxo Proposto', margin, y);
+                 doc.text(t('studio.proposedFlow'), margin, y);
                  y += 16;
                  
         try {
@@ -654,18 +689,57 @@ const ProjectStudio: React.FC = () => {
   }, []);
 
   return (
-    <div className={`min-h-screen md:grid md:grid-cols-1 ${isChatHidden ? 'md:grid-cols-1' : 'md:grid-cols-[420px_1fr]'} bg-slate-900`}>
+    <div className={`min-h-screen md:grid md:grid-cols-1 ${isChatHidden ? 'md:grid-cols-1' : 'md:grid-cols-[420px_1fr]'} bg-zinc-900 relative`}>
+      {/* Loading Overlay - Cobre toda a página do Studio */}
+      {isGeneratingFlow && (
+        <div className="fixed inset-0 bg-zinc-900 z-50 flex items-center justify-center">
+          <div className="text-center">
+            {/* Loading com logo da Suaiden */}
+            <div className="relative mb-12">
+              {/* Logo principal com animação */}
+              <div className="relative">
+                <img 
+                  src="/Logo_Suaiden.png" 
+                  alt="Suaiden Logo" 
+                  className="h-16 w-auto mx-auto animate-logo-pulse"
+                />
+                {/* Efeito de brilho ao redor da logo */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-r from-primary-500/20 to-accent-500/20 animate-ping"></div>
+                </div>
+                {/* Círculos orbitais ao redor da logo */}
+                <div className="absolute inset-0 animate-smooth-rotate" style={{animationDuration: '6s'}}>
+                  <div className="w-1 h-1 bg-primary-400 rounded-full absolute top-2 left-1/2 transform -translate-x-1/2 animate-fade-in-out"></div>
+                  <div className="w-1 h-1 bg-accent-400 rounded-full absolute bottom-2 left-1/2 transform -translate-x-1/2 animate-fade-in-out" style={{animationDelay: '0.8s'}}></div>
+                  <div className="w-1 h-1 bg-primary-400 rounded-full absolute left-2 top-1/2 transform -translate-y-1/2 animate-fade-in-out" style={{animationDelay: '1.6s'}}></div>
+                  <div className="w-1 h-1 bg-accent-400 rounded-full absolute right-2 top-1/2 transform -translate-y-1/2 animate-fade-in-out" style={{animationDelay: '2.4s'}}></div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Texto minimalista */}
+            <h3 className="text-xl font-medium text-white mb-2 tracking-wide">
+              {t('studio.generatingFlow')}
+            </h3>
+            
+            <p className="text-slate-400 text-sm font-light">
+              {t('studio.creatingFlow')}
+            </p>
+          </div>
+        </div>
+      )}
+      
       {/* Left: Chat */}
-      <div className={`border-r border-slate-700 max-h-screen h-screen ${mobileView === 'flow' ? 'hidden md:flex' : 'flex md:flex'} ${isChatHidden ? 'md:hidden' : ''} flex-col relative chat-container`}>
+      <div className={`border-r border-zinc-800 max-h-screen h-screen ${mobileView === 'flow' ? 'hidden md:flex' : 'flex md:flex'} ${isChatHidden ? 'md:hidden' : ''} flex-col relative chat-container`}>
         {/* Fixed Header */}
-        <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-slate-700 bg-slate-900 chat-header">
+        <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-zinc-800 bg-zinc-900 chat-header">
           <button onClick={() => window.location.hash = ''} className="flex items-center gap-2 text-white hover:text-primary-400 transition-colors">
             <FontAwesomeIcon icon={solidIcons.faArrowRight} size="sm" className="rotate-180" />
-            <span className="font-medium text-sm">Voltar para Página inicial</span>
+            <span className="font-medium text-sm">{t('studio.backToHome')}</span>
           </button>
           <div className="md:hidden relative z-20">
             <button onClick={() => setMobileView('flow')} disabled={!proposal} className={`text-xs px-3 py-2 rounded-lg border transition-colors relative z-20 ${proposal ? 'text-white border-slate-600 hover:bg-slate-800' : 'text-slate-500 border-slate-800 opacity-60'}`}>
-              Visualizar fluxo
+              {t('studio.viewFlow')}
             </button>
           </div>
         </div>
@@ -674,8 +748,8 @@ const ProjectStudio: React.FC = () => {
         {!isChatHidden && (
           <button 
             type="button" 
-            aria-label="Esconder chat" 
-            title="Esconder chat" 
+            aria-label={t('studio.hideChat')} 
+            title={t('studio.hideChat')} 
             onClick={() => setIsChatHidden(true)} 
             className={`hidden md:flex items-center justify-center absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-14 rounded-r-2xl rounded-l-md bg-slate-900 backdrop-blur border border-slate-700 shadow-xl hover:bg-slate-800 text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 z-10 ${edgeHintPulse ? 'animate-pulse' : ''}`}
           >
@@ -683,7 +757,7 @@ const ProjectStudio: React.FC = () => {
           </button>
         )}
         
-        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 custom-scrollbar chat-messages">
+        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 custom-scrollbar chat-messages bg-zinc-900">
           {messages.map((m, i) => (
             <div key={i} className={`${m.role === 'user' ? 'ml-12' : ''}`}>
               <div className={`px-4 py-3 whitespace-pre-line text-sm leading-relaxed ${m.role === 'user' ? 'bg-slate-700 text-white rounded-xl border border-slate-600' : 'text-white/90 w-full'}`}>
@@ -691,16 +765,16 @@ const ProjectStudio: React.FC = () => {
                   <>
                     <div className="flex items-center gap-2 mb-2">
                       <div className="bg-purple-500 p-0.5 rounded"><FontAwesomeIcon icon={solidIcons.faBrain} size="sm" className="text-white" /></div>
-                      <span className="font-semibold text-violet-400 text-sm">Suaiden AI</span>
+                      <span className="font-semibold text-violet-400 text-sm">{t('studio.suaidenAI')}</span>
                     </div>
                     <div className="leading-relaxed text-gray-200">
-                        {m.content === 'Thinking...' ? <ThinkingIndicator /> : <AssistantMessage content={m.content} />}
+                        {m.content === t('studio.thinking') ? <ThinkingIndicator t={t} /> : <AssistantMessage content={m.content} t={t} />}
                     </div>
-                    {m.content !== 'Thinking...' && (
+                    {m.content !== t('studio.thinking') && (
                        <div className="mt-2 flex items-center gap-2 text-xs text-slate-400">
-                        <button className={`p-1.5 rounded-md hover:bg-slate-800 transition-colors ${aiFeedback[i] === 'up' ? 'text-primary-400' : ''}`} aria-label="Gostei" onClick={() => setAiFeedback(prev => ({ ...prev, [i]: prev[i] === 'up' ? undefined : 'up' }))}><FontAwesomeIcon icon={solidIcons.faThumbsUp} size="sm" /></button>
-                        <button className={`p-1.5 rounded-md hover:bg-slate-800 transition-colors ${aiFeedback[i] === 'down' ? 'text-primary-400' : ''}`} aria-label="Não gostei" onClick={() => setAiFeedback(prev => ({ ...prev, [i]: prev[i] === 'down' ? undefined : 'down' }))}><FontAwesomeIcon icon={solidIcons.faThumbsDown} size="sm" /></button>
-                        <button className="p-1.5 rounded-md hover:bg-slate-800 transition-colors" aria-label="Copiar resposta" onClick={() => navigator.clipboard.writeText(m.content).catch(() => {})}><FontAwesomeIcon icon={solidIcons.faCopy} size="sm" /></button>
+                        <button className={`p-1.5 rounded-md hover:bg-slate-800 transition-colors ${aiFeedback[i] === 'up' ? 'text-primary-400' : ''}`} aria-label={t('studio.like')} onClick={() => setAiFeedback(prev => ({ ...prev, [i]: prev[i] === 'up' ? undefined : 'up' }))}><FontAwesomeIcon icon={solidIcons.faThumbsUp} size="sm" /></button>
+                        <button className={`p-1.5 rounded-md hover:bg-slate-800 transition-colors ${aiFeedback[i] === 'down' ? 'text-primary-400' : ''}`} aria-label={t('studio.dislike')} onClick={() => setAiFeedback(prev => ({ ...prev, [i]: prev[i] === 'down' ? undefined : 'down' }))}><FontAwesomeIcon icon={solidIcons.faThumbsDown} size="sm" /></button>
+                        <button className="p-1.5 rounded-md hover:bg-slate-800 transition-colors" aria-label={t('studio.copy')} onClick={() => navigator.clipboard.writeText(m.content).catch(() => {})}><FontAwesomeIcon icon={solidIcons.faCopy} size="sm" /></button>
                         
                       </div>
                     )}
@@ -711,23 +785,23 @@ const ProjectStudio: React.FC = () => {
               </div>
             </div>
           ))}
-          {messages.length === 0 && <div className="text-slate-500 text-xs text-center mt-8">Comece descrevendo seu projeto</div>}
+          {messages.length === 0 && <div className="text-slate-500 text-xs text-center mt-8">{t('studio.startDescribing')}</div>}
           <div ref={messagesEndRef} />
         </div>
         
-        <div className="flex-shrink-0 p-6 bg-slate-900 border-t border-slate-700 chat-input relative z-30">
-          <ChatInput value={input} onChange={setInput} onSend={send} loading={loading} placeholder="Ask Suaiden..." />
+        <div className="flex-shrink-0 p-6 bg-zinc-900 border-t border-zinc-800 chat-input relative z-30">
+          <ChatInput value={input} onChange={setInput} onSend={send} loading={loading} placeholder={t('studio.askSuaiden')} />
         </div>
         
       </div>
       
       {/* Right: Flow + Proposal */}
-      <div className={`h-screen relative ${mobileView === 'chat' ? 'hidden md:flex' : 'flex md:flex'} flex-col flow-container`}>
+      <div className={`h-screen relative ${mobileView === 'chat' ? 'hidden md:flex' : 'flex md:flex'} flex-col flow-container bg-zinc-900`}>
         <div className="flex-none px-4 pt-4 pb-2 relative z-20 flow-header">
           <div className="w-full flex items-center justify-between">
-            <span className="text-white/90 font-medium">Fluxo Proposto</span>
+            <span className="text-white/90 font-medium">{t('studio.proposedFlow')}</span>
             <button className="md:hidden text-xs px-3 py-2 rounded-lg border border-slate-600 text-white hover:bg-slate-800 transition-colors relative z-40" onClick={() => setMobileView('chat')}>
-              Voltar para chat
+              {t('studio.backToChat')}
             </button>
           </div>
         </div>
@@ -737,16 +811,16 @@ const ProjectStudio: React.FC = () => {
         </div>
         
         {isChatHidden && (
-          <button type="button" aria-label="Mostrar chat" title="Mostrar chat" onClick={() => setIsChatHidden(false)} className={`hidden md:flex items-center justify-center absolute left-2 top-1/2 -translate-y-1/2 w-6 h-14 rounded-l-2xl rounded-r-md bg-primary-600/95 backdrop-blur border border-primary-500 shadow-xl hover:bg-primary-500 text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 ${edgeHintPulse ? 'animate-pulse' : ''}`}>
+          <button type="button" aria-label={t('studio.showChat')} title={t('studio.showChat')} onClick={() => setIsChatHidden(false)} className={`hidden md:flex items-center justify-center absolute left-2 top-1/2 -translate-y-1/2 w-6 h-14 rounded-l-2xl rounded-r-md bg-primary-600/95 backdrop-blur border border-primary-500 shadow-xl hover:bg-primary-500 text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 ${edgeHintPulse ? 'animate-pulse' : ''}`}>
             <FontAwesomeIcon icon={solidIcons.faChevronRight} size="sm" />
           </button>
         )}
         <div className="absolute bottom-20 md:bottom-4 left-1/2 transform -translate-x-1/2 z-20 flex gap-3">
           <Button className="bg-primary-600 hover:bg-primary-500 text-white px-4 py-2 rounded-lg text-sm shadow-lg" onClick={() => setIsSchedulingModalOpen(true)}>
-            Solicitar Consultoria
+            {t('studio.requestConsultation')}
           </Button>
           <Button className="bg-accent-700 text-white px-4 py-2 rounded-lg text-sm shadow-lg" onClick={exportPdf} disabled={!proposal}>
-            Salvar PDF
+            {t('studio.savePDF')}
           </Button>
          </div>
       </div>

@@ -3,40 +3,44 @@ import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { LineChart, Lock, Rocket, ShieldCheck, Timer } from 'lucide-react';
 import SectionTitle from '../ui/SectionTitle';
+import { useLanguage } from '../../context/LanguageContext';
 
-const benefits = [
-  {
-    title: 'Produtividade imediata',
-    description: 'Implantação rápida que começa a gerar resultados desde os primeiros dias de uso.',
-    icon: Rocket
-  },
-  {
-    title: 'Atendimento 24/7 com IA',
-    description: 'Nunca mais perca um cliente. Nossa IA atende a qualquer hora sem necessidade de equipe adicional.',
-    icon: Timer
-  },
-  {
-    title: 'Decisões baseadas em dados',
-    description: 'Dashboards inteligentes que transformam dados em insights acionáveis para seu negócio.',
-    icon: LineChart
-  },
-  {
-    title: 'Automação escalável',
-    description: 'Sistemas que crescem com sua empresa, sem necessidade de grandes investimentos adicionais.',
-    icon: ShieldCheck
-  },
-  {
-    title: 'Segurança e personalização',
-    description: 'Toda a proteção que seus dados precisam, com soluções adaptadas exclusivamente ao seu negócio.',
-    icon: Lock
-  }
-];
+// Benefits data will be generated from translations
 
 const BenefitsSection: React.FC = () => {
+  const { t } = useLanguage();
   const [ref, inView] = useInView({
     triggerOnce: true,
     threshold: 0.1,
   });
+
+  const benefits = [
+    {
+      title: t('benefits.benefit1.title'),
+      description: t('benefits.benefit1.description'),
+      icon: Rocket
+    },
+    {
+      title: t('benefits.benefit2.title'),
+      description: t('benefits.benefit2.description'),
+      icon: Timer
+    },
+    {
+      title: t('benefits.benefit3.title'),
+      description: t('benefits.benefit3.description'),
+      icon: LineChart
+    },
+    {
+      title: t('benefits.benefit4.title'),
+      description: t('benefits.benefit4.description'),
+      icon: ShieldCheck
+    },
+    {
+      title: t('benefits.benefit5.title'),
+      description: t('benefits.benefit5.description'),
+      icon: Lock
+    }
+  ];
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -63,7 +67,7 @@ const BenefitsSection: React.FC = () => {
       
       <div className="container relative">
         <SectionTitle
-          title="O que sua empresa ganha com a SUAIDEN"
+          title={t('benefits.title')}
           center
           className="mb-16"
         />

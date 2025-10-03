@@ -7,7 +7,7 @@ type Language = 'en' | 'pt';
 interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
-  t: (key: string) => string;
+  t: (key: string, options?: { returnObjects?: boolean }) => string | any;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -19,13 +19,24 @@ interface LanguageProviderProps {
 export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
   // Try to get language from localStorage, default to 'en'
   const [language, setLanguage] = useState<Language>(() => {
-    const savedLanguage = localStorage.getItem('language') as Language;
-    return savedLanguage || 
-           (navigator.language.startsWith('pt') ? 'pt' : 'en');
+    try {
+      const savedLanguage = localStorage.getItem('language') as Language;
+      if (savedLanguage && (savedLanguage === 'pt' || savedLanguage === 'en')) {
+        console.log('🌐 LanguageProvider initialized with saved language:', savedLanguage);
+        return savedLanguage;
+      }
+    } catch (error) {
+      console.warn('Failed to read language from localStorage:', error);
+    }
+    
+    const detectedLanguage = navigator.language.startsWith('pt') ? 'pt' : 'en';
+    console.log('🌐 LanguageProvider initialized with detected language:', detectedLanguage, 'from navigator:', navigator.language);
+    return detectedLanguage;
   });
 
   // Update localStorage when language changes
   useEffect(() => {
+    console.log('🌐 Language changed to:', language);
     localStorage.setItem('language', language);
     document.documentElement.lang = language;
   }, [language]);
@@ -36,16 +47,20 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
   };
 
   // Translation function
-  const t = (key: string): string => {
+  const t = (key: string, options?: { returnObjects?: boolean }): string | any => {
     const keys = key.split('.');
     let translation: any = translations[language];
 
     for (const k of keys) {
       if (!translation[k]) {
-        console.warn(`Translation key not found: ${key}`);
+        console.warn(`Translation key not found: ${key} for language: ${language}`);
         return key;
       }
       translation = translation[k];
+    }
+
+    if (options?.returnObjects) {
+      return translation;
     }
 
     return translation;

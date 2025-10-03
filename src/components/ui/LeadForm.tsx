@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import Button from './Button';
 import Modal from './Modal';
-import { ArrowRight, Brain } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { generateProposal, type GeneratedProposal } from '../../services/ai';
 import { insertLead } from '../../services/supabase';
@@ -28,13 +28,8 @@ const LeadForm: React.FC<LeadFormProps> = ({ variant = 'default', className = ''
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   // Dynamic placeholder typing effect
-  const demoPrompts = [
-    'Descreva seu projeto à SU AI DEN',
-    'Quero um chatbot para suporte com WhatsApp e site',
-    'Quero automatizar relatórios do meu ERP e enviar no Slack',
-    'Quero um app para agendar consultas e lembrar por SMS',
-  ];
-  const [placeholderText, setPlaceholderText] = useState('Bem vindo a SU AI DEN');
+  const demoPrompts = t('hero.demoPrompts', { returnObjects: true });
+  const [placeholderText, setPlaceholderText] = useState(t('hero.welcomeMessage'));
   const [promptIdx, setPromptIdx] = useState(0);
   const [charIdx, setCharIdx] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -52,6 +47,13 @@ const LeadForm: React.FC<LeadFormProps> = ({ variant = 'default', className = ''
     syncTextareaSize();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Update placeholder text when language changes
+  useEffect(() => {
+    if (formData.projectDescription.length === 0) {
+      setPlaceholderText(t('hero.welcomeMessage'));
+    }
+  }, [t, formData.projectDescription.length]);
 
   // Typewriter effect for placeholder
   useEffect(() => {
@@ -254,8 +256,12 @@ const LeadForm: React.FC<LeadFormProps> = ({ variant = 'default', className = ''
         size="lg"
       >
         <div className="mb-6">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-primary-500 to-accent-500 flex items-center justify-center">
-            <Brain size={28} className="text-white" />
+          <div className="flex items-center justify-center mb-4">
+            <img 
+              src="/Logo_Suaiden.png" 
+              alt="Suaiden Logo" 
+              className="h-12 w-auto"
+            />
           </div>
           <p className="text-center text-white/80 text-sm">
             {t('contact.modal.subtitle')}
@@ -312,7 +318,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ variant = 'default', className = ''
           <form onSubmit={handleSubmit} className="space-y-3 w-full max-w-[520px] mx-auto">
             <div>
               <label htmlFor="name" className="block text-white/80 mb-1.5 text-sm">
-                Nome Completo
+                {t('contact.modal.name')}
               </label>
               <input
                 type="text"
@@ -321,7 +327,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ variant = 'default', className = ''
                 value={formData.name}
                 onChange={handleChange}
                 className="w-full rounded-lg bg-dark-800 border border-dark-700 text-white p-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent will-change-auto"
-                placeholder="Nome completo"
+                placeholder={t('contact.modal.name')}
                 required
               />
             </div>
@@ -353,7 +359,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ variant = 'default', className = ''
                 value={formData.whatsapp}
                 onChange={handleChange}
                 className="w-full rounded-lg bg-dark-800 border border-dark-700 text-white p-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent will-change-auto"
-                placeholder={t('(00) 00000-0000')}
+                placeholder="(00) 00000-0000"
                 required
               />
             </div>

@@ -403,8 +403,8 @@ body.modal-open {
     position: relative !important;
     bottom: 0 !important;
     z-index: 30 !important;
-    background: #0f172a !important;
-    border-top: 1px solid #334155 !important;
+    background: #18181b !important; /* zinc-900 - mesma cor do resto da interface */
+    border-top: 1px solid #3f3f46 !important; /* zinc-700 - border consistente */
     min-height: 80px !important;
     max-height: 120px !important;
     display: block !important;
@@ -457,8 +457,8 @@ body.modal-open {
     position: sticky;
     top: 0;
     z-index: 30;
-    background: #0f172a;
-    border-bottom: 1px solid #334155;
+    background: #18181b; /* zinc-900 - consistente com o resto */
+    border-bottom: 1px solid #3f3f46; /* zinc-700 - border consistente */
     padding: 1rem;
   }
   
@@ -627,4 +627,83 @@ body.modal-open {
   [data-modal="lead"] select {
     font-size: 16px !important;
   }
+}
+
+/* Loading animations for Studio - Modern and Minimalist */
+@keyframes modern-pulse {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes subtle-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(139, 92, 246, 0.3);
+  }
+}
+
+@keyframes smooth-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fade-in-out {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes logo-pulse {
+  0%, 100% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes logo-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 5px rgba(139, 92, 246, 0.3));
+  }
+  50% {
+    filter: drop-shadow(0 0 15px rgba(139, 92, 246, 0.6));
+  }
+}
+
+.animate-modern-pulse {
+  animation: modern-pulse 2s ease-in-out infinite;
+}
+
+.animate-subtle-glow {
+  animation: subtle-glow 3s ease-in-out infinite;
+}
+
+.animate-smooth-rotate {
+  animation: smooth-rotate 2s linear infinite;
+}
+
+.animate-fade-in-out {
+  animation: fade-in-out 1.5s ease-in-out infinite;
+}
+
+.animate-logo-pulse {
+  animation: logo-pulse 2.5s ease-in-out infinite, logo-glow 3s ease-in-out infinite;
 }

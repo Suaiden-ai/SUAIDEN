@@ -4,6 +4,7 @@ import App from './App';
 import ProjectStudio from './pages/ProjectStudio';
 import { useEffect, useState } from 'react';
 import { ModalProvider } from './context/ModalContext';
+import { LanguageProvider } from './context/LanguageContext';
 import './index.css';
 
 function Router() {
@@ -21,8 +22,10 @@ function Router() {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ModalProvider>
-      <Router />
-    </ModalProvider>
+    <LanguageProvider>
+      <ModalProvider>
+        <Router />
+      </ModalProvider>
+    </LanguageProvider>
   </StrictMode>
 );

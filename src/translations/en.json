@@ -1,75 +1,82 @@
 {
   "header": {
     "solutions": "Solutions",
-    "cases": "Cases",
-    "whyUs": "Why us?",
+    "cases": "Case Studies",
+    "whyUs": "Why Choose Us?",
     "contact": "Contact"
   },
   "hero": {
-    "tagline": "Boost your business with advanced AI",
-    "title": "Automate, innovate and scale with intelligence.",
-    "description": "Tell us about your project and our AI generates a complete solution for you.",
-    "cta": "Receive free intelligent project",
+    "tagline": "Empower your business with advanced AI",
+    "title": "Automate, innovate, and scale with intelligence.",
+    "description": "Tell us about your project and our AI generates a complete solution tailored for you.",
+    "cta": "Get your free AI-powered project",
     "features": {
-      "fastImplementation": "Fast implementation",
-      "advancedAI": "State-of-the-art AI"
-    }
+      "fastImplementation": "Rapid implementation",
+      "advancedAI": "Cutting-edge AI"
+    },
+    "welcomeMessage": "Welcome to SU AI DEN",
+    "demoPrompts": [
+      "Describe your project to SU AI DEN",
+      "I want a chatbot for WhatsApp and website support",
+      "I want to automate my ERP reports and send them to Slack",
+      "I want an app to schedule appointments and send SMS reminders"
+    ]
   },
   "technologies": {
     "title": "Technologies that power our solutions"
   },
   "services": {
-    "title": "Our Intelligent Solutions",
-    "subtitle": "We develop technologies that transform the way companies operate, focusing on real and measurable results.",
+    "title": "OUR INTELLIGENT SOLUTIONS",
+    "subtitle": "We develop technologies that transform how companies operate, focusing on real and measurable results.",
     "automation": {
-      "title": "Intelligent Automation",
-      "description": "Automate repetitive processes, integrate systems and increase productivity with custom bots for your business.",
-      "longDescription": "We develop automation solutions that eliminate manual tasks, reduce human errors and significantly increase your company's productivity. We integrate all your tools into a continuous flow.",
+      "title": "INTELLIGENT AUTOMATION",
+      "description": "Automate repetitive processes, integrate systems, and boost productivity with custom bots designed for your business.",
+      "longDescription": "We develop automation solutions that eliminate manual tasks, reduce human errors, and significantly increase your company's productivity. We seamlessly integrate all your tools into a continuous workflow.",
       "benefits": "Reduce operational costs by up to 40%",
       "features": [
-        "24/7 chatbots",
-        "Process automation (RPA)",
-        "API system integration",
-        "Custom workflows"
+        "24/7 intelligent chatbots",
+        "Robotic Process Automation (RPA)",
+        "Seamless API integrations",
+        "Custom workflow automation"
       ],
       "learnMore": "Learn more"
     },
     "ai": {
-      "title": "AI Solutions",
-      "description": "Advanced chatbots, natural language processing and content generation with the latest AI technologies.",
-      "longDescription": "We implement artificial intelligence technologies that transform data into valuable insights, automate complex decisions and personalize your customers' experience to a new level.",
+      "title": "AI-POWERED SOLUTIONS",
+      "description": "Advanced chatbots, natural language processing, and content generation powered by the latest AI technologies.",
+      "longDescription": "We implement cutting-edge artificial intelligence technologies that transform data into valuable insights, automate complex decisions, and elevate your customers' experience to unprecedented levels.",
       "benefits": "Increase operational efficiency by up to 60%",
       "features": [
-        "Predictive data analysis",
-        "Text and image generation",
-        "Intelligent recommendations",
-        "Pattern recognition"
+        "Predictive data analytics",
+        "AI-powered content generation",
+        "Intelligent recommendation engines",
+        "Advanced pattern recognition"
       ],
       "learnMore": "Learn more"
     },
     "custom": {
-      "title": "Custom Systems",
-      "description": "Development of SaaS, internal platforms and dashboards adapted to the specific needs of your business.",
-      "longDescription": "We create complete and personalized systems that exactly meet the needs of your business, from management dashboards to complex e-commerce or management platforms.",
+      "title": "CUSTOM SYSTEMS",
+      "description": "Development of SaaS platforms, internal tools, and dashboards tailored to your business's specific needs.",
+      "longDescription": "We create comprehensive, personalized systems that precisely meet your business requirements, from executive dashboards to complex e-commerce platforms and enterprise management systems.",
       "benefits": "Development time up to 70% faster",
       "features": [
-        "Web and mobile applications",
-        "Interactive dashboards",
-        "SaaS platforms",
+        "Full-stack web and mobile apps",
+        "Interactive business dashboards",
+        "Scalable SaaS platforms",
         "Integrated management systems"
       ],
       "learnMore": "Learn more"
     },
     "data": {
-      "title": "Data + Cloud",
-      "description": "Collection, analysis and visualization of data with artificial intelligence for valuable insights and decision making.",
-      "longDescription": "We offer complete solutions to collect, process and visualize data in real time, allowing your company to make decisions based on concrete information and not intuition.",
-      "benefits": "Insights up to 5x faster for decisions",
+      "title": "DATA + CLOUD",
+      "description": "Data collection, analysis, and visualization powered by AI for valuable insights and informed decision-making.",
+      "longDescription": "We provide comprehensive solutions to collect, process, and visualize data in real-time, enabling your company to make data-driven decisions based on concrete insights rather than intuition.",
+      "benefits": "Get insights up to 5x faster for decision-making",
       "features": [
-        "Data lakes and warehouses",
-        "Real-time processing",
+        "Data lakes and cloud warehouses",
+        "Real-time data processing",
         "Advanced data visualization",
-        "Big data and predictive analysis"
+        "Big data and predictive analytics"
       ],
       "learnMore": "Learn more"
     },
@@ -90,11 +97,11 @@
     }
   },
   "cases": {
-    "title": "Our Real Projects with Concrete Results",
-    "subtitle": "Learn about some of the projects we've developed and the measurable results we've helped our clients achieve.",
+    "title": "REAL PROJECTS WITH MEASURABLE RESULTS",
+    "subtitle": "Discover some of the projects we've developed and the concrete, measurable results we've helped our clients achieve.",
     "case1": {
       "title": "The Future of English",
-      "description": "We developed an innovative digital platform to facilitate document translation in different languages with Artificial Intelligence support, offering a simple, fast, and reliable experience for individuals and companies.",
+      "description": "We developed an innovative digital platform to facilitate document translation across multiple languages using advanced Artificial Intelligence, delivering a simple, fast, and reliable experience for individuals and businesses.",
       "results": [
         "85% reduction in translation time",
         "90% increase in translation accuracy",
@@ -103,7 +110,7 @@
     },
     "case2": {
       "title": "Lush America Translations",
-      "description": "We developed an innovative platform for translating official and academic documents using cutting-edge Artificial Intelligence, ensuring fast, consistent, and secure translations for multiple languages.",
+      "description": "We created an innovative platform for translating official and academic documents using cutting-edge Artificial Intelligence, ensuring fast, consistent, and secure translations across multiple languages.",
       "results": [
         "80% reduction in translation time",
         "95% increase in translation accuracy",
@@ -112,7 +119,7 @@
     },
     "case3": {
       "title": "Educational Guidance Platform",
-      "description": "We developed the Matrícula USA platform, a complete solution for international students seeking study opportunities in the United States, simplifying the entire admission process.",
+      "description": "We developed the Matrícula USA platform, a comprehensive solution for international students seeking educational opportunities in the United States, streamlining the entire admission process.",
       "results": [
         "80% reduction in scholarship research time",
         "65% increase in successful application rate",
@@ -123,26 +130,26 @@
   },
   "advantages": {
     "title": "Why choose SUAIDEN?",
-    "subtitle": "We deliver AI and automation solutions that really work and generate concrete results for your business.",
+    "subtitle": "We deliver AI and automation solutions that actually work and generate concrete, measurable results for your business.",
     "advantage1": {
-      "title": "Projects with real applied AI",
-      "description": "We don't just talk about AI, we implement real solutions that generate tangible results for your business."
+      "title": "Real AI implementation, not just promises",
+      "description": "We don't just talk about AI—we implement genuine solutions that deliver tangible, measurable results for your business."
     },
     "advantage2": {
-      "title": "Fast and iterative development",
-      "description": "Agile methodology with continuous deliveries, allowing you to see results from the beginning of the project."
+      "title": "Rapid, iterative development",
+      "description": "Agile methodology with continuous deliveries, enabling you to see results from day one of the project."
     },
     "advantage3": {
-      "title": "Experienced and multidisciplinary team",
-      "description": "Professional experts in AI, development and automation, ready to solve your challenges."
+      "title": "Experienced, multidisciplinary team",
+      "description": "Professional experts in AI, development, and automation, ready to tackle your most complex challenges."
     },
     "advantage4": {
-      "title": "Continuous support and evolution",
-      "description": "We offer constant support and updates to ensure that your solution evolves along with your business."
+      "title": "Ongoing support and evolution",
+      "description": "We provide continuous support and regular updates to ensure your solution grows and evolves with your business."
     },
     "advantage5": {
-      "title": "Integration with your current tools",
-      "description": "Our solutions integrate perfectly with the tools you already use, without the need for drastic changes."
+      "title": "Seamless integration with existing tools",
+      "description": "Our solutions integrate flawlessly with your current tools and systems, requiring minimal disruption to your workflow."
     }
   },
   "comparison": {
@@ -189,54 +196,54 @@
   },
   "faq": {
     "title": "Frequently Asked Questions",
-    "subtitle": "Clear your doubts about our services and how we can help your business.",
+    "subtitle": "Get answers to common questions about our services and how we can help transform your business.",
     "q1": {
-      "question": "Is it real AI?",
-      "answer": "Yes, we use advanced AI technologies such as GPT-4, Claude and proprietary models. It's not just marketing, they are real applications of artificial intelligence that generate tangible results for your business."
+      "question": "Is this real AI technology?",
+      "answer": "Absolutely. We utilize cutting-edge AI technologies including GPT-4, Claude, and proprietary models. This isn't just marketing—we implement genuine artificial intelligence applications that deliver tangible, measurable results for your business."
     },
     "q2": {
-      "question": "Do I need to know programming?",
-      "answer": "Absolutely not. Our solutions are developed to be intuitive and easy to use, regardless of your technical knowledge. Our team takes care of all the technical part for you."
+      "question": "Do I need programming knowledge?",
+      "answer": "Not at all. Our solutions are designed to be intuitive and user-friendly, regardless of your technical background. Our expert team handles all the technical aspects, so you can focus on your business goals."
     },
     "q3": {
-      "question": "How much does it cost?",
-      "answer": "The values vary according to the complexity and scope of the project. We offer personalized plans that adapt to your company's needs and budget. Contact us to receive a detailed proposal."
+      "question": "What are your pricing options?",
+      "answer": "Pricing varies based on project complexity and scope. We offer customized plans that align with your company's specific needs and budget. Contact us for a detailed, personalized proposal tailored to your requirements."
     },
     "q4": {
-      "question": "What is the delivery time?",
-      "answer": "The deadline depends on the complexity of the project, but our agile process allows incremental deliveries from the first weeks. Simple projects can be delivered in 2-4 weeks, while more complex projects can take 2-3 months."
+      "question": "What's the typical delivery timeline?",
+      "answer": "Timelines depend on project complexity, but our agile approach enables incremental deliveries starting from the first few weeks. Simple projects typically complete in 2-4 weeks, while more complex solutions may take 2-3 months."
     },
     "q5": {
-      "question": "Can I automate tools I already use?",
-      "answer": "Yes! One of our specialties is integrating and automating existing tools. We can connect your current tools (such as CRM, ERP, spreadsheets) and automate workflows between them."
+      "question": "Can you automate our existing tools?",
+      "answer": "Absolutely! One of our core specialties is integrating and automating existing systems. We can seamlessly connect your current tools (CRM, ERP, spreadsheets, etc.) and create automated workflows between them."
     }
   },
   "contact": {
     "title": "Describe your project and receive an AI-generated proposal",
-    "subtitle": "Tell us about your challenge and receive a free personalized diagnosis and proposal generated by our AI.",
+    "subtitle": "Share your challenge with us and receive a free, personalized diagnosis and proposal generated by our advanced AI.",
     "placeholder": "Briefly describe your project or technical challenge...",
-    "button": "Receive free intelligent project",
-    "privacy": "Your data is safe. No spam.",
+    "button": "Get your free AI-powered project",
+    "privacy": "Your data is secure. No spam, ever.",
     "modal": {
-      "title": "Receive your personalized project",
-      "subtitle": "We're almost there! Complete your registration to receive your personalized intelligent project.",
-      "name": "Name",
-      "email": "Email",
+      "title": "Get your personalized project",
+      "subtitle": "We're almost there! Complete your registration to receive your personalized AI-powered project.",
+      "name": "Full Name",
+      "email": "Email Address",
       "whatsapp": "WhatsApp",
-      "button": "Receive personalized project",
-      "privacy": "Your data is safe. We don't send spam."
+      "button": "Get personalized project",
+      "privacy": "Your data is secure. We never send spam."
     }
   },
   "footer": {
-    "description": "Innovative solutions in automation, artificial intelligence and custom software development.",
+    "description": "Innovative solutions in automation, artificial intelligence, and custom software development.",
     "quickLinks": "Quick Links",
     "links": {
       "home": "Home",
       "solutions": "Solutions",
-      "cases": "Cases",
+      "cases": "Case Studies",
       "contact": "Contact",
       "privacy": "Privacy Policy",
-      "terms": "Terms of Use"
+      "terms": "Terms of Service"
     },
     "contact": "Contact",
     "rights": "All rights reserved."
@@ -244,5 +251,33 @@
   "languageSwitcher": {
     "en": "English",
     "pt": "Portuguese"
+  },
+  "studio": {
+    "backToHome": "Back to Home",
+    "viewFlow": "View Flow",
+    "hideChat": "Hide Chat",
+    "showChat": "Show Chat",
+    "generatingFlow": "Generating Flow",
+    "creatingFlow": "Creating your personalized flow...",
+    "thinking": "Thinking...",
+    "suaidenAI": "Suaiden AI",
+    "like": "Like",
+    "dislike": "Dislike",
+    "copy": "Copy Response",
+    "startDescribing": "Start describing your project",
+    "askSuaiden": "Ask Suaiden...",
+    "proposedFlow": "Proposed Flow",
+    "backToChat": "Back to Chat",
+    "savePDF": "Save PDF",
+    "requestConsultation": "Request Consultation",
+    "suggestedSchedule": "Suggested Schedule",
+    "scheduleUpdated": "Schedule Updated",
+    "proposalUpdated": "Proposal Updated",
+    "projectSummary": "Project Summary",
+    "generatingPDF": "Generating PDF...",
+    "error": {
+      "communication": "Error: Failed to communicate with AI. Check your connection and settings.",
+      "updateFailed": "Error: Could not update proposal. Check AI configuration."
+    }
   }
 }

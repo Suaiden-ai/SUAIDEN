@@ -3,40 +3,44 @@ import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { Brain, Clock, Code2, HeartHandshake, RefreshCw } from 'lucide-react';
 import SectionTitle from '../ui/SectionTitle';
+import { useLanguage } from '../../context/LanguageContext';
 
-const advantages = [
-  {
-    title: 'Projetos com IA real aplicada',
-    description: 'Não apenas falamos de IA, implementamos soluções reais que geram resultados tangíveis para o seu negócio.',
-    icon: Brain
-  },
-  {
-    title: 'Desenvolvimento rápido e iterativo',
-    description: 'Metodologia ágil com entregas contínuas, permitindo que você veja resultados desde o início do projeto.',
-    icon: Clock
-  },
-  {
-    title: 'Equipe experiente e multidisciplinar',
-    description: 'Profissionais especialistas em IA, desenvolvimento e automação, prontos para resolver seus desafios.',
-    icon: Code2
-  },
-  {
-    title: 'Suporte e evolução contínuos',
-    description: 'Oferecemos suporte constante e atualizações para garantir que sua solução evolua junto com seu negócio.',
-    icon: RefreshCw
-  },
-  {
-    title: 'Integração com suas ferramentas atuais',
-    description: 'Nossas soluções se integram perfeitamente com as ferramentas que você já utiliza, sem necessidade de mudanças drásticas.',
-    icon: HeartHandshake
-  }
-];
+// Advantages data will be generated from translations
 
 const AdvantagesSection: React.FC = () => {
+  const { t } = useLanguage();
   const [ref, inView] = useInView({
     triggerOnce: true,
     threshold: 0.1,
   });
+
+  const advantages = [
+    {
+      title: t('advantages.advantage1.title'),
+      description: t('advantages.advantage1.description'),
+      icon: Brain
+    },
+    {
+      title: t('advantages.advantage2.title'),
+      description: t('advantages.advantage2.description'),
+      icon: Clock
+    },
+    {
+      title: t('advantages.advantage3.title'),
+      description: t('advantages.advantage3.description'),
+      icon: Code2
+    },
+    {
+      title: t('advantages.advantage4.title'),
+      description: t('advantages.advantage4.description'),
+      icon: RefreshCw
+    },
+    {
+      title: t('advantages.advantage5.title'),
+      description: t('advantages.advantage5.description'),
+      icon: HeartHandshake
+    }
+  ];
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -63,8 +67,8 @@ const AdvantagesSection: React.FC = () => {
       
       <div className="container relative">
         <SectionTitle
-          title="Por que escolher a SUAIDEN?"
-          subtitle="Entregamos soluções de IA e automação que realmente funcionam e geram resultados concretos para o seu negócio."
+          title={t('advantages.title')}
+          subtitle={t('advantages.subtitle')}
           center
           className="mb-16"
         />

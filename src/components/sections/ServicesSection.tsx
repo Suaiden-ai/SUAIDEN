@@ -6,74 +6,15 @@ import { solidIcons } from '../../lib/icons';
 import SectionTitle from '../ui/SectionTitle';
 import Button from '../ui/Button';
 import SchedulingModal from '../ui/SchedulingModal';
+import { useLanguage } from '../../context/LanguageContext';
 
-const services = [
-  {
-    title: 'AUTOMAÇÃO INTELIGENTE',
-    description: 'Automatize processos repetitivos, integre sistemas e aumente a produtividade com bots personalizados para seu negócio.',
-    longDescription: 'Desenvolvemos soluções de automação que eliminam tarefas manuais, reduzem erros humanos e aumentam significativamente a produtividade da sua empresa. Integramos todas suas ferramentas em um fluxo contínuo.',
-    icon: solidIcons.faRobot,
-    color: 'from-primary-500/20 to-primary-700/20',
-    features: [
-      'Chatbots de atendimento 24/7',
-      'Automação de processos (RPA)',
-      'Integração entre sistemas via API',
-      'Workflows personalizados',
-    ],
-    benefits: 'Reduza custos operacionais em até 40%',
-    link: '#contato'
-  },
-  {
-    title: 'SOLUÇÕES COM IA',
-    description: 'Chatbots avançados, processamento de linguagem natural e geração de conteúdo com as tecnologias mais recentes de IA.',
-    longDescription: 'Implementamos tecnologias de inteligência artificial que transformam dados em insights valiosos, automatizam decisões complexas e personalizam a experiência dos seus clientes a um novo nível.',
-    icon: solidIcons.faTerminal,
-    color: 'from-accent-500/20 to-accent-700/20',
-    features: [
-      'Análise preditiva de dados',
-      'Geração de textos e imagens',
-      'Recomendações inteligentes',
-      'Reconhecimento de padrões',
-    ],
-    benefits: 'Aumente a eficiência operacional em até 60%',
-    link: '#contato'
-  },
-  {
-    title: 'SISTEMAS SOB MEDIDA',
-    description: 'Desenvolvimento de SaaS, plataformas internas e dashboards adaptados às necessidades específicas do seu negócio.',
-    longDescription: 'Criamos sistemas completos e personalizados que atendem exatamente às necessidades do seu negócio, desde dashboards gerenciais a plataformas complexas de e-commerce ou gestão.',
-    icon: solidIcons.faCode,
-    color: 'from-secondary-500/20 to-secondary-700/20',
-    features: [
-      'Aplicações web e mobile',
-      'Dashboards interativos',
-      'Plataformas SaaS',
-      'Sistemas de gestão integrados',
-    ],
-    benefits: 'Tempo de desenvolvimento até 70% mais rápido',
-    link: '#contato'
-  },
-  {
-    title: 'DADOS + NUVEM',
-    description: 'Coleta, análise e visualização de dados com inteligência artificial para insights valiosos e tomada de decisão.',
-    longDescription: 'Oferecemos soluções completas para coletar, processar e visualizar dados em tempo real, permitindo que sua empresa tome decisões baseadas em informações concretas e não em intuição.',
-    icon: solidIcons.faDatabase,
-    color: 'from-primary-700/20 to-accent-700/20',
-    features: [
-      'Data lakes e warehouses',
-      'Processamento em tempo real',
-      'Visualização avançada de dados',
-      'Big data e análise preditiva',
-    ],
-    benefits: 'Insights até 5x mais rápidos para decisões',
-    link: '#contato'
-  }
-];
+// Services data will be generated from translations
 
 const ServiceCard: React.FC<{
-  service: typeof services[0];
+  service: any;
   index: number;
-}> = ({ service, index }) => {
+  t: (key: string) => string;
+}> = ({ service, index, t }) => {
   const [isHovered, setIsHovered] = useState(false);
 
   // Animation variants
@@ -183,7 +124,7 @@ const ServiceCard: React.FC<{
             {/* Features - Left aligned */}
             <div className="mt-auto space-y-3 w-full">
               <ul className="space-y-3 mb-5">
-                {service.features.map((feature, idx) => (
+                {service.features.map((feature: any, idx: number) => (
                   <motion.li 
                     key={idx} 
                     initial={{ opacity: 0, x: -10 }}
@@ -209,7 +150,7 @@ const ServiceCard: React.FC<{
                              shadow-lg shadow-primary-500/25 hover:shadow-primary-400/40
                              font-semibold group-hover:scale-105"
                 >
-                  Saiba mais
+                  {t('services.automation.learnMore')}
                   <motion.span
                     animate={isHovered ? { x: 4 } : { x: 0 }}
                     transition={{ duration: 0.2 }}
@@ -227,6 +168,50 @@ const ServiceCard: React.FC<{
 };
 
 const ServicesSection: React.FC = () => {
+  const { t } = useLanguage();
+  
+  const services = [
+    {
+      title: t('services.automation.title'),
+      description: t('services.automation.description'),
+      longDescription: t('services.automation.longDescription'),
+      icon: solidIcons.faRobot,
+      color: 'from-primary-500/20 to-primary-700/20',
+      features: t('services.automation.features', { returnObjects: true }),
+      benefits: t('services.automation.benefits'),
+      link: '#contato'
+    },
+    {
+      title: t('services.ai.title'),
+      description: t('services.ai.description'),
+      longDescription: t('services.ai.longDescription'),
+      icon: solidIcons.faTerminal,
+      color: 'from-accent-500/20 to-accent-700/20',
+      features: t('services.ai.features', { returnObjects: true }),
+      benefits: t('services.ai.benefits'),
+      link: '#contato'
+    },
+    {
+      title: t('services.custom.title'),
+      description: t('services.custom.description'),
+      longDescription: t('services.custom.longDescription'),
+      icon: solidIcons.faCode,
+      color: 'from-secondary-500/20 to-secondary-700/20',
+      features: t('services.custom.features', { returnObjects: true }),
+      benefits: t('services.custom.benefits'),
+      link: '#contato'
+    },
+    {
+      title: t('services.data.title'),
+      description: t('services.data.description'),
+      longDescription: t('services.data.longDescription'),
+      icon: solidIcons.faDatabase,
+      color: 'from-primary-700/20 to-accent-700/20',
+      features: t('services.data.features', { returnObjects: true }),
+      benefits: t('services.data.benefits'),
+      link: '#contato'
+    }
+  ];
   const [ref, inView] = useInView({
     triggerOnce: true,
     threshold: 0.1,
@@ -246,15 +231,15 @@ const ServicesSection: React.FC = () => {
       
       <div className="container relative max-w-8xl mx-auto px-4">
         <SectionTitle
-          title="NOSSAS SOLUÇÕES INTELIGENTES"
-          subtitle="Desenvolvemos tecnologias que transformam a maneira como as empresas operam, com foco em resultados reais e mensuráveis."
+          title={t('services.title')}
+          subtitle={t('services.subtitle')}
           center
           className="mb-16"
         />
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-8xl mx-auto">
           {services.map((service, index) => (
-            <ServiceCard key={index} service={service} index={index} />
+            <ServiceCard key={index} service={service} index={index} t={t} />
           ))}
         </div>
         
@@ -263,19 +248,19 @@ const ServicesSection: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div className="text-center">
               <div className="text-primary-300 text-4xl font-display font-bold">+120</div>
-              <div className="text-slate-300 mt-2 font-medium">Projetos entregues</div>
+              <div className="text-slate-300 mt-2 font-medium">{t('services.stats.projects')}</div>
             </div>
             <div className="text-center">
               <div className="text-primary-300 text-4xl font-display font-bold">98%</div>
-              <div className="text-slate-300 mt-2 font-medium">Clientes satisfeitos</div>
+              <div className="text-slate-300 mt-2 font-medium">{t('services.stats.satisfied')}</div>
             </div>
             <div className="text-center">
               <div className="text-primary-300 text-4xl font-display font-bold">45%</div>
-              <div className="text-slate-300 mt-2 font-medium">Economia média</div>
+              <div className="text-slate-300 mt-2 font-medium">{t('services.stats.savings')}</div>
             </div>
             <div className="text-center">
               <div className="text-primary-300 text-4xl font-display font-bold">24/7</div>
-              <div className="text-slate-300 mt-2 font-medium">Suporte disponível</div>
+              <div className="text-slate-300 mt-2 font-medium">{t('services.stats.support')}</div>
             </div>
           </div>
         </div>
@@ -295,11 +280,11 @@ const ServicesSection: React.FC = () => {
           </div>
           
           <h3 className="text-2xl md:text-3xl font-display font-medium mb-4 max-w-2xl mx-auto">
-            Pronto para transformar seu negócio com soluções de <span className="text-primary-400">IA realmente aplicáveis</span>?
+            {t('services.cta.title').split(' ').slice(0, -1).join(' ')} <span className="text-primary-400">{t('services.cta.title').split(' ').pop()}</span>?
           </h3>
           
           <p className="text-white/70 mb-8 max-w-xl mx-auto">
-            Agende uma consulta gratuita com nossos especialistas e descubra como podemos criar soluções personalizadas para os desafios específicos do seu negócio.
+            {t('services.cta.subtitle')}
           </p>
           
           <Button 
@@ -307,18 +292,18 @@ const ServicesSection: React.FC = () => {
             className="group"
             onClick={() => setIsSchedulingModalOpen(true)}
           >
-            Solicitar consultoria gratuita
+            {t('services.cta.button')}
             <FontAwesomeIcon icon={solidIcons.faArrowRight} size="sm" className="ml-2 transition-transform group-hover:translate-x-1" />
           </Button>
           
           <div className="flex justify-center gap-3 mt-6">
             <div className="flex items-center">
               <FontAwesomeIcon icon={solidIcons.faCheckCircle} size="sm" className="text-primary-400 mr-1.5" />
-              <span className="text-white/60 text-sm">Sem compromisso</span>
+              <span className="text-white/60 text-sm">{t('services.cta.features.noCommitment')}</span>
             </div>
             <div className="flex items-center">
               <FontAwesomeIcon icon={solidIcons.faCheckCircle} size="sm" className="text-primary-400 mr-1.5" />
-              <span className="text-white/60 text-sm">Atendimento personalizado</span>
+              <span className="text-white/60 text-sm">{t('services.cta.features.personalizedService')}</span>
             </div>
           </div>
         </motion.div>

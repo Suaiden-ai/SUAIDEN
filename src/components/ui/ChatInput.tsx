@@ -28,7 +28,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
       {/* Input principal */}
       <div className="relative">
         <input
-          className="w-full rounded-xl bg-dark-800 border border-dark-700 px-4 py-3 pr-12 text-white text-sm focus:outline-none focus:border-primary-500 transition-colors leading-relaxed"
+          className="w-full rounded-xl bg-zinc-800 border border-zinc-700 px-4 py-3 pr-12 text-white text-sm focus:outline-none focus:border-primary-500 transition-colors leading-relaxed"
           value={value}
           placeholder={placeholder}
           onChange={e => onChange(e.target.value)}
@@ -40,7 +40,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
           type="button"
           onClick={onSend}
           disabled={loading || !value.trim()}
-          className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-primary-600 hover:bg-primary-700 disabled:bg-dark-600 disabled:opacity-50 flex items-center justify-center transition-colors"
+          className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-primary-600 hover:bg-primary-700 disabled:bg-zinc-600 disabled:opacity-50 flex items-center justify-center transition-colors"
         >
           <Send size={14} className="text-white" />
         </button>
