@@ -198,7 +198,7 @@ const ProjectStudio: React.FC = () => {
     }
   }
 
-  const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>(
+  const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; content: string; isStreaming?: boolean }[]>(
     () => (initialDesc ? [{ role: 'user', content: initialDesc }] : [])
   );
   const [input, setInput] = useState('');
@@ -293,14 +293,34 @@ const ProjectStudio: React.FC = () => {
           setProposal(aiProposal);
           const timelineText = aiProposal.timeline.map(t => `${t.phase} — ${t.duration}: ${t.details}`).join('\n');
           const projectSummary = `\n\n${t('studio.projectSummary')}:\n${aiProposal.summary}`;
-          setMessages(prev => [...prev, { role: 'assistant', content: `${t('studio.suggestedSchedule')}:\n${timelineText}${projectSummary}` }]);
+          const fullResponse = `${t('studio.suggestedSchedule')}:\n${timelineText}${projectSummary}`;
+          
+          setMessages(prev => {
+            const newMessages = [...prev, { role: 'assistant' as const, content: '', isStreaming: true }];
+            const messageIndex = newMessages.length - 1;
+            streamTokens(fullResponse, messageIndex);
+            return newMessages;
+          });
         } else {
           console.log('❌ IA retornou null - sem proposta gerada');
-          setMessages(prev => [...prev, { role: 'assistant', content: '⚠️ Cota da API excedida. Você já usou as 50 requisições gratuitas do dia. Aguarde 24h ou configure billing no Google Cloud Console.' }]);
+          const errorMessage = '⚠️ Cota da API excedida. Você já usou as 50 requisições gratuitas do dia. Aguarde 24h ou configure billing no Google Cloud Console.';
+          
+          setMessages(prev => {
+            const newMessages = [...prev, { role: 'assistant' as const, content: '', isStreaming: true }];
+            const messageIndex = newMessages.length - 1;
+            streamTokens(errorMessage, messageIndex);
+            return newMessages;
+          });
         }
       } catch (error) {
         console.error('❌ Erro na geração com IA:', error);
-        setMessages(prev => [...prev, { role: 'assistant', content: t('studio.error.communication') }]);
+        const errorMessage = t('studio.error.communication');
+        setMessages(prev => {
+          const newMessages = [...prev, { role: 'assistant' as const, content: '', isStreaming: true }];
+          const messageIndex = newMessages.length - 1;
+          streamTokens(errorMessage, messageIndex);
+          return newMessages;
+        });
       } finally {
         setLoading(false);
       }
@@ -319,10 +339,45 @@ const ProjectStudio: React.FC = () => {
     return () => clearTimeout(t);
   }, [initialDesc, messages, proposal]);
 
+  // Função para simular streaming de tokens com formatação em tempo real
+  const streamTokens = useCallback(async (fullText: string, messageIndex: number) => {
+    const lines = fullText.split('\n');
+    let currentText = '';
+    
+    for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+      const line = lines[lineIndex];
+      const words = line.split(' ');
+      
+      // Adicionar quebra de linha se não for a primeira linha
+      if (lineIndex > 0) {
+        currentText += '\n';
+      }
+      
+      // Stream palavra por palavra dentro da linha
+      for (let wordIndex = 0; wordIndex < words.length; wordIndex++) {
+        await new Promise(resolve => setTimeout(resolve, 80));
+        currentText += (wordIndex > 0 ? ' ' : '') + words[wordIndex];
+        
+        // Atualizar o estado com formatação aplicada
+        setMessages(prev => {
+          const newMessages = [...prev];
+          if (newMessages[messageIndex]) {
+            newMessages[messageIndex] = { 
+              ...newMessages[messageIndex], 
+              content: currentText,
+              isStreaming: lineIndex < lines.length - 1 || wordIndex < words.length - 1
+            };
+          }
+          return newMessages;
+        });
+      }
+    }
+  }, []);
+
   const send = useCallback(async () => {
     if (!input.trim()) return;
     const text = input.trim();
-    const newMessages = [...messages, { role: 'user' as const, content: text }, { role: 'assistant' as const, content: t('studio.thinking') }];
+    const newMessages = [...messages, { role: 'user' as const, content: text }, { role: 'assistant' as const, content: t('studio.thinking'), isStreaming: true }];
     setMessages(newMessages);
     setInput('');
     setLoading(true);
@@ -343,22 +398,39 @@ const ProjectStudio: React.FC = () => {
         setProposal(aiProposal);
         const timelineText = aiProposal.timeline.map(t => `${t.phase} — ${t.duration}: ${t.details}`).join('\n');
         const projectSummary = `\n\n${t('studio.projectSummary')}:\n${aiProposal.summary}`;
-            return [...withoutThinking, { role: 'assistant', content: `${t('studio.scheduleUpdated')}:\n${timelineText}${projectSummary}` }];
+        const fullResponse = `${t('studio.scheduleUpdated')}:\n${timelineText}${projectSummary}`;
+        
+        // Iniciar streaming de tokens
+        const messageIndex = withoutThinking.length;
+        const newMessages = [...withoutThinking, { role: 'assistant' as const, content: '', isStreaming: true }];
+        streamTokens(fullResponse, messageIndex);
+        
+        return newMessages;
       } else {
         console.log('❌ IA retornou null - sem atualização');
-            return [...withoutThinking, { role: 'assistant', content: t('studio.error.updateFailed') }];
+        const errorMessage = t('studio.error.updateFailed');
+        const messageIndex = withoutThinking.length;
+        const newMessages = [...withoutThinking, { role: 'assistant' as const, content: '', isStreaming: true }];
+        streamTokens(errorMessage, messageIndex);
+        
+        return newMessages;
           }
         });
     } catch (error) {
       console.error('❌ Erro na atualização com IA:', error);
       setMessages(prev => {
         const withoutThinking = prev.slice(0, -1);
-        return [...withoutThinking, { role: 'assistant', content: t('studio.error.communication') }];
+        const errorMessage = t('studio.error.communication');
+        const messageIndex = withoutThinking.length;
+        const newMessages = [...withoutThinking, { role: 'assistant' as const, content: '', isStreaming: true }];
+        streamTokens(errorMessage, messageIndex);
+        
+        return newMessages;
       });
     } finally {
       setLoading(false);
     }
-  }, [input, messages, initialDesc, buildDescriptionFromHistory]);
+  }, [input, messages, initialDesc, buildDescriptionFromHistory, streamTokens, t]);
 
   // Hook para detectar mudanças de tamanho da tela
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
@@ -816,9 +888,69 @@ const ProjectStudio: React.FC = () => {
                       <span className="font-semibold text-violet-400 text-sm">{t('studio.suaidenAI')}</span>
                     </div>
                     <div className="leading-relaxed text-gray-200">
-                        {m.content === t('studio.thinking') ? <ThinkingIndicator t={t} /> : <AssistantMessage content={m.content} t={t} />}
+                        {m.content === t('studio.thinking') ? <ThinkingIndicator t={t} /> : (
+                          <div>
+                            {m.isStreaming ? (
+                              <div className="space-y-3">
+                                {m.content.split('\n').map((line, idx) => {
+                                  const normalized = line.replace(/[–—]/g, '—');
+                                  const hasSeparator = normalized.includes('—');
+                                  const hasDuration = /(week|weeks|day|days|hour|hours|semana|semanas|dia|dias|mês|meses|hora|horas|Contínuo|Continuo|Ongoing)/i.test(normalized);
+
+                                  if (hasSeparator && hasDuration) {
+                                    const [phase, duration, ...details] = normalized.split('—');
+                                    return (
+                                      <div key={idx} className="bg-slate-800/50 rounded-lg p-3 border-l-4 border-violet-500">
+                                        <div className="flex items-start gap-3">
+                                          <div className="flex-shrink-0 w-2 h-2 bg-violet-500 rounded-full mt-2"></div>
+                                          <div className="flex-1">
+                                            <div className="font-semibold text-violet-300 text-sm mb-1">{phase.trim()}</div>
+                                            <div className="text-xs text-gray-400 mb-2 font-medium">{duration.trim()}</div>
+                                            <div className="text-gray-200 text-sm">{details.join('—').trim()}</div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  }
+                                  if (line.includes(t('studio.suggestedSchedule') + ':') || line.includes(t('studio.scheduleUpdated') + ':') || line.includes(t('studio.proposalUpdated'))) {
+                                    return <div key={idx} className="font-bold text-white text-base mb-4">{line}</div>;
+                                  }
+                                  if (line.trim().startsWith('•') || line.trim().startsWith('-') || line.trim().startsWith('*') || line.trim().startsWith('–')) {
+                                    return (
+                                      <div key={idx} className="flex items-start gap-2 text-gray-200 leading-relaxed">
+                                        <span className="text-violet-500 mt-1">•</span>
+                                        <span>{line.trim().substring(1).trim()}</span>
+                                      </div>
+                                    );
+                                  }
+                                  if (line.includes('Benefícios:') || line.includes('Funcionalidades:') || line.includes('Tecnologias:') || line.includes('Cronograma:') || line.includes('Orçamento:')) {
+                                      return <div key={idx} className="font-semibold text-violet-400 text-sm mb-2 mt-4">{line}</div>;
+                                  }
+                                  if (line.includes('Resumo:') || line.includes('Resumo do Projeto:') || line.includes('Visão Geral:')) {
+                                      return <div key={idx} className="font-semibold text-violet-400 text-sm mb-2 mt-4">{line}</div>;
+                                  }
+                                  if (line.includes('**') && line.split('**').length >= 3) {
+                                    const parts = line.split('**');
+                                    return (
+                                      <div key={idx} className="text-gray-200 leading-relaxed">
+                                        {parts.map((part, partIdx) => partIdx % 2 === 1 ? <strong key={partIdx} className="text-white font-semibold">{part}</strong> : <span key={partIdx}>{part}</span>)}
+                                      </div>
+                                    );
+                                  }
+                                  if (line.trim()) {
+                                    return <div key={idx} className="text-gray-200 leading-relaxed">{line}</div>;
+                                  }
+                                  return null;
+                                })}
+                                <span className="inline-block w-2 h-4 bg-violet-400 ml-1 animate-pulse"></span>
+                              </div>
+                            ) : (
+                              <AssistantMessage content={m.content} t={t} />
+                            )}
+                          </div>
+                        )}
                     </div>
-                    {m.content !== t('studio.thinking') && (
+                    {m.content !== t('studio.thinking') && !m.isStreaming && (
                        <div className="mt-2 flex items-center gap-2 text-xs text-slate-400">
                         <button className={`p-1.5 rounded-md hover:bg-slate-800 transition-colors ${aiFeedback[i] === 'up' ? 'text-primary-400' : ''}`} aria-label={t('studio.like')} onClick={() => setAiFeedback(prev => ({ ...prev, [i]: prev[i] === 'up' ? undefined : 'up' }))}><FontAwesomeIcon icon={solidIcons.faThumbsUp} size="sm" /></button>
                         <button className={`p-1.5 rounded-md hover:bg-slate-800 transition-colors ${aiFeedback[i] === 'down' ? 'text-primary-400' : ''}`} aria-label={t('studio.dislike')} onClick={() => setAiFeedback(prev => ({ ...prev, [i]: prev[i] === 'down' ? undefined : 'down' }))}><FontAwesomeIcon icon={solidIcons.faThumbsDown} size="sm" /></button>
@@ -863,27 +995,35 @@ const ProjectStudio: React.FC = () => {
             <FontAwesomeIcon icon={solidIcons.faChevronRight} size="sm" />
           </button>
         )}
-        <div className="absolute bottom-6 md:bottom-6 left-1/2 transform -translate-x-1/2 z-20 flex gap-3 px-4">
+        {!loading && (
+          <div className="fixed bottom-4 left-2 right-2 sm:absolute sm:bottom-6 sm:left-1/2 sm:right-auto sm:transform sm:-translate-x-1/2 z-50 flex flex-col sm:flex-row gap-2 sm:gap-3 sm:px-4 sm:w-auto max-w-[calc(100vw-1rem)] sm:max-w-none">
           <Button 
             variant="secondary" 
             size="md"
-            className="bg-slate-800/90 hover:bg-slate-700 text-white px-6 py-3 rounded-2xl text-sm font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 border-0 ring-1 ring-slate-700/50 backdrop-blur-sm" 
+            className="bg-slate-800/90 hover:bg-slate-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-2xl text-xs sm:text-sm font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 border-0 ring-1 ring-slate-700/50 backdrop-blur-sm w-full sm:w-auto" 
             onClick={() => setIsSchedulingModalOpen(true)}
           >
-            <FontAwesomeIcon icon={solidIcons.faCalendar} className="mr-2" size="sm" />
-            {t('studio.requestConsultation')}
+            <FontAwesomeIcon icon={solidIcons.faCalendar} className="mr-1 sm:mr-2" size="sm" />
+            <span className="truncate">
+              <span className="sm:hidden">Consultoria</span>
+              <span className="hidden sm:inline">{t('studio.requestConsultation')}</span>
+            </span>
           </Button>
           <Button 
             variant="outline" 
             size="md"
-            className="!bg-white !text-slate-800 hover:!bg-slate-50 !border-slate-200/50 px-6 py-3 rounded-2xl text-sm font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 ring-1 ring-slate-200/50" 
+            className="!bg-white !text-slate-800 hover:!bg-slate-50 !border-slate-200/50 px-4 sm:px-6 py-2 sm:py-3 rounded-2xl text-xs sm:text-sm font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 ring-1 ring-slate-200/50 w-full sm:w-auto" 
             onClick={exportPdf} 
             disabled={!proposal}
           >
-            <FontAwesomeIcon icon={solidIcons.faDownload} className="mr-2" size="sm" />
-            {t('studio.savePDF')}
+            <FontAwesomeIcon icon={solidIcons.faDownload} className="mr-1 sm:mr-2" size="sm" />
+            <span className="truncate">
+              <span className="sm:hidden">Salvar PDF</span>
+              <span className="hidden sm:inline">{t('studio.savePDF')}</span>
+            </span>
           </Button>
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Scheduling Modal */}

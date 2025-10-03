@@ -6,6 +6,7 @@ import { ArrowRight } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { generateProposal, type GeneratedProposal } from '../../services/ai';
 import { insertLead } from '../../services/supabase';
+import { sendNewLead } from '../../services/webhook';
 import ProposalPanel from './ProposalPanel';
 
 interface LeadFormProps {
@@ -138,6 +139,21 @@ const LeadForm: React.FC<LeadFormProps> = ({ variant = 'default', className = ''
         referrer,
       });
       try { localStorage.setItem('leadId', leadId); } catch {}
+
+      // Enviar para webhook do n8n
+      try {
+        await sendNewLead({
+          name: formData.name,
+          email: formData.email,
+          whatsapp: formData.whatsapp,
+          source: 'landing_page',
+          project_description: formData.projectDescription,
+        });
+        console.log('Lead enviado para n8n com sucesso');
+      } catch (webhookError) {
+        console.error('Erro ao enviar lead para n8n:', webhookError);
+        // Não bloquear o fluxo se o webhook falhar
+      }
     } catch (err) {
       console.error('Failed to save lead:', err);
       // proceed anyway to avoid blocking UX

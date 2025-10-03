@@ -38,7 +38,7 @@ const ComparisonSection: React.FC = () => {
   };
 
   return (
-    <section className="py-20 relative overflow-hidden">
+    <section className="py-20 relative overflow-hidden hidden md:block">
       {/* Background elements */}
       
       <div className="container relative">
@@ -54,47 +54,85 @@ const ComparisonSection: React.FC = () => {
           initial="hidden"
           animate={inView ? 'visible' : 'hidden'}
           variants={variants}
-          className="overflow-x-auto"
         >
-          <table className="min-w-full bg-dark-800 rounded-xl overflow-hidden">
-            <thead>
-              <tr className="text-left border-b border-dark-700">
-                <th className="p-4 md:p-6">{t('comparison.features.title')}</th>
-                <th className="p-4 md:p-6 text-center bg-gradient-to-r from-primary-900/40 to-accent-900/40">
-                  <span className="text-primary-400 font-display font-medium">{t('comparison.options.suaiden')}</span>
-                </th>
-                <th className="p-4 md:p-6 text-center">{t('comparison.options.freelancer')}</th>
-                <th className="p-4 md:p-6 text-center">{t('comparison.options.agency')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {features.map((feature, index) => (
-                <tr 
-                  key={index} 
-                  className={`border-b border-dark-700 ${index % 2 === 0 ? 'bg-dark-800' : 'bg-dark-850'}`}
-                >
-                  <td className="p-4 md:p-6">{feature}</td>
-                  <td className="p-4 md:p-6 text-center bg-gradient-to-r from-primary-900/40 to-accent-900/40">
-                    <Check size={20} className="mx-auto text-primary-400" />
-                  </td>
-                  <td className="p-4 md:p-6 text-center">
-                    {['Soluções com IA real aplicada', 'Desenvolvimento ágil', 'Código fonte proprietário'].includes(feature) ? (
-                      <Check size={20} className="mx-auto text-white/50" />
-                    ) : (
-                      <X size={20} className="mx-auto text-white/30" />
-                    )}
-                  </td>
-                  <td className="p-4 md:p-6 text-center">
-                    {['Equipe multidisciplinar', 'Código fonte proprietário', 'Experiência comprovada', 'Integração com sistemas existentes'].includes(feature) ? (
-                      <Check size={20} className="mx-auto text-white/50" />
-                    ) : (
-                      <X size={20} className="mx-auto text-white/30" />
-                    )}
-                  </td>
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="min-w-full bg-dark-800 rounded-xl overflow-hidden">
+              <thead>
+                <tr className="text-left border-b border-dark-700">
+                  <th className="p-4 md:p-6">{t('comparison.features.title')}</th>
+                  <th className="p-4 md:p-6 text-center bg-gradient-to-r from-primary-900/40 to-accent-900/40">
+                    <span className="text-primary-400 font-display font-medium">{t('comparison.options.suaiden')}</span>
+                  </th>
+                  <th className="p-4 md:p-6 text-center">{t('comparison.options.freelancer')}</th>
+                  <th className="p-4 md:p-6 text-center">{t('comparison.options.agency')}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {features.map((feature, index) => (
+                  <tr 
+                    key={index} 
+                    className={`border-b border-dark-700 ${index % 2 === 0 ? 'bg-dark-800' : 'bg-dark-850'}`}
+                  >
+                    <td className="p-4 md:p-6">{feature}</td>
+                    <td className="p-4 md:p-6 text-center bg-gradient-to-r from-primary-900/40 to-accent-900/40">
+                      <Check size={20} className="mx-auto text-primary-400" />
+                    </td>
+                    <td className="p-4 md:p-6 text-center">
+                      {['Soluções com IA real aplicada', 'Desenvolvimento ágil', 'Código fonte proprietário'].includes(feature) ? (
+                        <Check size={20} className="mx-auto text-white/50" />
+                      ) : (
+                        <X size={20} className="mx-auto text-white/30" />
+                      )}
+                    </td>
+                    <td className="p-4 md:p-6 text-center">
+                      {['Equipe multidisciplinar', 'Código fonte proprietário', 'Experiência comprovada', 'Integração com sistemas existentes'].includes(feature) ? (
+                        <Check size={20} className="mx-auto text-white/50" />
+                      ) : (
+                        <X size={20} className="mx-auto text-white/30" />
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Cards */}
+          <div className="md:hidden space-y-4">
+            {features.map((feature, index) => (
+              <div key={index} className="bg-dark-800 rounded-xl p-4 border border-dark-700">
+                <h3 className="text-white font-medium mb-4 text-sm">{feature}</h3>
+                <div className="space-y-3">
+                  {/* SUAIDEN */}
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-primary-900/40 to-accent-900/40 border border-primary-500/20">
+                    <span className="text-primary-400 font-medium text-sm">{t('comparison.options.suaiden')}</span>
+                    <Check size={18} className="text-primary-400" />
+                  </div>
+                  
+                  {/* Freelancer */}
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-dark-850 border border-dark-600">
+                    <span className="text-white/70 text-sm">{t('comparison.options.freelancer')}</span>
+                    {['Soluções com IA real aplicada', 'Desenvolvimento ágil', 'Código fonte proprietário'].includes(feature) ? (
+                      <Check size={18} className="text-white/50" />
+                    ) : (
+                      <X size={18} className="text-white/30" />
+                    )}
+                  </div>
+                  
+                  {/* Agência */}
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-dark-850 border border-dark-600">
+                    <span className="text-white/70 text-sm">{t('comparison.options.agency')}</span>
+                    {['Equipe multidisciplinar', 'Código fonte proprietário', 'Experiência comprovada', 'Integração com sistemas existentes'].includes(feature) ? (
+                      <Check size={18} className="text-white/50" />
+                    ) : (
+                      <X size={18} className="text-white/30" />
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </motion.div>
       </div>
     </section>
