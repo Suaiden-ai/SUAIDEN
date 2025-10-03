@@ -10,6 +10,35 @@ import FlowCanvas, { type NodeData, type FlowCanvasHandle } from '../components/
 import { jsPDF } from 'jspdf';
 import * as htmlToImage from 'html-to-image';
 
+// Safe UUID generator: tries crypto.randomUUID, then getRandomValues, then Math.random
+function generateSafeUUID(): string {
+  const globalCrypto = (globalThis as any)?.crypto;
+  if (globalCrypto && typeof globalCrypto.randomUUID === 'function') {
+    return globalCrypto.randomUUID();
+  }
+  if (globalCrypto && typeof globalCrypto.getRandomValues === 'function') {
+    const bytes = new Uint8Array(16);
+    globalCrypto.getRandomValues(bytes);
+    // Per RFC 4122 v4
+    bytes[6] = (bytes[6] & 0x0f) | 0x40; // version 4
+    bytes[8] = (bytes[8] & 0x3f) | 0x80; // variant 10
+    const hex = Array.from(bytes, b => b.toString(16).padStart(2, '0'));
+    return (
+      hex.slice(0, 4).join('') +
+      hex.slice(4, 6).join('') +
+      '-' +
+      hex.slice(6, 8).join('') +
+      '-' +
+      hex.slice(8, 10).join('') +
+      '-' +
+      hex.slice(10, 12).join('') +
+      '-' +
+      hex.slice(12, 16).join('')
+    );
+  }
+  return `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
 // ANOTAÇÃO: Funções puras movidas para fora do componente para evitar recriação em cada renderização.
 function calculateOptimalItemsPerNode(content: string[]): number {
   const avgLength = content.reduce((sum, item) => sum + item.length, 0) / content.length;
@@ -151,7 +180,7 @@ const ProjectStudio: React.FC = () => {
     if (existing) {
       sessionId.current = existing;
     } else {
-      const id = crypto.randomUUID();
+      const id = generateSafeUUID();
       sessionStorage.setItem('studioSessionId', id);
       sessionId.current = id;
     }

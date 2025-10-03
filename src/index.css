@@ -243,19 +243,30 @@
   cursor: pointer;
 }
 
-/* Mobile modal improvements */
-@media (max-width: 640px) {
-  /* Force consistent height for all form elements */
-  .modal-content input,
-  .modal-content select {
-    height: 28px !important;
-    min-height: 28px !important;
-    max-height: 28px !important;
-    font-size: 12px !important;
-    padding: 2px 6px !important;
-    line-height: 1.2 !important;
-    box-sizing: border-box !important;
-  }
+  /* Mobile modal improvements */
+  @media (max-width: 640px) {
+    /* Prevent zoom on all modal inputs */
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"],
+    input[type="date"],
+    input[type="time"],
+    textarea,
+    select {
+      font-size: 16px !important;
+    }
+    
+    /* Force consistent height for all form elements */
+    .modal-content input,
+    .modal-content select {
+      height: 28px !important;
+      min-height: 28px !important;
+      max-height: 28px !important;
+      font-size: 16px !important;
+      padding: 2px 6px !important;
+      line-height: 1.2 !important;
+      box-sizing: border-box !important;
+    }
   
   /* Specific overrides for date inputs */
   .modal-content input[type="date"] {
@@ -431,20 +442,9 @@
   /* Fix zoom buttons positioning on mobile */
   .flow-canvas [data-export-ignore="true"] {
     position: fixed !important;
-    bottom: 80px !important;
+    top: 80px !important;
     left: 20px !important;
-    right: 20px !important;
     z-index: 40 !important;
-    max-width: calc(100vw - 40px) !important;
-    width: auto !important;
-  }
-  
-  /* Ensure zoom buttons are not hidden behind browser UI */
-  .flow-canvas [data-export-ignore="true"] > div {
-    background: rgba(255, 255, 255, 0.95) !important;
-    backdrop-filter: blur(10px) !important;
-    border: 1px solid rgba(226, 232, 240, 0.8) !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
   }
   
   /* Ensure ChatInput is visible on mobile */
@@ -478,18 +478,9 @@
   }
   
   /* Additional mobile flow fixes */
-  .flow-container {
-    position: relative !important;
-    overflow: hidden !important;
-  }gi
+  /* keep .flow-container fullscreen fixed as defined above */
   
-  /* Make zoom buttons more mobile-friendly */
-  .flow-canvas [data-export-ignore="true"] button {
-    min-height: 44px !important;
-    min-width: 44px !important;
-    font-size: 18px !important;
-    font-weight: 600 !important;
-  }
+  /* No mobile overrides for zoom buttons - let inline styles handle it */
   
   /* Improve touch experience for flow canvas */
   .flow-canvas svg {
@@ -519,6 +510,30 @@
     padding: 0 !important;
     transform: none !important;
   }
+  
+  /* Simple mobile improvements for PDF and Consultation buttons */
+  .flow-container .absolute.bottom-20 {
+    bottom: 20px !important;
+    left: 16px !important;
+    right: 16px !important;
+    transform: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    z-index: 50 !important;
+    max-width: calc(100vw - 32px) !important;
+    width: auto !important;
+    position: fixed !important;
+  }
+  
+  .flow-container .absolute.bottom-20 button {
+    min-height: 44px !important;
+    font-size: 14px !important;
+    padding: 12px 16px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    flex: 1 !important;
+  }
 }
 
 /* Infinite scroll animation */
@@ -534,4 +549,34 @@
 .animate-scroll {
   animation: scroll 40s linear infinite;
   will-change: transform;
+}
+
+/* Prevent iOS Safari auto-zoom on inputs by ensuring 16px font-size */
+@supports (-webkit-touch-callout: none) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+  .chat-container .chat-input input {
+    font-size: 16px !important;
+  }
+  /* Modal inputs specifically */
+  .modal-content input,
+  .modal-content textarea,
+  .modal-content select {
+    font-size: 16px !important;
+  }
+  /* SchedulingModal inputs */
+  [data-modal="scheduling"] input,
+  [data-modal="scheduling"] textarea,
+  [data-modal="scheduling"] select {
+    font-size: 16px !important;
+  }
+  /* LeadForm inputs */
+  [data-modal="lead"] input,
+  [data-modal="lead"] textarea,
+  [data-modal="lead"] select {
+    font-size: 16px !important;
+  }
 }
