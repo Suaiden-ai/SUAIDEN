@@ -39,52 +39,79 @@ function generateSafeUUID(): string {
   return `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-// ANOTAÇÃO: Funções puras movidas para fora do componente para evitar recriação em cada renderização.
-function calculateOptimalItemsPerNode(content: string[]): number {
-  const avgLength = content.reduce((sum, item) => sum + item.length, 0) / content.length;
-  if (avgLength > 300) return 1;
-  if (avgLength > 150) return 2;
-  return 3;
-}
 
-function splitContentIntoNodes(content: string[], maxItemsPerNode?: number): string[][] {
-  const optimalItems = maxItemsPerNode || calculateOptimalItemsPerNode(content);
-  const result: string[][] = [];
-  let currentChunk: string[] = [];
-  
-  for (const item of content) {
-    if (item.length > 200) {
-      if (currentChunk.length > 0) {
-        result.push([...currentChunk]);
-        currentChunk = [];
-      }
-      const sentences = item.split(/[.!?]+/).filter(s => s.trim().length > 0);
-      const chunks = [];
-      let currentSentence = '';
-      for (const sentence of sentences) {
-        if ((currentSentence + sentence).length > 120) {
-          if (currentSentence.trim()) chunks.push(currentSentence.trim());
-          currentSentence = sentence.trim();
+// Calcula a faixa total de duração a partir do cronograma (min–max) respeitando unidades e idiomas
+function computeTimelineDurationRange(timeline: { duration: string }[], locale: 'pt' | 'en') {
+  if (!timeline || timeline.length === 0) return null;
+  // Se qualquer item for contínuo/ongoing, priorizar essa informação
+  const hasOngoing = timeline.some((p) => /ongoing|contínuo|continuo/i.test(p.duration));
+  if (hasOngoing) {
+    return locale === 'pt' ? 'Contínuo' : 'Ongoing';
+  }
+
+  // Conversões para dias
+  const toDays = (value: number, unit: 'day' | 'week' | 'month') => {
+    if (unit === 'day') return value;
+    if (unit === 'week') return value * 7;
+    return value * 30; // month approx
+  };
+
+  let totalMinDays = 0;
+  let totalMaxDays = 0;
+
+  const norm = (s: string) => s.replace(/[–—]/g, '-').toLowerCase();
+  const detectUnit = (s: string): 'day' | 'week' | 'month' | null => {
+    if (/(day|days|dia|dias)/i.test(s)) return 'day';
+    if (/(week|weeks|semana|semanas)/i.test(s)) return 'week';
+    if (/(month|months|mês|meses)/i.test(s)) return 'month';
+    return null;
+  };
+
+  timeline.forEach((phase) => {
+    const d = norm(phase.duration);
+    const unit = detectUnit(d) || 'week'; // default to weeks if unspecified
+    const matchRange = d.match(/(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)/);
+    const matchSingle = d.match(/(\d+(?:\.\d+)?)/);
+    let minVal = 0;
+    let maxVal = 0;
+    if (matchRange) {
+      minVal = parseFloat(matchRange[1]);
+      maxVal = parseFloat(matchRange[2]);
+    } else if (matchSingle) {
+      minVal = maxVal = parseFloat(matchSingle[1]);
         } else {
-          currentSentence += (currentSentence ? '. ' : '') + sentence.trim();
-        }
-      }
-      if (currentSentence.trim()) chunks.push(currentSentence.trim());
-      chunks.forEach(chunk => result.push([chunk]));
-    } else {
-      currentChunk.push(item);
-      if (currentChunk.length >= optimalItems) {
-        result.push([...currentChunk]);
-        currentChunk = [];
-      }
+      // sem números claros; ignorar fase na soma
+      minVal = 0;
+      maxVal = 0;
     }
-  }
-  
-  if (currentChunk.length > 0) {
-    result.push(currentChunk);
-  }
-  
-  return result;
+    totalMinDays += toDays(minVal, unit);
+    totalMaxDays += toDays(maxVal, unit);
+  });
+
+  // Escolher a unidade de saída mais legível
+  const formatRange = (minDays: number, maxDays: number) => {
+    const preferWeeks = maxDays >= 14 && maxDays < 120; // entre 2 semanas e ~4 meses
+    const preferMonths = maxDays >= 120; // ~4+ meses
+    if (preferMonths) {
+      const minM = Math.round(minDays / 30);
+      const maxM = Math.round(maxDays / 30);
+      if (locale === 'pt') return minM === maxM ? `${maxM} mês${maxM === 1 ? '' : 'es'}` : `${minM}–${maxM} meses`;
+      return minM === maxM ? `${maxM} month${maxM === 1 ? '' : 's'}` : `${minM}–${maxM} months`;
+    }
+    if (preferWeeks) {
+      const minW = Math.round(minDays / 7);
+      const maxW = Math.round(maxDays / 7);
+      if (locale === 'pt') return minW === maxW ? `${maxW} semana${maxW === 1 ? '' : 's'}` : `${minW}–${maxW} semanas`;
+      return minW === maxW ? `${maxW} week${maxW === 1 ? '' : 's'}` : `${minW}–${maxW} weeks`;
+    }
+    // dias
+    const minD = Math.round(totalMinDays);
+    const maxD = Math.round(totalMaxDays);
+    if (locale === 'pt') return minD === maxD ? `${maxD} dia${maxD === 1 ? '' : 's'}` : `${minD}–${maxD} dias`;
+    return minD === maxD ? `${maxD} day${maxD === 1 ? '' : 's'}` : `${minD}–${maxD} days`;
+  };
+
+  return formatRange(totalMinDays, totalMaxDays);
 }
 
 // ANOTAÇÃO: Componente para o indicador "Thinking..." para limpar o JSX principal.
@@ -99,60 +126,118 @@ const ThinkingIndicator: React.FC<{ t: (key: string) => string }> = ({ t }) => (
   </div>
 );
 
-// ANOTAÇÃO: Componente dedicado para renderizar o conteúdo da mensagem do assistente.
-// Isso torna o componente principal muito mais limpo e a lógica de renderização mais fácil de gerenciar.
-const AssistantMessage: React.FC<{ content: string; t: (key: string) => string }> = ({ content, t }) => {
+// Formatter simples e elegante para o chat
+const AssistantMessage: React.FC<{ content: string; isStreaming?: boolean }> = ({ content }) => {
+  const lines = content.split('\n');
+
+  const isEmpty = (s: string) => !s.trim();
+  const isNumberOnly = (s: string) => /^\s*\d+\s*$/.test(s);
+  const isBullet = (s: string) => /^(\s*[•\-*]\s+|\s*\d+\.\s+)/.test(s);
+  const isHeading = (s: string) => /:\s*$/.test(s.trim()) || (/^[A-ZÁÂÃÀÉÊÍÓÔÕÚÇ][\wÁÂÃÀÉÊÍÓÔÕÚÇ\s/&()\-]{2,}$/.test(s.trim()) && s.trim().length <= 80);
+  const durationCard = (s: string) => s.match(/^\s*((?:Ongoing|Contínuo|Continuo)|\d+(?:\s*[-–—]\s*\d+)?\s*(?:weeks?|days?|months?|semanas?|dias?|meses?))\s*:\s*(.+)$/i);
+  const fullTriplet = (s: string) => {
+    if (!s.includes('—')) return null;
+    const parts = s.split('—');
+    if (parts.length < 3) return null;
+    const [title, duration, ...rest] = parts;
+    if (!/(weeks?|days?|months?|semanas?|dias?|meses?|Ongoing|Contínuo|Continuo)/i.test(duration)) return null;
+    return { title: title.trim(), duration: duration.trim(), details: rest.join('—').trim() };
+  };
+  const titleDashDurationColon = (s: string) => s.match(/^\s*(.+?)\s*—\s*((?:Ongoing|Contínuo|Continuo)|\d+(?:\s*[-–—]\s*\d+)?\s*(?:weeks?|days?|months?|semanas?|dias?|meses?))\s*:\s*(.+)$/i);
+
+  // Para streaming, formatamos incrementalmente, mas mantendo a mesma estrutura visual.
+  // Estratégia: usamos as mesmas regras, mas devolvemos placeholders para blocos incompletos
   return (
     <div className="space-y-3">
-      {content.split('\n').map((line, idx) => {
-        const normalized = line.replace(/[–—]/g, '—');
-        const hasSeparator = normalized.includes('—');
-        const hasDuration = /(week|weeks|day|days|hour|hours|semana|semanas|dia|dias|mês|meses|hora|horas|Contínuo|Continuo|Ongoing)/i.test(normalized);
+      {lines.map((raw, idx) => {
+        const line = raw.replace(/[–—]/g, '—');
+        if (isEmpty(line) || isNumberOnly(line)) return null;
 
-        if (hasSeparator && hasDuration) {
-          const [phase, duration, ...details] = normalized.split('—');
+        // Card do tipo: Fase — Duração — Detalhes
+        const trip = fullTriplet(line);
+        if (trip) {
           return (
-            <div key={idx} className="bg-slate-800/50 rounded-lg p-3 border-l-4 border-violet-500">
+            <div key={idx} className="rounded-xl p-3 sm:p-4 bg-gradient-to-b from-slate-800/70 to-slate-800/30 border border-slate-700/60 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]">
               <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-2 h-2 bg-violet-500 rounded-full mt-2"></div>
+                <span className="mt-1 inline-block w-2 h-2 rounded-full bg-violet-400 shadow-[0_0_0_3px_rgba(139,92,246,0.2)]" />
                 <div className="flex-1">
-                  <div className="font-semibold text-violet-300 text-sm mb-1">{phase.trim()}</div>
-                  <div className="text-xs text-gray-400 mb-2 font-medium">{duration.trim()}</div>
-                  <div className="text-gray-200 text-sm">{details.join('—').trim()}</div>
+                  <div className="text-[13px] sm:text-sm text-violet-300 font-semibold mb-1 break-words whitespace-pre-wrap">{trip.title}</div>
+                  <div className="text-[11px] sm:text-xs text-white font-semibold mb-1 tracking-wide uppercase">{trip.duration}</div>
+                  {trip.details && <div className="text-gray-200 text-[13px] sm:text-sm leading-6 break-words whitespace-pre-wrap">{trip.details}</div>}
                 </div>
               </div>
             </div>
           );
         }
-        if (line.includes(t('studio.suggestedSchedule') + ':') || line.includes(t('studio.scheduleUpdated') + ':') || line.includes(t('studio.proposalUpdated'))) {
-          return <div key={idx} className="font-bold text-white text-base mb-4">{line}</div>;
-        }
-        if (line.trim().startsWith('•') || line.trim().startsWith('-') || line.trim().startsWith('*') || line.trim().startsWith('–')) {
+
+        // Card do tipo: Fase — Duração: Detalhes
+        const td = titleDashDurationColon(line);
+        if (td) {
           return (
-            <div key={idx} className="flex items-start gap-2 text-gray-200 leading-relaxed">
-              <span className="text-violet-500 mt-1">•</span>
-              <span>{line.trim().substring(1).trim()}</span>
+            <div key={idx} className="rounded-xl p-3 sm:p-4 bg-gradient-to-b from-slate-800/70 to-slate-800/30 border border-slate-700/60 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]">
+              <div className="flex items-start gap-3">
+                <span className="mt-1 inline-block w-2 h-2 rounded-full bg-violet-400 shadow-[0_0_0_3px_rgba(139,92,246,0.2)]" />
+                <div className="flex-1">
+                  <div className="text-[13px] sm:text-sm text-violet-300 font-semibold mb-1 break-words whitespace-pre-wrap">{td[1].trim()}</div>
+                  <div className="text-[11px] sm:text-xs text-white font-semibold mb-1 tracking-wide uppercase">{td[2].trim()}</div>
+                  <div className="text-gray-200 text-[13px] sm:text-sm leading-6 break-words whitespace-pre-wrap">{td[3].trim()}</div>
+                </div>
+              </div>
             </div>
           );
         }
-        if (line.includes('Benefícios:') || line.includes('Funcionalidades:') || line.includes('Tecnologias:') || line.includes('Cronograma:') || line.includes('Orçamento:')) {
-            return <div key={idx} className="font-semibold text-violet-400 text-sm mb-2 mt-4">{line}</div>;
+
+        const dur = durationCard(line);
+        if (dur) {
+          return (
+            <div key={idx} className="rounded-xl p-3 sm:p-4 bg-gradient-to-b from-slate-800/70 to-slate-800/30 border border-slate-700/60 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]">
+              <div className="flex items-start gap-3">
+                <span className="mt-1 inline-block w-2 h-2 rounded-full bg-violet-400 shadow-[0_0_0_3px_rgba(139,92,246,0.2)]" />
+                <div className="flex-1">
+                  <div className="text-[11px] sm:text-xs text-white font-semibold mb-1 break-words whitespace-pre-wrap tracking-wide uppercase">{dur[1].trim()}</div>
+                  <div className="text-gray-200 text-[13px] sm:text-sm leading-6 break-words whitespace-pre-wrap">{dur[2].trim()}</div>
+                </div>
+              </div>
+            </div>
+          );
         }
-        if (line.includes('Resumo:') || line.includes('Resumo do Projeto:') || line.includes('Visão Geral:')) {
-            return <div key={idx} className="font-semibold text-violet-400 text-sm mb-2 mt-4">{line}</div>;
+
+        if (isHeading(line)) {
+          const label = line.replace(/:\s*$/, '').trim();
+          const isProjectSummary = /^(Project Summary|Resumo do Projeto)$/i.test(label);
+          const isSuggestedSchedule = /^(Suggested Schedule|Cronograma sugerido)$/i.test(label);
+          return (
+            <div key={idx} className="pt-2">
+              <div className={`${(isProjectSummary || isSuggestedSchedule) ? 'text-white' : 'text-violet-300'} font-semibold text-sm sm:text-[15px] tracking-wide break-words whitespace-pre-wrap`}>
+                {label}
+              </div>
+              <div className="h-px mt-1 bg-gradient-to-r from-violet-500/40 via-violet-500/10 to-transparent" />
+            </div>
+          );
         }
+
+        if (isBullet(line)) {
+          const text = line.replace(/^\s*[•\-*]\s+/, '').replace(/^\s*\d+\.\s+/, '');
+          return (
+            <div key={idx} className="flex items-start gap-3 text-gray-200 leading-relaxed">
+              <span className="mt-1 inline-block w-1.5 h-1.5 rounded-full bg-violet-400" />
+              <span className="break-words whitespace-pre-wrap text-[13px] sm:text-sm">{text}</span>
+            </div>
+          );
+        }
+
         if (line.includes('**') && line.split('**').length >= 3) {
           const parts = line.split('**');
           return (
             <div key={idx} className="text-gray-200 leading-relaxed">
-              {parts.map((part, partIdx) => partIdx % 2 === 1 ? <strong key={partIdx} className="text-white font-semibold">{part}</strong> : <span key={partIdx}>{part}</span>)}
+              {parts.map((p, i) => (i % 2 === 1 ? <strong key={i} className="text-white font-semibold">{p}</strong> : <span key={i}>{p}</span>))}
             </div>
           );
         }
-        if (line.trim()) {
-          return <div key={idx} className="text-gray-200 leading-relaxed">{line}</div>;
-        }
-        return null;
+
+        return (
+          <div key={idx} className="text-gray-200 leading-7 tracking-[0.01em] text-[13px] sm:text-sm break-words whitespace-pre-wrap">{line}</div>
+        );
       })}
     </div>
   );
@@ -171,7 +256,6 @@ function useHashQuery(): URLSearchParams {
 
 const ProjectStudio: React.FC = () => {
   const { t, language, setLanguage } = useLanguage();
-  console.log('🎨 ProjectStudio loaded with language:', language);
   
   // Sync language with localStorage on mount
   useEffect(() => {
@@ -213,6 +297,19 @@ const ProjectStudio: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isSchedulingModalOpen, setIsSchedulingModalOpen] = useState(false);
   const [isGeneratingFlow, setIsGeneratingFlow] = useState(false);
+  const [showFlowTip, setShowFlowTip] = useState(() => {
+    try { return localStorage.getItem('studio_flow_tip_dismissed') !== '1'; } catch { return true; }
+  });
+  const [showFlowNavTip, setShowFlowNavTip] = useState(() => {
+    try { return localStorage.getItem('studio_flow_nav_tip_dismissed') !== '1'; } catch { return true; }
+  });
+  const [showConsultTip, setShowConsultTip] = useState(() => {
+    try { return localStorage.getItem('studio_consult_tip_dismissed') !== '1'; } catch { return true; }
+  });
+
+  const scrollToBottom = useCallback(() => {
+    try { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); } catch {}
+  }, []);
 
   // Constrói a descrição completa usando o histórico do chat e o estado atual
   const buildDescriptionFromHistory = useCallback((newUserText?: string) => {
@@ -264,6 +361,46 @@ const ProjectStudio: React.FC = () => {
       }
     }
   }, [proposal, messages]);
+
+  // Mostrar mini tutoriais no mobile quando a IA terminar de responder
+  useEffect(() => {
+    if (!messages.length) return;
+    const last = messages[messages.length - 1];
+    const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
+    if (isMobile && proposal && last.role === 'assistant' && !last.isStreaming) {
+      try {
+        const flowDismissed = localStorage.getItem('studio_flow_tip_dismissed') === '1';
+        const consultDismissed = localStorage.getItem('studio_consult_tip_dismissed') === '1';
+        // Nova prioridade: Visualizar fluxo -> Agendar consultoria
+        if (!flowDismissed) {
+          setShowFlowTip(true);
+          setShowConsultTip(false);
+        } else if (!consultDismissed) {
+          setShowConsultTip(true);
+          // Garantir que a dica fique visível no chat
+          scrollToBottom();
+        }
+      } catch {
+        if (showFlowTip) { setShowFlowTip(true); setShowConsultTip(false); }
+        else if (showConsultTip) { setShowConsultTip(true); scrollToBottom(); }
+      }
+      if (showFlowNavTip) setShowFlowNavTip(true);
+    }
+  }, [messages, proposal, showFlowTip, showFlowNavTip, showConsultTip, scrollToBottom]);
+
+  const dismissFlowTip = useCallback(() => {
+    setShowFlowTip(false);
+    try { localStorage.setItem('studio_flow_tip_dismissed', '1'); } catch {}
+  }, []);
+
+  const dismissFlowNavTip = useCallback(() => {
+    setShowFlowNavTip(false);
+    try { localStorage.setItem('studio_flow_nav_tip_dismissed', '1'); } catch {}
+  }, []);
+  const dismissConsultTip = useCallback(() => {
+    setShowConsultTip(false);
+    try { localStorage.setItem('studio_consult_tip_dismissed', '1'); } catch {}
+  }, []);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -457,21 +594,20 @@ const ProjectStudio: React.FC = () => {
     
     const colors: NodeData['color'][] = ['lime','sky','accent','primary','slate'];
     // Input sempre na primeira coluna, junto com o fluxo
-    const nodes: NodeData[] = [{ id: 'input', title: 'Input', subtitleLines: [proposal.summary], color: 'lime', x: baseX, y: baseY }];
+    const nodes: NodeData[] = [{ id: 'input', title: t('studio.inputNode'), subtitleLines: [proposal.summary], color: 'lime', x: baseX, y: baseY }];
     const edges: Array<{ from: string; to: string }> = [];
 
     let col = 0, row = 1, lastNodeId = 'input', totalNodesInCurrentColumn = 1; // col = 0 para começar na primeira coluna
     
-    proposal.sections.forEach((s, idx) => {
-      const contentChunks = splitContentIntoNodes(s.content);
-      contentChunks.forEach((chunk, chunkIdx) => {
-        const nodeId = `sec-${idx}-${chunkIdx}`;
-        // No mobile, todos os nós ficam na mesma coluna (baseX)
+    // Construir nós a partir do cronograma para espelhar exatamente o que é exibido no "Cronograma"
+    proposal.timeline.forEach((item, idx) => {
+      const nodeId = `tl-${idx}`;
         const x = isMobile ? baseX : baseX + col * stepX;
         const y = isMobile ? baseY + row * stepY : baseY + row * stepY;
-        const title = chunkIdx === 0 ? s.heading : `${s.heading} (${chunkIdx + 1})`;
+      const title = item.phase;
+      const subtitleLines = [item.duration, item.details].filter(Boolean);
         
-        nodes.push({ id: nodeId, title, subtitleLines: chunk, color: colors[idx % colors.length], x, y });
+      nodes.push({ id: nodeId, title, subtitleLines, color: colors[idx % colors.length], x, y });
         edges.push({ from: lastNodeId, to: nodeId });
         lastNodeId = nodeId;
         row++;
@@ -483,7 +619,6 @@ const ProjectStudio: React.FC = () => {
           col++; 
           totalNodesInCurrentColumn = 0;
         }
-      });
     });
     
     // Posicionamento do Output: na mesma coluna no mobile, última coluna no desktop
@@ -491,38 +626,25 @@ const ProjectStudio: React.FC = () => {
     // No mobile, fica no final da pilha vertical
     const outputY = isMobile ? baseY + row * stepY : baseY + row * stepY;
     
-    // Gerar conteúdo dinâmico para o nó Output
-    const outputContent = [];
-    
-    // Adicionar resumo se disponível
+    // Gerar conteúdo dinâmico para o nó Output (sem truncar)
+    const outputContent: string[] = [];
     if (proposal.summary) {
-      const summaryPreview = proposal.summary.length > 100 
-        ? proposal.summary.substring(0, 100) + '...' 
-        : proposal.summary;
-      outputContent.push(`Resumo: ${summaryPreview}`);
+      outputContent.push(`${t('studio.outputLabels.summary')}: ${proposal.summary}`);
     }
-    
-    // Adicionar informações do cronograma
     if (proposal.timeline && proposal.timeline.length > 0) {
-      const totalDuration = proposal.timeline.reduce((acc, phase) => {
-        const duration = phase.duration.match(/\d+/);
-        return acc + (duration ? parseInt(duration[0]) : 0);
-      }, 0);
-      outputContent.push(`Cronograma: ${proposal.timeline.length} fases`);
-      if (totalDuration > 0) {
-        outputContent.push(`Duração estimada: ${totalDuration} dias`);
+      outputContent.push(`${t('studio.outputLabels.timeline')}: ${proposal.timeline.length} ${t('studio.outputLabels.phases')}`);
+      const locale = (document.documentElement.lang || 'pt') as 'pt' | 'en';
+      const range = computeTimelineDurationRange(proposal.timeline, locale);
+      if (range) {
+        outputContent.push(`${t('studio.outputLabels.estimatedDuration')}: ${range}`);
       }
     }
-    
-    // Adicionar informações das seções
     if (proposal.sections && proposal.sections.length > 0) {
-      outputContent.push(`${proposal.sections.length} seções técnicas`);
+      outputContent.push(`${proposal.sections.length} ${t('studio.outputLabels.technicalSections')}`);
     }
+    outputContent.push(`${t('studio.outputLabels.nextSteps')}: ${t('studio.outputLabels.implementation')}`);
     
-    // Adicionar próximos passos
-    outputContent.push('Próximos passos: Implementação');
-    
-    nodes.push({ id: 'output', title: 'Output', subtitleLines: outputContent, color: 'accent', x: outputX, y: outputY });
+    nodes.push({ id: 'output', title: t('studio.outputNode'), subtitleLines: outputContent, color: 'accent', x: outputX, y: outputY });
     edges.push({ from: lastNodeId, to: 'output' });
     
     // Altura baseada no número de nós empilhados
@@ -853,10 +975,54 @@ const ProjectStudio: React.FC = () => {
             <FontAwesomeIcon icon={solidIcons.faArrowRight} size="sm" className="rotate-180" />
             <span className="font-medium text-sm">{t('studio.backToHome')}</span>
           </button>
-          <div className="md:hidden relative z-20">
-            <button onClick={() => setMobileView('flow')} disabled={!proposal} className={`text-xs px-3 py-2 rounded-lg border transition-colors relative z-20 ${proposal ? 'text-white border-slate-600 hover:bg-slate-800' : 'text-slate-500 border-slate-800 opacity-60'}`}>
+          <div className="md:hidden relative z-20 flex items-center gap-2">
+            <button id="btn-view-flow" onClick={() => { setMobileView('flow'); dismissFlowTip(); }} disabled={!proposal} className={`text-xs px-3 py-2 rounded-lg border transition-colors relative z-20 ${proposal ? 'text-white border-slate-600 hover:bg-slate-800' : 'text-slate-500 border-slate-800 opacity-60'}`}>
               {t('studio.viewFlow')}
             </button>
+            <button
+              type="button"
+              aria-label="Ajuda"
+              className="text-slate-300 hover:text-white text-xs px-2 py-2 rounded-md border border-slate-700"
+              onClick={() => {
+                if (mobileView === 'chat') {
+                  // Sequência nova: visualizar fluxo -> consultoria
+                  const flowDismissed = (() => { try { return localStorage.getItem('studio_flow_tip_dismissed') === '1'; } catch { return false; } })();
+                  const consultDismissed = (() => { try { return localStorage.getItem('studio_consult_tip_dismissed') === '1'; } catch { return false; } })();
+                  if (!flowDismissed) {
+                    setShowFlowTip(true);
+                    setShowConsultTip(false);
+                  } else if (!consultDismissed) {
+                    setShowConsultTip(true);
+                  } else {
+                    setShowFlowTip(true);
+                    setShowConsultTip(false);
+                  }
+                } else {
+                  setShowFlowNavTip(true);
+                }
+              }}
+            >?
+            </button>
+            {showFlowTip && proposal && (
+              <div className="absolute top-full mt-2 right-0 left-auto w-64 bg-slate-900/95 border border-slate-700 rounded-lg shadow-lg p-3 z-30">
+                {/* Botão próximo (ícone) */}
+                <button
+                  type="button"
+                  aria-label="Próxima dica"
+                  className="absolute top-1 right-1 w-6 h-6 rounded-full bg-violet-600/90 text-white text-xs flex items-center justify-center hover:bg-violet-600"
+                  onClick={() => { dismissFlowTip(); setShowConsultTip(true); }}
+                >
+                  <FontAwesomeIcon icon={solidIcons.faChevronRight} size="sm" />
+                </button>
+                <div className="text-[11px] text-white font-semibold mb-1">Visualize o fluxo do projeto</div>
+                <div className="text-[11px] text-slate-300">Toque em "{t('studio.viewFlow')}" para ver o cronograma gerado como etapas conectadas.</div>
+                <div className="mt-2 flex justify-end gap-2">
+                  <button onClick={() => { setMobileView('flow'); dismissFlowTip(); }} className="px-2 py-1 rounded-md bg-violet-600 text-white text-[11px]">{t('studio.viewFlow')}</button>
+                  <button onClick={dismissFlowTip} className="px-2 py-1 rounded-md border border-slate-600 text-slate-200 text-[11px]">Fechar</button>
+                </div>
+                <span className="absolute -top-2 right-3 w-3 h-3 rotate-45 bg-slate-900 border-l border-t border-slate-700" />
+              </div>
+            )}
           </div>
         </div>
         
@@ -887,65 +1053,12 @@ const ProjectStudio: React.FC = () => {
                       />
                       <span className="font-semibold text-violet-400 text-sm">{t('studio.suaidenAI')}</span>
                     </div>
-                    <div className="leading-relaxed text-gray-200">
+                    <div className="leading-relaxed text-gray-200 break-words whitespace-pre-wrap">
                         {m.content === t('studio.thinking') ? <ThinkingIndicator t={t} /> : (
                           <div>
-                            {m.isStreaming ? (
-                              <div className="space-y-3">
-                                {m.content.split('\n').map((line, idx) => {
-                                  const normalized = line.replace(/[–—]/g, '—');
-                                  const hasSeparator = normalized.includes('—');
-                                  const hasDuration = /(week|weeks|day|days|hour|hours|semana|semanas|dia|dias|mês|meses|hora|horas|Contínuo|Continuo|Ongoing)/i.test(normalized);
-
-                                  if (hasSeparator && hasDuration) {
-                                    const [phase, duration, ...details] = normalized.split('—');
-                                    return (
-                                      <div key={idx} className="bg-slate-800/50 rounded-lg p-3 border-l-4 border-violet-500">
-                                        <div className="flex items-start gap-3">
-                                          <div className="flex-shrink-0 w-2 h-2 bg-violet-500 rounded-full mt-2"></div>
-                                          <div className="flex-1">
-                                            <div className="font-semibold text-violet-300 text-sm mb-1">{phase.trim()}</div>
-                                            <div className="text-xs text-gray-400 mb-2 font-medium">{duration.trim()}</div>
-                                            <div className="text-gray-200 text-sm">{details.join('—').trim()}</div>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    );
-                                  }
-                                  if (line.includes(t('studio.suggestedSchedule') + ':') || line.includes(t('studio.scheduleUpdated') + ':') || line.includes(t('studio.proposalUpdated'))) {
-                                    return <div key={idx} className="font-bold text-white text-base mb-4">{line}</div>;
-                                  }
-                                  if (line.trim().startsWith('•') || line.trim().startsWith('-') || line.trim().startsWith('*') || line.trim().startsWith('–')) {
-                                    return (
-                                      <div key={idx} className="flex items-start gap-2 text-gray-200 leading-relaxed">
-                                        <span className="text-violet-500 mt-1">•</span>
-                                        <span>{line.trim().substring(1).trim()}</span>
-                                      </div>
-                                    );
-                                  }
-                                  if (line.includes('Benefícios:') || line.includes('Funcionalidades:') || line.includes('Tecnologias:') || line.includes('Cronograma:') || line.includes('Orçamento:')) {
-                                      return <div key={idx} className="font-semibold text-violet-400 text-sm mb-2 mt-4">{line}</div>;
-                                  }
-                                  if (line.includes('Resumo:') || line.includes('Resumo do Projeto:') || line.includes('Visão Geral:')) {
-                                      return <div key={idx} className="font-semibold text-violet-400 text-sm mb-2 mt-4">{line}</div>;
-                                  }
-                                  if (line.includes('**') && line.split('**').length >= 3) {
-                                    const parts = line.split('**');
-                                    return (
-                                      <div key={idx} className="text-gray-200 leading-relaxed">
-                                        {parts.map((part, partIdx) => partIdx % 2 === 1 ? <strong key={partIdx} className="text-white font-semibold">{part}</strong> : <span key={partIdx}>{part}</span>)}
-                                      </div>
-                                    );
-                                  }
-                                  if (line.trim()) {
-                                    return <div key={idx} className="text-gray-200 leading-relaxed">{line}</div>;
-                                  }
-                                  return null;
-                                })}
+                            <AssistantMessage content={m.content} isStreaming={m.isStreaming} />
+                            {m.isStreaming && (
                                 <span className="inline-block w-2 h-4 bg-violet-400 ml-1 animate-pulse"></span>
-                              </div>
-                            ) : (
-                              <AssistantMessage content={m.content} t={t} />
                             )}
                           </div>
                         )}
@@ -954,8 +1067,96 @@ const ProjectStudio: React.FC = () => {
                        <div className="mt-2 flex items-center gap-2 text-xs text-slate-400">
                         <button className={`p-1.5 rounded-md hover:bg-slate-800 transition-colors ${aiFeedback[i] === 'up' ? 'text-primary-400' : ''}`} aria-label={t('studio.like')} onClick={() => setAiFeedback(prev => ({ ...prev, [i]: prev[i] === 'up' ? undefined : 'up' }))}><FontAwesomeIcon icon={solidIcons.faThumbsUp} size="sm" /></button>
                         <button className={`p-1.5 rounded-md hover:bg-slate-800 transition-colors ${aiFeedback[i] === 'down' ? 'text-primary-400' : ''}`} aria-label={t('studio.dislike')} onClick={() => setAiFeedback(prev => ({ ...prev, [i]: prev[i] === 'down' ? undefined : 'down' }))}><FontAwesomeIcon icon={solidIcons.faThumbsDown} size="sm" /></button>
-                        <button className="p-1.5 rounded-md hover:bg-slate-800 transition-colors" aria-label={t('studio.copy')} onClick={() => navigator.clipboard.writeText(m.content).catch(() => {})}><FontAwesomeIcon icon={solidIcons.faCopy} size="sm" /></button>
+                        <div className="relative group inline-block">
+                          <button
+                            className="p-1.5 rounded-md hover:bg-slate-800 transition-colors"
+                            aria-label={t('studio.copy')}
+                            onClick={() => {
+                            try {
+                              const text = m.content || '';
+                              if (navigator?.clipboard?.writeText) {
+                                navigator.clipboard.writeText(text).catch(() => {
+                                  // fallback
+                                  const ta = document.createElement('textarea');
+                                  ta.value = text;
+                                  ta.style.position = 'fixed';
+                                  ta.style.left = '-9999px';
+                                  document.body.appendChild(ta);
+                                  ta.select();
+                                  try { document.execCommand('copy'); } catch {}
+                                  document.body.removeChild(ta);
+                                });
+                              } else {
+                                const ta = document.createElement('textarea');
+                                ta.value = text;
+                                ta.style.position = 'fixed';
+                                ta.style.left = '-9999px';
+                                document.body.appendChild(ta);
+                                ta.select();
+                                try { document.execCommand('copy'); } catch {}
+                                document.body.removeChild(ta);
+                                // feedback visual rápido no tooltip
+                                const el = (event?.currentTarget as HTMLElement)?.parentElement?.querySelector('.copy-tooltip');
+                                if (el) {
+                                  const original = (el as HTMLElement).getAttribute('data-original') || el.textContent || '';
+                                  (el as HTMLElement).setAttribute('data-original', original);
+                                  el.textContent = t('studio.copied') || 'Copiado!';
+                                  el.classList.add('opacity-100');
+                                  el.classList.remove('opacity-0');
+                                  setTimeout(() => {
+                                    el.textContent = original;
+                                    el.classList.remove('opacity-100');
+                                    el.classList.add('opacity-0');
+                                  }, 1200);
+                                }
+                              }
+                            } catch {}
+                            }}
+                          >
+                            <FontAwesomeIcon icon={solidIcons.faCopy} size="sm" />
+                          </button>
+                          <span className="copy-tooltip pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap text-[11px] bg-slate-800 text-white px-2 py-1 rounded-md shadow opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                            {t('studio.copy')}
+                            <span className="absolute left-1/2 -bottom-1 -translate-x-1/2 w-2 h-2 rotate-45 bg-slate-800"></span>
+                          </span>
+                        </div>
                         
+                      </div>
+                    )}
+                    {/* Botão de agendamento logo após a última mensagem da IA + dica mobile */}
+                    {m.role === 'assistant' && !m.isStreaming && i === messages.length - 1 && (
+                      <div className="mt-3 relative">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="group w-full sm:w-auto inline-flex items-center gap-2 !bg-white !text-slate-900 hover:!bg-slate-50 !border-slate-200/70 rounded-xl px-4 py-2 shadow-md hover:shadow-lg ring-1 ring-slate-200/70 transition-all duration-200 hover:scale-[1.01]"
+                          onClick={() => { setIsSchedulingModalOpen(true); dismissConsultTip(); }}
+                        >
+                          <FontAwesomeIcon icon={solidIcons.faCalendar} className="text-slate-700" size="sm" />
+                          <span>{language === 'pt' ? 'Agendar consultoria' : t('studio.requestConsultation')}</span>
+                          <FontAwesomeIcon icon={solidIcons.faChevronRight} className="text-slate-700 opacity-0 group-hover:opacity-100 transition-opacity" size="sm" />
+                        </Button>
+                        {/* Dica mobile ancorada ao botão */}
+                        {showConsultTip && (
+                          <div className="sm:hidden absolute top-full mt-2 left-0 right-0 bg-slate-900/95 border border-slate-700 rounded-lg shadow-lg p-3 z-40">
+                            {/* Voltar para dica anterior (ícone) */}
+                            <button
+                              type="button"
+                              aria-label="Dica anterior"
+                              className="absolute top-1 right-1 w-6 h-6 rounded-full bg-slate-700/90 text-white text-xs flex items-center justify-center hover:bg-slate-700"
+                              onClick={() => { dismissConsultTip(); setShowFlowTip(true); }}
+                            >
+                              <FontAwesomeIcon icon={solidIcons.faChevronLeft} size="sm" />
+                            </button>
+                            <div className="text-[11px] text-white font-semibold mb-1">Agende uma conversa de 60 minutos</div>
+                            <div className="text-[11px] text-slate-300">Toque em “{language === 'pt' ? 'Agendar consultoria' : t('studio.requestConsultation')}” para combinarmos uma call rápida e tirar dúvidas.</div>
+                            <div className="mt-2 flex justify-end gap-2">
+                              <button onClick={() => { setIsSchedulingModalOpen(true); dismissConsultTip(); }} className="px-2 py-1 rounded-md bg-violet-600 text-white text-[11px]">{language === 'pt' ? 'Agendar consultoria' : t('studio.requestConsultation')}</button>
+                              <button onClick={dismissConsultTip} className="px-2 py-1 rounded-md border border-slate-600 text-slate-200 text-[11px]">Fechar</button>
+                            </div>
+                            <span className="absolute -top-2 left-10 w-3 h-3 rotate-45 bg-slate-900 border-l border-t border-slate-700" />
+                          </div>
+                        )}
                       </div>
                     )}
                   </>
@@ -968,6 +1169,32 @@ const ProjectStudio: React.FC = () => {
           {messages.length === 0 && <div className="text-slate-500 text-xs text-center mt-8">{t('studio.startDescribing')}</div>}
           <div ref={messagesEndRef} />
         </div>
+        {/* Botão de ajuda flutuante (mobile) */}
+        <button
+          type="button"
+          aria-label="Ajuda"
+          className="sm:hidden absolute bottom-24 right-3 z-40 w-10 h-10 rounded-full bg-violet-600 text-white shadow-lg ring-1 ring-white/10 flex items-center justify-center active:scale-95"
+          onClick={() => {
+            // Sequência no chat: visualizar fluxo -> consultoria; no flow: navegação
+            if (mobileView === 'chat') {
+              const flowDismissed = (() => { try { return localStorage.getItem('studio_flow_tip_dismissed') === '1'; } catch { return false; } })();
+              const consultDismissed = (() => { try { return localStorage.getItem('studio_consult_tip_dismissed') === '1'; } catch { return false; } })();
+              if (!flowDismissed) {
+                setShowFlowTip(true);
+                setShowConsultTip(false);
+              } else if (!consultDismissed) {
+                setShowConsultTip(true);
+              } else {
+                setShowFlowTip(true);
+                setShowConsultTip(false);
+              }
+            } else {
+              setShowFlowNavTip(true);
+            }
+          }}
+        >
+          ?
+        </button>
         
         <div className="flex-shrink-0 p-6 bg-zinc-900 border-t border-zinc-800 chat-input relative z-30">
           <ChatInput value={input} onChange={setInput} onSend={send} loading={loading} placeholder={t('studio.askSuaiden')} />
@@ -1009,6 +1236,29 @@ const ProjectStudio: React.FC = () => {
               <span className="hidden sm:inline">{t('studio.requestConsultation')}</span>
             </span>
           </Button>
+          {/* Dica 3: Agendar consultoria (mobile) */}
+          {showConsultTip && (
+            <div className="absolute -top-24 left-4 right-4 sm:hidden bg-slate-900/95 border border-slate-700 rounded-lg shadow-lg p-3 z-40">
+              <div className="text-[11px] text-white font-semibold mb-1">Agende uma conversa de 60 minutos</div>
+              <div className="text-[11px] text-slate-300">Toque em “{t('studio.requestConsultation')}” para combinarmos uma call rápida e tirar dúvidas.</div>
+              <div className="mt-2 flex justify-end gap-2">
+                <button onClick={() => { setIsSchedulingModalOpen(true); dismissConsultTip(); }} className="px-2 py-1 rounded-md bg-violet-600 text-white text-[11px]">{t('studio.requestConsultation')}</button>
+                <button onClick={dismissConsultTip} className="px-2 py-1 rounded-md border border-slate-600 text-slate-200 text-[11px]">Entendi</button>
+              </div>
+              <span className="absolute -bottom-2 left-10 w-3 h-3 rotate-45 bg-slate-900 border-r border-b border-slate-700" />
+            </div>
+          )}
+          {/* Dica 2: Navegação no fluxo (mobile) */}
+          {showFlowNavTip && mobileView === 'flow' && (
+            <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[min(92vw,320px)] bg-slate-900/95 border border-slate-700 rounded-lg shadow-lg p-3 z-40">
+              <div className="text-[11px] text-white font-semibold mb-1">Navegue entre as etapas</div>
+              <div className="text-[11px] text-slate-300">Arraste para mover o canvas, dê pinça para zoom e toque nos cards para ler os detalhes.</div>
+              <div className="mt-2 flex justify-end gap-2">
+                <button onClick={dismissFlowNavTip} className="px-2 py-1 rounded-md border border-slate-600 text-slate-200 text-[11px]">Entendi</button>
+              </div>
+              <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 bg-slate-900 border-r border-b border-slate-700" />
+            </div>
+          )}
           <Button 
             variant="outline" 
             size="md"

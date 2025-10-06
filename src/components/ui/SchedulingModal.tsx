@@ -195,7 +195,7 @@ const SchedulingModal: React.FC<SchedulingModalProps> = ({ isOpen, onClose, onSc
             </label>
             <div className="relative">
               {!formData.date && (
-                <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-white/70">
+                <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-white/70 sm:hidden">
                   Selecione uma data
                 </span>
               )}

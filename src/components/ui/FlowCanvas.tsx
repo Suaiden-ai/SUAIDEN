@@ -57,7 +57,7 @@ const FlowCanvas = forwardRef<FlowCanvasHandle, FlowCanvasProps>(({ nodes, edges
   // Tamanho responsivo dos nós
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
   const NODE_W = isMobile ? 180 : 280;
-  const NODE_H = isMobile ? 90 : 140;
+  const NODE_H = isMobile ? 110 : 160;
   const pad = isMobile ? 30 : 60;
 
   const xs = localNodes.map(n => n.x);

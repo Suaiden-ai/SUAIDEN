@@ -18,12 +18,13 @@ function buildPrompt(description: string, locale: 'pt' | 'en'): string {
     `Write in ${language}.`,
     'Be concise, practical and free of hype.',
     'Stay strictly on the project scope; do not invent missing details.',
-    'If information is insufficient, make minimal safe assumptions and state them explicitly.',
+    'If information is insufficient, ask for clarifications briefly in the summary OR make minimal safe assumptions and state them explicitly as assumptions.',
     'Avoid sensitive, illegal or harmful content.',
     'Prefer bullet points and short paragraphs in strings where appropriate.',
     'Do not include markdown code fences or markdown headings; plain text only inside JSON strings.',
     'Keep timelines realistic; do not promise guaranteed results.',
     'Do not include pricing unless asked. If currency appears, use BRL format: R$ 12.345,67.',
+    'All fields MUST be short and skimmable; avoid long paragraphs.',
   ].join('\n- ');
 
   const schemaInstruction = `Return ONLY valid JSON that matches this TypeScript type:\n` +
@@ -36,9 +37,33 @@ function buildPrompt(description: string, locale: 'pt' | 'en'): string {
 `};\n` +
 `Do not include markdown code fences.`;
 
+  const formattingRules = [
+    'title: 6–12 words, specific to the project.',
+    'summary: 2–4 concise sentences. If assumptions are made, prefix with "Assumptions:".',
+    'sections: 3–6 sections. Each section content is 3–6 bullet strings, each 6–18 words.',
+    'timeline: 4–6 phases. For duration, use one of: "X–Y weeks", "X–Y days", "X–Y months", or "Ongoing"/"Contínuo". Keep units consistent with locale.',
+    'timeline.details: 1–2 short sentences; avoid marketing language.',
+    'budgetNote: one sentence; do NOT include prices unless explicitly requested.',
+  ].join('\n- ');
+
+  const localization = locale === 'pt'
+    ? [
+        'Use units in Portuguese: dias, semanas, meses, Contínuo.',
+        'Use vírgula decimal apenas quando natural ao texto; evite números desnecessários.',
+      ].join('\n- ')
+    : [
+        'Use units in English: days, weeks, months, Ongoing.',
+      ].join('\n- ');
+
   const guardrails = `Global rules:\n- ${globalRules}`;
 
-  return `${schemaInstruction}\n\n${guardrails}\n\nUser description:\n${description}`;
+  return [
+    schemaInstruction,
+    guardrails,
+    `Output formatting constraints:\n- ${formattingRules}`,
+    `Localization rules:\n- ${localization}`,
+    `User description:\n${description}`
+  ].join('\n\n');
 }
 
 

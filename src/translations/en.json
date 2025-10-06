@@ -264,6 +264,7 @@
     "like": "Like",
     "dislike": "Dislike",
     "copy": "Copy Response",
+    "copied": "Copied!",
     "startDescribing": "Start describing your project",
     "askSuaiden": "Ask Suaiden...",
     "proposedFlow": "Proposed Flow",
@@ -281,6 +282,17 @@
     "pdfSuggestedTimeline": "Suggested Timeline",
     "pdfFlowDetails": "Proposed Flow - Node Details",
     "pdfFlowConnections": "Flow Connections",
+    "inputNode": "Input",
+    "outputNode": "Output",
+    "outputLabels": {
+      "summary": "Summary",
+      "timeline": "Timeline",
+      "estimatedDuration": "Estimated duration",
+      "technicalSections": "technical sections",
+      "nextSteps": "Next steps",
+      "implementation": "Implementation",
+      "phases": "phases"
+    },
     "error": {
       "communication": "Error: Failed to communicate with AI. Check your connection and settings.",
       "updateFailed": "Error: Could not update proposal. Check AI configuration."

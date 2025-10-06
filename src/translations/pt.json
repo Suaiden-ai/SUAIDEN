@@ -264,6 +264,7 @@
     "like": "Gostei",
     "dislike": "Não gostei",
     "copy": "Copiar resposta",
+    "copied": "Copiado!",
     "startDescribing": "Comece descrevendo seu projeto",
     "askSuaiden": "Ask Suaiden...",
     "proposedFlow": "Fluxo Proposto",
@@ -281,6 +282,17 @@
     "pdfSuggestedTimeline": "Cronograma Sugerido",
     "pdfFlowDetails": "Fluxo Proposto - Detalhes dos Nós",
     "pdfFlowConnections": "Conexões do Fluxo",
+    "inputNode": "Entrada",
+    "outputNode": "Saída",
+    "outputLabels": {
+      "summary": "Resumo",
+      "timeline": "Cronograma",
+      "estimatedDuration": "Duração estimada",
+      "technicalSections": "seções técnicas",
+      "nextSteps": "Próximos passos",
+      "implementation": "Implementação",
+      "phases": "fases"
+    },
     "error": {
       "communication": "Erro: Falha na comunicação com a IA. Verifique sua conexão e configurações.",
       "updateFailed": "Erro: Não foi possível atualizar a proposta. Verifique a configuração da IA."
