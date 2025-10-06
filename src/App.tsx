@@ -5,6 +5,7 @@ import HeroSection from './components/sections/HeroSection';
 import TechnologiesSection from './components/sections/TechnologiesSection';
 import ServicesSection from './components/sections/ServicesSection';
 import CasesSection from './components/sections/CasesSection';
+import SolutionsSection from './components/sections/SolutionsSection';
 import AdvantagesSection from './components/sections/AdvantagesSection';
 import ComparisonSection from './components/sections/ComparisonSection';
 import BenefitsSection from './components/sections/BenefitsSection';
@@ -30,8 +31,9 @@ function App() {
         <main className="relative z-10">
           <HeroSection />
           <ServicesSection />
-          <CasesSection />
-          <AdvantagesSection />
+        <CasesSection />
+        <SolutionsSection />
+        <AdvantagesSection />
           <ComparisonSection />
           <BenefitsSection />
           <FaqSection />

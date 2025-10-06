@@ -101,7 +101,13 @@
     "subtitle": "Discover some of the projects we've developed and the concrete, measurable results we've helped our clients achieve.",
     "case1": {
       "title": "The Future of English",
-      "description": "We developed an innovative digital platform to facilitate document translation across multiple languages using advanced Artificial Intelligence, delivering a simple, fast, and reliable experience for individuals and businesses.",
+      "description": "Complete AI-powered translation platform that integrates multiple solutions to facilitate learning and document translation across different languages.",
+      "solutions": [
+        "Intelligent chatbot for user support",
+        "Advanced AI translation system", 
+        "Zelle payment with AI validation",
+        "CRM integration for post-sales"
+      ],
       "results": [
         "85% reduction in translation time",
         "90% increase in translation accuracy",
@@ -127,6 +133,60 @@
       ]
     },
     "viewDetails": "View details"
+  },
+  "solutions": {
+    "title": "SOLUTIONS WE'VE IMPLEMENTED",
+    "subtitle": "Discover the specific technologies and systems we've developed for our clients.",
+    "items": [
+      {
+        "title": "AI-Powered Chatbots",
+        "description": "Intelligent customer support with natural language processing and WhatsApp integration",
+        "icon": "chatbot"
+      },
+      {
+        "title": "AI Translation Systems",
+        "description": "Advanced document translation with 90%+ accuracy across multiple languages",
+        "icon": "translation"
+      },
+      {
+        "title": "Zelle Payment with AI Validation",
+        "description": "Automated payment processing with intelligent fraud detection and validation",
+        "icon": "payment"
+      },
+      {
+        "title": "CRM Integration & Automation",
+        "description": "Seamless data flow between systems with automated CRM functionalities",
+        "icon": "crm"
+      },
+      {
+        "title": "Document Validation with AI",
+        "description": "Intelligent validation of passports, bank statements, and academic records",
+        "icon": "validation"
+      },
+      {
+        "title": "WhatsApp Business Integration",
+        "description": "Complete WhatsApp Business API integration for customer communication",
+        "icon": "whatsapp"
+      },
+      {
+        "title": "AI Email Automation",
+        "description": "Automated email responses with AI-powered content generation",
+        "icon": "email"
+      },
+      {
+        "title": "AI Agent Creation",
+        "description": "Custom AI agents for specific business processes and customer interactions",
+        "icon": "agent"
+      },
+      {
+        "title": "Chatbot Training Systems",
+        "description": "Advanced training systems to improve chatbot performance and accuracy",
+        "icon": "training"
+      }
+    ],
+    "clients": {
+      "title": "Trusted by leading companies"
+    }
   },
   "advantages": {
     "title": "Why choose SUAIDEN?",

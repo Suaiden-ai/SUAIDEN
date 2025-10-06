@@ -102,6 +102,12 @@
     "case1": {
       "title": "The Future of English",
       "description": "Desenvolvemos uma plataforma digital inovadora para facilitar a tradução de documentos em diferentes idiomas com o apoio da Inteligência Artificial, oferecendo uma experiência simples, rápida e confiável para pessoas e empresas.",
+      "solutions": [
+        "Chatbot inteligente para suporte ao usuário",
+        "Sistema de tradução com IA avançada",
+        "Pagamento Zelle com validação por IA",
+        "Integração com CRM para pós-vendas"
+      ],
       "results": [
         "Redução de 85% no tempo de tradução",
         "Aumento de 90% na precisão das traduções",
@@ -127,6 +133,60 @@
       ]
     },
     "viewDetails": "Ver detalhes"
+  },
+  "solutions": {
+    "title": "SOLUÇÕES QUE IMPLEMENTAMOS",
+    "subtitle": "Conheça as tecnologias e sistemas específicos que desenvolvemos para nossos clientes.",
+    "items": [
+      {
+        "title": "Chatbots com IA",
+        "description": "Atendimento inteligente com processamento de linguagem natural e integração WhatsApp",
+        "icon": "chatbot"
+      },
+      {
+        "title": "Sistemas de Tradução com IA",
+        "description": "Tradução avançada de documentos com 90%+ de precisão em múltiplos idiomas",
+        "icon": "translation"
+      },
+      {
+        "title": "Pagamento Zelle com Validação IA",
+        "description": "Processamento automatizado de pagamentos com detecção inteligente de fraudes",
+        "icon": "payment"
+      },
+      {
+        "title": "Integração e Automação CRM",
+        "description": "Fluxo de dados perfeito entre sistemas com funcionalidades automatizadas de CRM",
+        "icon": "crm"
+      },
+      {
+        "title": "Validação de Documentos com IA",
+        "description": "Validação inteligente de passaportes, extratos bancários e históricos escolares",
+        "icon": "validation"
+      },
+      {
+        "title": "Integração WhatsApp Business",
+        "description": "Integração completa da API WhatsApp Business para comunicação com clientes",
+        "icon": "whatsapp"
+      },
+      {
+        "title": "Automação de Emails com IA",
+        "description": "Respostas automáticas de email com geração de conteúdo por IA",
+        "icon": "email"
+      },
+      {
+        "title": "Criação de Agentes IA",
+        "description": "Agentes de IA personalizados para processos específicos e interações com clientes",
+        "icon": "agent"
+      },
+      {
+        "title": "Sistemas de Treinamento de Chatbot",
+        "description": "Sistemas avançados de treinamento para melhorar performance e precisão do chatbot",
+        "icon": "training"
+      }
+    ],
+    "clients": {
+      "title": "Confiado por empresas líderes"
+    }
   },
   "advantages": {
     "title": "Por que escolher a SUAIDEN?",
