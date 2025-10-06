@@ -57,4 +57,48 @@ export async function fetchStudioState(sessionId: string) {
   return (data?.state as StudioState) || null;
 }
 
+// ====== Rate Limiting Functions ======
+export type RateLimitResult = {
+  is_blocked: boolean;
+  attempt_count: number;
+  max_attempts: number;
+  remaining_attempts: number;
+  reset_time: string;
+  time_window_hours: number;
+};
+
+export async function checkRateLimit(
+  ipAddress: string,
+  endpoint: string = 'ai_generation',
+  maxAttempts: number = 10,
+  timeWindowHours: number = 24
+): Promise<RateLimitResult> {
+  const { data, error } = await supabase.rpc('check_rate_limit', {
+    p_ip_address: ipAddress,
+    p_endpoint: endpoint,
+    p_max_attempts: maxAttempts,
+    p_time_window_hours: timeWindowHours
+  });
+  
+  if (error) throw error;
+  return data as RateLimitResult;
+}
+
+export async function logRequestAttempt(
+  ipAddress: string,
+  endpoint: string = 'ai_generation',
+  userAgent?: string,
+  referrer?: string
+): Promise<string> {
+  const { data, error } = await supabase.rpc('log_request_attempt', {
+    p_ip_address: ipAddress,
+    p_endpoint: endpoint,
+    p_user_agent: userAgent || null,
+    p_referrer: referrer || null
+  });
+  
+  if (error) throw error;
+  return data as string;
+}
+
 

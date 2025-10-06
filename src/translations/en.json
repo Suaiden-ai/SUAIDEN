@@ -355,7 +355,8 @@
     },
     "error": {
       "communication": "Error: Failed to communicate with AI. Check your connection and settings.",
-      "updateFailed": "Error: Could not update proposal. Check AI configuration."
+      "updateFailed": "Error: Could not update proposal. Check AI configuration.",
+      "rateLimitExceeded": "🚫 Daily request limit reached!\n\nYou have used all 10 free requests for today. The limit will reset in 24 hours.\n\nTo continue using now, contact us to learn about our premium plans."
     },
     "tips": {
       "prev": "Previous",

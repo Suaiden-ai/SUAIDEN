@@ -501,7 +501,19 @@ const ProjectStudio: React.FC = () => {
         
         const aiProposal = await aiGenerateProposal(initialDesc, locale);
         
-        if (aiProposal) {
+        // Verificar se é um erro de rate limiting
+        if (aiProposal && 'type' in aiProposal && aiProposal.type === 'RATE_LIMIT_EXCEEDED') {
+          console.log('🚫 Rate limit excedido na geração inicial:', aiProposal);
+          const rateLimitMessage = t('studio.error.rateLimitExceeded');
+          setMessages(prev => {
+            const newMessages = [...prev, { role: 'assistant' as const, content: '', isStreaming: true }];
+            const messageIndex = newMessages.length - 1;
+            streamTokens(rateLimitMessage, messageIndex);
+            return newMessages;
+          });
+        }
+        // Verificar se é uma proposta válida
+        else if (aiProposal && 'timeline' in aiProposal && Array.isArray(aiProposal.timeline)) {
           console.log('✅ IA gerou proposta com sucesso!', aiProposal);
           setProposal(aiProposal);
           const timelineText = aiProposal.timeline.map(t => `${t.phase} — ${t.duration}: ${t.details}`).join('\n');
@@ -515,7 +527,7 @@ const ProjectStudio: React.FC = () => {
             return newMessages;
           });
         } else {
-          console.log('❌ IA retornou null - sem proposta gerada');
+          console.log('❌ IA retornou null ou dados inválidos - sem proposta gerada');
           const errorMessage = '⚠️ Cota da API excedida. Você já usou as 50 requisições gratuitas do dia. Aguarde 24h ou configure billing no Google Cloud Console.';
           
           setMessages(prev => {
@@ -606,7 +618,20 @@ const ProjectStudio: React.FC = () => {
       
       setMessages(prev => {
           const withoutThinking = prev.slice(0, -1);
-      if (aiProposal) {
+      
+      // Verificar se é um erro de rate limiting
+      if (aiProposal && 'type' in aiProposal && aiProposal.type === 'RATE_LIMIT_EXCEEDED') {
+        console.log('🚫 Rate limit excedido no ProjectStudio:', aiProposal);
+        const rateLimitMessage = t('studio.error.rateLimitExceeded');
+        const messageIndex = withoutThinking.length;
+        const newMessages = [...withoutThinking, { role: 'assistant' as const, content: '', isStreaming: true }];
+        streamTokens(rateLimitMessage, messageIndex);
+        
+        return newMessages;
+      }
+      
+      // Verificar se é uma proposta válida
+      if (aiProposal && 'timeline' in aiProposal && Array.isArray(aiProposal.timeline)) {
         console.log('✅ IA atualizou proposta com sucesso!', aiProposal);
         setProposal(aiProposal);
         const timelineText = aiProposal.timeline.map(t => `${t.phase} — ${t.duration}: ${t.details}`).join('\n');
@@ -620,14 +645,14 @@ const ProjectStudio: React.FC = () => {
         
         return newMessages;
       } else {
-        console.log('❌ IA retornou null - sem atualização');
+        console.log('❌ IA retornou null ou dados inválidos - sem atualização');
         const errorMessage = t('studio.error.updateFailed');
         const messageIndex = withoutThinking.length;
         const newMessages = [...withoutThinking, { role: 'assistant' as const, content: '', isStreaming: true }];
         streamTokens(errorMessage, messageIndex);
         
         return newMessages;
-          }
+      }
         });
     } catch (error) {
       console.error('❌ Erro na atualização com IA:', error);
@@ -1200,7 +1225,7 @@ const ProjectStudio: React.FC = () => {
                       </div>
                     )}
                     {/* Botão de agendamento logo após a última mensagem da IA + dica mobile */}
-                    {m.role === 'assistant' && !m.isStreaming && i === messages.length - 1 && (
+                    {m.role === 'assistant' && !m.isStreaming && i === messages.length - 1 && !isGeneratingFlow && (
                       <div className="mt-3 relative">
                         <Button
                           size="sm"
@@ -1331,7 +1356,7 @@ const ProjectStudio: React.FC = () => {
             <FontAwesomeIcon icon={solidIcons.faChevronRight} size="sm" />
           </button>
         )}
-        {!loading && (
+        {!loading && !isGeneratingFlow && (
           <div className="fixed bottom-4 left-2 right-2 sm:absolute sm:bottom-6 sm:left-1/2 sm:right-auto sm:transform sm:-translate-x-1/2 z-50 flex flex-col sm:flex-row gap-2 sm:gap-3 sm:px-4 sm:w-auto max-w-[calc(100vw-1rem)] sm:max-w-none">
           <Button id="btn-flow-consult"
             variant="secondary" 

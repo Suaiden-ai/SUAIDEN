@@ -4,7 +4,7 @@ import Button from './Button';
 import Modal from './Modal';
 import { ArrowRight } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
-import { generateProposal, type GeneratedProposal } from '../../services/ai';
+import { generateProposal, type GeneratedProposal, type RateLimitError } from '../../services/ai';
 import { insertLead } from '../../services/supabase';
 import { sendNewLead } from '../../services/webhook';
 import ProposalPanel from './ProposalPanel';
@@ -15,7 +15,7 @@ interface LeadFormProps {
 }
 
 const LeadForm: React.FC<LeadFormProps> = ({ variant = 'default', className = '' }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -27,6 +27,8 @@ const LeadForm: React.FC<LeadFormProps> = ({ variant = 'default', className = ''
   const [proposal, setProposal] = useState<GeneratedProposal | null>(null);
   const [showContactForm, setShowContactForm] = useState(false);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [rateLimitError, setRateLimitError] = useState<RateLimitError | null>(null);
+  const [showRateLimitNotification, setShowRateLimitNotification] = useState(false);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   // Dynamic placeholder typing effect
   const demoPrompts = t('hero.demoPrompts', { returnObjects: true });
@@ -107,7 +109,34 @@ const LeadForm: React.FC<LeadFormProps> = ({ variant = 'default', className = ''
 
   const handleFirstStep = async (e: React.FormEvent) => {
     e.preventDefault();
-    // First open the contact modal to capture lead info before redirecting
+    
+    // Gerar proposta com IA primeiro
+    if (formData.projectDescription.trim()) {
+      setIsGenerating(true);
+      setRateLimitError(null);
+      try {
+        const locale = (document.documentElement.lang || 'pt') as 'pt' | 'en';
+        const result = await generateProposal(formData.projectDescription, locale);
+        
+        if (result && 'type' in result && result.type === 'RATE_LIMIT_EXCEEDED') {
+          setRateLimitError(result);
+          setProposal(null);
+          setIsGenerating(false);
+          setShowRateLimitNotification(true);
+          // Auto-hide notification after 5 seconds
+          setTimeout(() => setShowRateLimitNotification(false), 5000);
+          return; // Não abrir modal se houver erro de rate limit
+        } else {
+          setProposal(result as GeneratedProposal | null);
+        }
+      } catch (error) {
+        console.error('Erro ao gerar proposta:', error);
+      } finally {
+        setIsGenerating(false);
+      }
+    }
+    
+    // Abrir modal para capturar informações de contato
     setShowContactForm(true);
     setIsModalOpen(true);
   };
@@ -214,12 +243,41 @@ const LeadForm: React.FC<LeadFormProps> = ({ variant = 'default', className = ''
               onInput={() => { if (!isModalOpen) syncTextareaSize(); }}
               onFocus={() => setIsPaused(true)}
               onBlur={() => setIsPaused(false)}
-              className="block mx-auto w-full max-w-[480px] rounded-2xl bg-dark-900/70 border border-dark-700/70 text-white p-4 md:p-5 shadow-inner resize-none placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-primary-500/70 focus:border-primary-500/50 hover:border-primary-400/40 transition-colors duration-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),_0_0_0_0_rgba(154,103,255,0)] focus:shadow-[inset_0_1px_0_rgba(255,255,255,0.05),_0_0_0_4px_rgba(154,103,255,0.15)] min-h-[64px] max-h-[max(35svh,5rem)] text-[16px] leading-snug"
+              className={`block mx-auto w-full max-w-[480px] rounded-2xl bg-dark-900/70 border text-white p-4 md:p-5 shadow-inner resize-none placeholder-white/60 focus:outline-none focus:ring-2 transition-colors duration-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),_0_0_0_0_rgba(154,103,255,0)] focus:shadow-[inset_0_1px_0_rgba(255,255,255,0.05),_0_0_0_4px_rgba(154,103,255,0.15)] min-h-[64px] max-h-[max(35svh,5rem)] text-[16px] leading-snug ${
+                showRateLimitNotification 
+                  ? 'border-red-500/70 focus:ring-red-500/70 focus:border-red-500/50 hover:border-red-400/40' 
+                  : 'border-dark-700/70 focus:ring-primary-500/70 focus:border-primary-500/50 hover:border-primary-400/40'
+              }`}
               style={{ height: '64px' }}
               placeholder={formData.projectDescription.length === 0 ? '' : placeholderText}
               required
             ></textarea>
           </div>
+          
+          {/* Notificação de Rate Limit */}
+          {showRateLimitNotification && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="mx-auto max-w-[480px] bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-center"
+            >
+              <div className="flex items-center justify-center gap-2 text-red-400 text-sm">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+                <span className="font-medium">
+                  {language === 'pt' ? 'Limite diário atingido!' : 'Daily limit reached!'}
+                </span>
+              </div>
+              <p className="text-red-300 text-xs mt-1">
+                {language === 'pt' 
+                  ? 'Você já usou suas 10 requisições gratuitas. Tente novamente em 24 horas.'
+                  : 'You have used all 10 free requests. Try again in 24 hours.'
+                }
+              </p>
+            </motion.div>
+          )}
           
           <Button 
             type="submit" 
@@ -245,11 +303,18 @@ const LeadForm: React.FC<LeadFormProps> = ({ variant = 'default', className = ''
         onRefine={async (hint) => {
           if (!formData.projectDescription) return;
           setIsGenerating(true);
+          setRateLimitError(null);
           try {
             const locale = (document.documentElement.lang || 'pt') as 'pt' | 'en';
             const combined = `${formData.projectDescription}\n\nRefine: ${hint}`;
             const result = await generateProposal(combined, locale);
-            setProposal(result);
+            
+            if (result && 'type' in result && result.type === 'RATE_LIMIT_EXCEEDED') {
+              setRateLimitError(result);
+              setProposal(null);
+            } else {
+              setProposal(result as GeneratedProposal | null);
+            }
           } finally {
             setIsGenerating(false);
           }
@@ -293,6 +358,36 @@ const LeadForm: React.FC<LeadFormProps> = ({ variant = 'default', className = ''
           <div className="py-8 text-center">
             <div className="mx-auto w-10 h-10 border-4 border-primary-500/30 border-t-primary-500 rounded-full animate-spin" />
             <p className="mt-4 text-white/70 text-sm">Gerando proposta com IA...</p>
+          </div>
+        )}
+
+        {rateLimitError && (
+          <div className="py-8 text-center">
+            <div className="mx-auto w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mb-4">
+              <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-white mb-2">Limite de Requisições Excedido</h3>
+            <p className="text-white/70 text-sm mb-4">{rateLimitError.message}</p>
+            <div className="bg-dark-800/60 border border-dark-700 rounded-lg p-4 text-left">
+              <p className="text-white/80 text-sm">
+                <strong>Tentativas usadas:</strong> {rateLimitError.rateLimitInfo.attempt_count} de {rateLimitError.rateLimitInfo.max_attempts}
+              </p>
+              <p className="text-white/80 text-sm mt-1">
+                <strong>Reset em:</strong> {new Date(rateLimitError.rateLimitInfo.reset_time).toLocaleString('pt-BR')}
+              </p>
+            </div>
+            <Button 
+              onClick={() => {
+                setRateLimitError(null);
+                setIsModalOpen(false);
+              }}
+              className="mt-4"
+              variant="outline"
+            >
+              Entendi
+            </Button>
           </div>
         )}
 

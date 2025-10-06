@@ -355,7 +355,8 @@
     },
     "error": {
       "communication": "Erro: Falha na comunicação com a IA. Verifique sua conexão e configurações.",
-      "updateFailed": "Erro: Não foi possível atualizar a proposta. Verifique a configuração da IA."
+      "updateFailed": "Erro: Não foi possível atualizar a proposta. Verifique a configuração da IA.",
+      "rateLimitExceeded": "🚫 Limite diário de requisições atingido!\n\nVocê já utilizou suas 10 requisições gratuitas de hoje. O limite será resetado em 24 horas.\n\nPara continuar usando agora, entre em contato conosco para conhecer nossos planos premium."
     },
     "tips": {
       "prev": "Anterior",

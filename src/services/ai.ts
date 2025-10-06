@@ -2,6 +2,8 @@
 // Usage prefers a secure proxy endpoint via VITE_AI_PROXY_URL.
 // If not configured, falls back to a local heuristic generator.
 
+import { checkRateLimit, logRequestAttempt, type RateLimitResult } from './supabase';
+
 export type GeneratedProposal = {
   title: string;
   summary: string;
@@ -9,6 +11,26 @@ export type GeneratedProposal = {
   timeline: Array<{ phase: string; duration: string; details: string }>;
   budgetNote: string;
 };
+
+export type RateLimitError = {
+  type: 'RATE_LIMIT_EXCEEDED';
+  message: string;
+  rateLimitInfo: RateLimitResult;
+};
+
+// Função para obter o IP do usuário
+async function getUserIP(): Promise<string | null> {
+  try {
+    const res = await fetch('https://api.ipify.org?format=json');
+    if (res.ok) {
+      const data = await res.json();
+      return data.ip || null;
+    }
+  } catch (error) {
+    console.log('Erro ao obter IP:', error);
+  }
+  return null;
+}
 
 // Global guardrails applied to every prompt
 function buildPrompt(description: string, locale: 'pt' | 'en'): string {
@@ -180,7 +202,43 @@ async function generateWithGemini(description: string, locale: 'pt' | 'en'): Pro
 export async function generateProposal(
   description: string,
   locale: 'pt' | 'en' = 'pt'
-): Promise<GeneratedProposal | null> {
+): Promise<GeneratedProposal | null | RateLimitError> {
+  // Verificar rate limiting antes de processar
+  const userIP = await getUserIP();
+  
+  if (userIP) {
+    try {
+      const rateLimitInfo = await checkRateLimit(userIP, 'ai_generation', 10, 24);
+      
+      if (rateLimitInfo.is_blocked) {
+        console.log('🚫 Rate limit excedido para IP:', userIP, rateLimitInfo);
+        
+        const resetTime = new Date(rateLimitInfo.reset_time);
+        const now = new Date();
+        const hoursUntilReset = Math.ceil((resetTime.getTime() - now.getTime()) / (1000 * 60 * 60));
+        
+        return {
+          type: 'RATE_LIMIT_EXCEEDED',
+          message: `Limite de requisições excedido. Você pode tentar novamente em ${hoursUntilReset} horas.`,
+          rateLimitInfo
+        };
+      }
+      
+      // Registrar tentativa de requisição
+      await logRequestAttempt(
+        userIP, 
+        'ai_generation', 
+        navigator.userAgent, 
+        document.referrer || undefined
+      );
+      
+      console.log('✅ Rate limit OK para IP:', userIP, `(${rateLimitInfo.remaining_attempts} tentativas restantes)`);
+    } catch (error) {
+      console.log('❌ Erro ao verificar rate limit:', error);
+      // Continuar mesmo se houver erro na verificação de rate limit
+    }
+  }
+
   const proxyUrl = import.meta.env.VITE_AI_PROXY_URL as string | undefined;
 
   if (proxyUrl) {
