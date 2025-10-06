@@ -7,7 +7,7 @@
   },
   "hero": {
     "tagline": "Potencialize seu negócio com IA avançada",
-    "title": "Automatize, inove e escale com inteligência.",
+    "title": "Automatize, inove e escale com IA.",
     "description": "Conte-nos sobre seu projeto e nossa IA gera uma solução completa para você.",
     "cta": "Receber projeto inteligente gratuitamente",
     "features": {
@@ -296,6 +296,25 @@
     "error": {
       "communication": "Erro: Falha na comunicação com a IA. Verifique sua conexão e configurações.",
       "updateFailed": "Erro: Não foi possível atualizar a proposta. Verifique a configuração da IA."
+    },
+    "tips": {
+      "prev": "Anterior",
+      "next": "Próximo",
+      "close": "Fechar",
+      "flow": {
+        "navigate": {
+          "title": "Navegue entre as etapas",
+          "text": "Use o mouse para arrastar o canvas, a roda para zoom e clique nos cards para ler os detalhes."
+        },
+        "consult": {
+          "title": "Agendar consultoria",
+          "text": "Clique em \"Solicitar Consultoria\" para combinarmos uma call rápida e tirar dúvidas sobre o projeto."
+        },
+        "export": {
+          "title": "Exporte e compartilhe",
+          "text": "Use \"Salvar em PDF\" para gerar um arquivo com o cronograma e os detalhes do fluxo."
+        }
+      }
     }
   }
 }

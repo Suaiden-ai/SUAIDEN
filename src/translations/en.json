@@ -7,7 +7,7 @@
   },
   "hero": {
     "tagline": "Empower your business with advanced AI",
-    "title": "Automate, innovate, and scale with intelligence.",
+    "title": "Automate, innovate, and scale with AI.",
     "description": "Tell us about your project and our AI generates a complete solution tailored for you.",
     "cta": "Get your free AI-powered project",
     "features": {
@@ -296,6 +296,25 @@
     "error": {
       "communication": "Error: Failed to communicate with AI. Check your connection and settings.",
       "updateFailed": "Error: Could not update proposal. Check AI configuration."
+    },
+    "tips": {
+      "prev": "Previous",
+      "next": "Next",
+      "close": "Close",
+      "flow": {
+        "navigate": {
+          "title": "Navigate between stages",
+          "text": "Use the mouse to pan the canvas, the wheel to zoom, and click on cards to read details."
+        },
+        "consult": {
+          "title": "Request consultation",
+          "text": "Click \"Request Consultation\" to schedule a quick call and clarify questions about the project."
+        },
+        "export": {
+          "title": "Export and share",
+          "text": "Use \"Save PDF\" to generate a file with the timeline and flow details."
+        }
+      }
     }
   }
 }

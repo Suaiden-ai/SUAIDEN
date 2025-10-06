@@ -303,6 +303,10 @@ const ProjectStudio: React.FC = () => {
   const [showFlowNavTip, setShowFlowNavTip] = useState(() => {
     try { return localStorage.getItem('studio_flow_nav_tip_dismissed') !== '1'; } catch { return true; }
   });
+  const [flowNavTipStep, setFlowNavTipStep] = useState(0);
+  const flowCanvasContainerRef = useRef<HTMLDivElement>(null);
+  const [flowDesktopTipPos, setFlowDesktopTipPos] = useState<{ x: number; y: number } | null>(null);
+  
   const [showConsultTip, setShowConsultTip] = useState(() => {
     try { return localStorage.getItem('studio_consult_tip_dismissed') !== '1'; } catch { return true; }
   });
@@ -362,27 +366,30 @@ const ProjectStudio: React.FC = () => {
     }
   }, [proposal, messages]);
 
-  // Mostrar mini tutoriais no mobile quando a IA terminar de responder
+  // Mostrar mini tutoriais ao terminar resposta (mobile e desktop)
   useEffect(() => {
     if (!messages.length) return;
     const last = messages[messages.length - 1];
     const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
-    if (isMobile && proposal && last.role === 'assistant' && !last.isStreaming) {
+    if (proposal && last.role === 'assistant' && !last.isStreaming) {
       try {
         const flowDismissed = localStorage.getItem('studio_flow_tip_dismissed') === '1';
         const consultDismissed = localStorage.getItem('studio_consult_tip_dismissed') === '1';
-        // Nova prioridade: Visualizar fluxo -> Agendar consultoria
-        if (!flowDismissed) {
-          setShowFlowTip(true);
-          setShowConsultTip(false);
-        } else if (!consultDismissed) {
-          setShowConsultTip(true);
-          // Garantir que a dica fique visível no chat
-          scrollToBottom();
+        if (isMobile) {
+          // Mobile: Visualizar fluxo -> Consultoria
+          if (!flowDismissed) { setShowFlowTip(true); setShowConsultTip(false); }
+          else if (!consultDismissed) { setShowConsultTip(true); scrollToBottom(); }
+        } else {
+          // Desktop: não há botão Visualizar fluxo; priorize Consultoria
+          if (!consultDismissed) { setShowConsultTip(true); }
         }
       } catch {
-        if (showFlowTip) { setShowFlowTip(true); setShowConsultTip(false); }
-        else if (showConsultTip) { setShowConsultTip(true); scrollToBottom(); }
+        if (isMobile) {
+          if (showFlowTip) { setShowFlowTip(true); setShowConsultTip(false); }
+          else if (showConsultTip) { setShowConsultTip(true); scrollToBottom(); }
+        } else {
+          if (showConsultTip) { setShowConsultTip(true); }
+        }
       }
       if (showFlowNavTip) setShowFlowNavTip(true);
     }
@@ -397,6 +404,75 @@ const ProjectStudio: React.FC = () => {
     setShowFlowNavTip(false);
     try { localStorage.setItem('studio_flow_nav_tip_dismissed', '1'); } catch {}
   }, []);
+
+  const flowTips = useMemo(() => ([
+    {
+      title: t('studio.tips.flow.navigate.title'),
+      text: t('studio.tips.flow.navigate.text'),
+      anchorSelector: '#flow-help-button'
+    },
+    {
+      title: t('studio.tips.flow.consult.title'),
+      text: t('studio.tips.flow.consult.text'),
+      anchorSelector: '#btn-flow-consult',
+      offsetX: -12
+    },
+    {
+      title: t('studio.tips.flow.export.title'),
+      text: t('studio.tips.flow.export.text'),
+      anchorSelector: '#btn-save-pdf',
+      offsetX: 20
+    }
+  ]), [t]);
+
+  const computeAnchorPos = useCallback((selector: string, opts?: { offsetX?: number; offsetY?: number }) => {
+    if (!flowCanvasContainerRef.current) return null;
+    const container = flowCanvasContainerRef.current;
+    const anchor = document.querySelector(selector) as HTMLElement | null;
+    if (!anchor) return null;
+    const contRect = container.getBoundingClientRect();
+    const aRect = anchor.getBoundingClientRect();
+    const tipWidth = Math.min(420, Math.min(contRect.width * 0.6, 512));
+    const containerPadding = 12;
+    const gap = 16; // distância entre dica e botão
+    const estimatedTipHeight = 140; // aproximação suficiente p/ posicionar
+
+    // Alinhar preferencialmente pela direita do alvo, com leve recuo
+    let x = aRect.right - contRect.left - tipWidth + 8 + (opts?.offsetX ?? 0);
+    // Clamps horizontais
+    x = Math.max(containerPadding, Math.min(x, contRect.width - tipWidth - containerPadding));
+
+    // Tentar acima primeiro com gap generoso; se não couber, posicionar abaixo com gap
+    let yAbove = aRect.top - contRect.top - (estimatedTipHeight + gap);
+    let y: number;
+    if (yAbove >= containerPadding) {
+      y = yAbove + (opts?.offsetY ?? 0);
+    } else {
+      y = aRect.bottom - contRect.top + gap + (opts?.offsetY ?? 0);
+    }
+
+    // Clamp vertical dentro do container
+    y = Math.max(containerPadding, Math.min(y, contRect.height - containerPadding - 80));
+    return { x, y };
+  }, []);
+
+  const openFlowNavTip = useCallback(() => {
+    setShowFlowNavTip(true);
+    if (typeof window !== 'undefined' && window.innerWidth >= 640) {
+      const cfg = flowTips[flowNavTipStep] as any;
+      const pos = computeAnchorPos(cfg.anchorSelector, { offsetX: cfg.offsetX, offsetY: cfg.offsetY });
+      if (pos) setFlowDesktopTipPos(pos);
+    }
+  }, [computeAnchorPos, flowNavTipStep, flowTips]);
+
+  useEffect(() => {
+    if (!showFlowNavTip) return;
+    if (typeof window !== 'undefined' && window.innerWidth >= 640) {
+      const cfg = flowTips[flowNavTipStep] as any;
+      const pos = computeAnchorPos(cfg.anchorSelector, { offsetX: cfg.offsetX, offsetY: cfg.offsetY });
+      if (pos) setFlowDesktopTipPos(pos);
+    }
+  }, [showFlowNavTip, flowNavTipStep, computeAnchorPos, flowTips]);
   const dismissConsultTip = useCallback(() => {
     setShowConsultTip(false);
     try { localStorage.setItem('studio_consult_tip_dismissed', '1'); } catch {}
@@ -1129,7 +1205,7 @@ const ProjectStudio: React.FC = () => {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="group w-full sm:w-auto inline-flex items-center gap-2 !bg-white !text-slate-900 hover:!bg-slate-50 !border-slate-200/70 rounded-xl px-4 py-2 shadow-md hover:shadow-lg ring-1 ring-slate-200/70 transition-all duration-200 hover:scale-[1.01]"
+                          className="group w-full sm:w-auto inline-flex items-center gap-2 !bg-white !text-slate-900 hover:!bg-slate-50 !border-slate-200/70 rounded-xl px-4 py-2 shadow-md hover:shadow-lg ring-1 ring-slate-200/70 transition-all duration-200 hover:scale-[1.01] md:hidden"
                           onClick={() => { setIsSchedulingModalOpen(true); dismissConsultTip(); }}
                         >
                           <FontAwesomeIcon icon={solidIcons.faCalendar} className="text-slate-700" size="sm" />
@@ -1169,27 +1245,22 @@ const ProjectStudio: React.FC = () => {
           {messages.length === 0 && <div className="text-slate-500 text-xs text-center mt-8">{t('studio.startDescribing')}</div>}
           <div ref={messagesEndRef} />
         </div>
-        {/* Botão de ajuda flutuante (mobile) */}
+        {/* Botão de ajuda flutuante: somente mobile no chat (no desktop deixamos apenas no Flow) */}
         <button
           type="button"
           aria-label="Ajuda"
-          className="sm:hidden absolute bottom-24 right-3 z-40 w-10 h-10 rounded-full bg-violet-600 text-white shadow-lg ring-1 ring-white/10 flex items-center justify-center active:scale-95"
+          className="md:hidden absolute bottom-24 right-3 z-40 w-10 h-10 rounded-full bg-violet-600 text-white shadow-lg ring-1 ring-white/10 flex items-center justify-center active:scale-95"
           onClick={() => {
-            // Sequência no chat: visualizar fluxo -> consultoria; no flow: navegação
-            if (mobileView === 'chat') {
-              const flowDismissed = (() => { try { return localStorage.getItem('studio_flow_tip_dismissed') === '1'; } catch { return false; } })();
-              const consultDismissed = (() => { try { return localStorage.getItem('studio_consult_tip_dismissed') === '1'; } catch { return false; } })();
-              if (!flowDismissed) {
-                setShowFlowTip(true);
-                setShowConsultTip(false);
-              } else if (!consultDismissed) {
-                setShowConsultTip(true);
-              } else {
-                setShowFlowTip(true);
-                setShowConsultTip(false);
-              }
+            const flowDismissed = (() => { try { return localStorage.getItem('studio_flow_tip_dismissed') === '1'; } catch { return false; } })();
+            const consultDismissed = (() => { try { return localStorage.getItem('studio_consult_tip_dismissed') === '1'; } catch { return false; } })();
+            if (!flowDismissed) {
+              setShowFlowTip(true);
+              setShowConsultTip(false);
+            } else if (!consultDismissed) {
+              setShowConsultTip(true);
             } else {
-              setShowFlowNavTip(true);
+              setShowFlowTip(true);
+              setShowConsultTip(false);
             }
           }}
         >
@@ -1207,14 +1278,52 @@ const ProjectStudio: React.FC = () => {
         <div className="flex-none px-4 pt-4 pb-2 relative z-20 flow-header">
           <div className="w-full flex items-center justify-between">
             <span className="text-white/90 font-medium">{t('studio.proposedFlow')}</span>
-            <button className="md:hidden text-xs px-3 py-2 rounded-lg border border-slate-600 text-white hover:bg-slate-800 transition-colors relative z-40" onClick={() => setMobileView('chat')}>
-              {t('studio.backToChat')}
-            </button>
+            <div className="flex items-center gap-2">
+              {/* Ajuda (mobile) no header ao lado do Voltar para chat */}
+              <button id="flow-help-button" type="button" aria-label="Ajuda Fluxo" className="md:hidden w-8 h-8 rounded-full bg-violet-600 text-white shadow ring-1 ring-white/10 flex items-center justify-center active:scale-95"
+                onClick={openFlowNavTip}>?
+              </button>
+              <button className="md:hidden text-xs px-3 py-2 rounded-lg border border-slate-600 text-white hover:bg-slate-800 transition-colors relative z-40" onClick={() => setMobileView('chat')}>
+                {t('studio.backToChat')}
+              </button>
+            </div>
           </div>
         </div>
         
-        <div id="flow-canvas-container" className="flex-1 flex flex-col min-h-0 overflow-auto rounded-2xl flow-canvas">
+        <div id="flow-canvas-container" ref={flowCanvasContainerRef} className="flex-1 flex flex-col min-h-0 overflow-auto rounded-2xl flow-canvas relative">
           {flowData && <FlowCanvas ref={flowRef} nodes={flowData.nodes} edges={flowData.edges} height={flowData.height} />}
+          {/* Botão de ajuda flutuante no Flow (apenas desktop) */}
+          <button id="flow-help-button"
+            type="button"
+            aria-label="Ajuda Fluxo"
+            className="hidden sm:flex absolute bottom-6 right-4 z-40 w-10 h-10 rounded-full bg-violet-600 text-white shadow-lg ring-1 ring-white/10 items-center justify-center active:scale-95"
+            onClick={openFlowNavTip}
+          >
+            ?
+          </button>
+          {/* Tip desktop no Flow (posicionada acima do botão) */}
+          {showFlowNavTip && (
+            <div className="hidden sm:flex flex-col absolute w-[min(32rem,60vw)] max-w-[420px] bg-slate-900/95 border border-slate-700 rounded-lg shadow-lg p-3 z-40"
+                 style={flowDesktopTipPos ? { left: flowDesktopTipPos.x, top: flowDesktopTipPos.y } : { bottom: 80, right: 16 }}>
+              <div className="flex items-start justify-between gap-2">
+                <div className="text-[12px] text-white font-semibold mb-1">{flowTips[flowNavTipStep].title}</div>
+                <div className="flex items-center gap-1">
+                  {/* indicadores */}
+                  {flowTips.map((_, i) => (
+                    <span key={i} className={`w-1.5 h-1.5 rounded-full ${i === flowNavTipStep ? 'bg-violet-400' : 'bg-slate-600'} `} />
+                  ))}
+                </div>
+              </div>
+              <div className="text-[12px] text-slate-300">{flowTips[flowNavTipStep].text}</div>
+              <div className="mt-2 flex justify-between gap-2">
+                <div className="flex gap-2">
+                  <button disabled={flowNavTipStep === 0} onClick={() => setFlowNavTipStep(s => Math.max(0, s - 1))} className={`px-2 py-1 rounded-md border text-[12px] ${flowNavTipStep === 0 ? 'text-slate-500 border-slate-700 cursor-not-allowed' : 'text-slate-200 border-slate-600 hover:bg-slate-800'}`}>{t('studio.tips.prev')}</button>
+                  <button disabled={flowNavTipStep === flowTips.length - 1} onClick={() => setFlowNavTipStep(s => Math.min(flowTips.length - 1, s + 1))} className={`px-2 py-1 rounded-md border text-[12px] ${flowNavTipStep === flowTips.length - 1 ? 'text-slate-500 border-slate-700 cursor-not-allowed' : 'text-slate-200 border-slate-600 hover:bg-slate-800'}`}>{t('studio.tips.next')}</button>
+                </div>
+                <button onClick={() => { setShowFlowNavTip(false); try { localStorage.setItem('studio_flow_nav_tip_dismissed', '1'); } catch {} }} className="px-2 py-1 rounded-md border border-slate-600 text-slate-200 text-[12px]">{t('studio.tips.close')}</button>
+              </div>
+            </div>
+          )}
         </div>
         
         {isChatHidden && (
@@ -1224,7 +1333,7 @@ const ProjectStudio: React.FC = () => {
         )}
         {!loading && (
           <div className="fixed bottom-4 left-2 right-2 sm:absolute sm:bottom-6 sm:left-1/2 sm:right-auto sm:transform sm:-translate-x-1/2 z-50 flex flex-col sm:flex-row gap-2 sm:gap-3 sm:px-4 sm:w-auto max-w-[calc(100vw-1rem)] sm:max-w-none">
-          <Button 
+          <Button id="btn-flow-consult"
             variant="secondary" 
             size="md"
             className="bg-slate-800/90 hover:bg-slate-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-2xl text-xs sm:text-sm font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 border-0 ring-1 ring-slate-700/50 backdrop-blur-sm w-full sm:w-auto" 
@@ -1238,28 +1347,28 @@ const ProjectStudio: React.FC = () => {
           </Button>
           {/* Dica 3: Agendar consultoria (mobile) */}
           {showConsultTip && (
-            <div className="absolute -top-24 left-4 right-4 sm:hidden bg-slate-900/95 border border-slate-700 rounded-lg shadow-lg p-3 z-40">
+            <div className="sm:hidden absolute bottom-full mb-6 left-1/2 -translate-x-1/2 w-[min(92vw,360px)] bg-slate-900/95 border border-slate-700 rounded-lg shadow-lg p-3 z-40">
               <div className="text-[11px] text-white font-semibold mb-1">Agende uma conversa de 60 minutos</div>
               <div className="text-[11px] text-slate-300">Toque em “{t('studio.requestConsultation')}” para combinarmos uma call rápida e tirar dúvidas.</div>
               <div className="mt-2 flex justify-end gap-2">
                 <button onClick={() => { setIsSchedulingModalOpen(true); dismissConsultTip(); }} className="px-2 py-1 rounded-md bg-violet-600 text-white text-[11px]">{t('studio.requestConsultation')}</button>
                 <button onClick={dismissConsultTip} className="px-2 py-1 rounded-md border border-slate-600 text-slate-200 text-[11px]">Entendi</button>
               </div>
-              <span className="absolute -bottom-2 left-10 w-3 h-3 rotate-45 bg-slate-900 border-r border-b border-slate-700" />
+              <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 bg-slate-900 border-r border-b border-slate-700" />
             </div>
           )}
           {/* Dica 2: Navegação no fluxo (mobile) */}
           {showFlowNavTip && mobileView === 'flow' && (
-            <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[min(92vw,320px)] bg-slate-900/95 border border-slate-700 rounded-lg shadow-lg p-3 z-40">
+            <div className="sm:hidden absolute -top-24 left-1/2 -translate-x-1/2 w-[min(92vw,320px)] bg-slate-900/95 border border-slate-700 rounded-lg shadow-lg p-3 z-40">
               <div className="text-[11px] text-white font-semibold mb-1">Navegue entre as etapas</div>
               <div className="text-[11px] text-slate-300">Arraste para mover o canvas, dê pinça para zoom e toque nos cards para ler os detalhes.</div>
               <div className="mt-2 flex justify-end gap-2">
-                <button onClick={dismissFlowNavTip} className="px-2 py-1 rounded-md border border-slate-600 text-slate-200 text-[11px]">Entendi</button>
+                <button onClick={dismissFlowNavTip} className="px-2 py-1 rounded-md border border-slate-600 text-slate-200 text-[11px]">Fechar</button>
               </div>
               <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 bg-slate-900 border-r border-b border-slate-700" />
             </div>
           )}
-          <Button 
+          <Button id="btn-save-pdf"
             variant="outline" 
             size="md"
             className="!bg-white !text-slate-800 hover:!bg-slate-50 !border-slate-200/50 px-4 sm:px-6 py-2 sm:py-3 rounded-2xl text-xs sm:text-sm font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 ring-1 ring-slate-200/50 w-full sm:w-auto" 
