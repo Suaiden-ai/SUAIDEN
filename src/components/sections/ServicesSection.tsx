@@ -140,25 +140,7 @@ const ServiceCard: React.FC<{
                 ))}
               </ul>
               
-              {/* Button - Centered */}
-              <div className="flex justify-center">
-                <a 
-                  href={service.link} 
-                  className="inline-flex items-center text-sm text-white hover:text-primary-100 transition-all duration-300
-                             bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-400 hover:to-primary-500
-                             px-5 py-2.5 rounded-lg border border-primary-400/30 hover:border-primary-300/50
-                             shadow-lg shadow-primary-500/25 hover:shadow-primary-400/40
-                             font-semibold group-hover:scale-105"
-                >
-                  {t('services.automation.learnMore')}
-                  <motion.span
-                    animate={isHovered ? { x: 4 } : { x: 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <FontAwesomeIcon icon={solidIcons.faArrowRight} size="sm" className="ml-2" />
-                  </motion.span>
-                </a>
-              </div>
+              
             </div>
           </div>
         </motion.div>

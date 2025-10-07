@@ -1270,27 +1270,7 @@ const ProjectStudio: React.FC = () => {
           {messages.length === 0 && <div className="text-slate-500 text-xs text-center mt-8">{t('studio.startDescribing')}</div>}
           <div ref={messagesEndRef} />
         </div>
-        {/* Botão de ajuda flutuante: somente mobile no chat (no desktop deixamos apenas no Flow) */}
-        <button
-          type="button"
-          aria-label="Ajuda"
-          className="md:hidden absolute bottom-24 right-3 z-40 w-10 h-10 rounded-full bg-violet-600 text-white shadow-lg ring-1 ring-white/10 flex items-center justify-center active:scale-95"
-          onClick={() => {
-            const flowDismissed = (() => { try { return localStorage.getItem('studio_flow_tip_dismissed') === '1'; } catch { return false; } })();
-            const consultDismissed = (() => { try { return localStorage.getItem('studio_consult_tip_dismissed') === '1'; } catch { return false; } })();
-            if (!flowDismissed) {
-              setShowFlowTip(true);
-              setShowConsultTip(false);
-            } else if (!consultDismissed) {
-              setShowConsultTip(true);
-            } else {
-              setShowFlowTip(true);
-              setShowConsultTip(false);
-            }
-          }}
-        >
-          ?
-        </button>
+        
         
         <div className="flex-shrink-0 p-6 bg-zinc-900 border-t border-zinc-800 chat-input relative z-30">
           <ChatInput value={input} onChange={setInput} onSend={send} loading={loading} placeholder={t('studio.askSuaiden')} />
