@@ -46,15 +46,13 @@ const LeadForm: React.FC<LeadFormProps> = ({ variant = 'default', className = ''
     }
     const interval = setInterval(() => {
       setLoadingTextIndex((prev) => (prev + 1) % 4);
-    }, 2000);
+    }, 2800);
     return () => clearInterval(interval);
   }, [isGenerating]);
 
   const getLoadingText = () => {
-    const texts = language === 'pt' 
-      ? ['Processando Ideia...', 'Analisando Requisitos...', 'Estruturando Projeto...', 'Gerando Solução...']
-      : ['Processing Idea...', 'Analyzing Requirements...', 'Structuring Project...', 'Generating Solution...'];
-    return texts[loadingTextIndex];
+    const texts = t('leadForm.loadingStates', { returnObjects: true }) as string[];
+    return Array.isArray(texts) ? texts[loadingTextIndex] : texts;
   };
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -67,15 +65,13 @@ const LeadForm: React.FC<LeadFormProps> = ({ variant = 'default', className = ''
     }
     const interval = setInterval(() => {
       setSubmittingTextIndex((prev) => (prev + 1) % 3);
-    }, 1500);
+    }, 2800);
     return () => clearInterval(interval);
   }, [isSubmitting]);
 
   const getSubmittingText = () => {
-     const texts = language === 'pt'
-        ? ['Salvando informaÃ§Ãµes...', 'Preparando estÃºdio...', 'Redirecionando...']
-        : ['Saving information...', 'Preparing studio...', 'Redirecting...'];
-     return texts[submittingTextIndex];
+     const texts = t('leadForm.submittingStates', { returnObjects: true }) as string[];
+     return Array.isArray(texts) ? texts[submittingTextIndex] : texts;
   };
 
   const syncTextareaSize = () => {

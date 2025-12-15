@@ -1,4 +1,4 @@
-import { LanguageProvider } from './context/LanguageContext';
+
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import HeroSection from './components/sections/HeroSection';
@@ -14,7 +14,7 @@ import AnimatedGradientBackground from './components/ui/AnimatedGradientBackgrou
 
 function App() {
   return (
-    <LanguageProvider>
+    <>
       {/* Root layout keeps relative stacking; background is a single fixed layer for all sections */}
       <div className="relative flex flex-col min-h-screen">
         {/* Animated gradient background across the entire app */}
@@ -41,7 +41,7 @@ function App() {
         </main>
         <Footer />
       </div>
-    </LanguageProvider>
+    </>
   );
 }
 

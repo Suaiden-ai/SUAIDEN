@@ -3,6 +3,7 @@ import Button from './Button';
 import { X, RefreshCw, Download, Copy, ArrowRight, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { GeneratedProposal } from '../../services/ai';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface ProposalPanelProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ const ProposalPanel: React.FC<ProposalPanelProps> = ({
   onContinue,
   onCopyMarkdown
 }) => {
+  const { t } = useLanguage();
   const [hasCopied, setHasCopied] = useState(false);
 
   if (!isOpen) return null;
@@ -32,11 +34,11 @@ const ProposalPanel: React.FC<ProposalPanelProps> = ({
       <header className="flex items-center justify-between px-6 py-4 border-b border-dark-700 bg-dark-900/80">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-md bg-gradient-to-r from-primary-500 to-accent-500" />
-          <h3 className="text-lg font-medium">Proposta gerada por IA</h3>
+          <h3 className="text-lg font-medium">{t('proposalPanel.aiGenerated')}</h3>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => onRefine('Torne a proposta mais objetiva')}>
-            <RefreshCw size={14} className="mr-2" /> Refine
+          <Button variant="outline" size="sm" onClick={() => onRefine(t('proposalPanel.inputPlaceholder'))}>
+            <RefreshCw size={14} className="mr-2" /> {t('proposalPanel.refine')}
           </Button>
           <Button 
             variant="outline" 
@@ -60,7 +62,7 @@ const ProposalPanel: React.FC<ProposalPanelProps> = ({
                   transition={{ duration: 0.2 }}
                   className="flex items-center text-emerald-400 absolute inset-0 justify-center w-full h-full"
                 >
-                  <Check size={14} className="mr-2" /> Copiado!
+                  <Check size={14} className="mr-2" /> {t('studio.copied')}
                 </motion.span>
               ) : (
                 <motion.span
@@ -71,7 +73,7 @@ const ProposalPanel: React.FC<ProposalPanelProps> = ({
                   transition={{ duration: 0.2 }}
                   className="flex items-center w-full justify-center"
                 >
-                  <Copy size={14} className="mr-2" /> Copiar Markdown
+                  <Copy size={14} className="mr-2" /> {t('proposalPanel.copyMarkdown')}
                 </motion.span>
               )}
             </AnimatePresence>
@@ -87,7 +89,7 @@ const ProposalPanel: React.FC<ProposalPanelProps> = ({
           {isGenerating && (
             <div className="py-20 text-center">
               <div className="mx-auto w-12 h-12 border-4 border-primary-500/30 border-t-primary-500 rounded-full animate-spin" />
-              <p className="mt-4 text-white/70">Gerando proposta com IA...</p>
+              <p className="mt-4 text-white/70">{(t('leadForm.loadingStates', {returnObjects:true}) as string[])[3]}</p>
             </div>
           )}
 
@@ -102,10 +104,10 @@ const ProposalPanel: React.FC<ProposalPanelProps> = ({
                     <div className="flex items-center justify-between mb-2">
                       <h2 className="font-medium">{s.heading}</h2>
                       <button
-                        onClick={() => onRefine(`Refine somente a seção "${s.heading}"`)}
+                        onClick={() => onRefine(`${t('proposalPanel.refine')} "${s.heading}"`)}
                         className="text-xs text-primary-400 hover:text-primary-300 flex items-center gap-1"
                       >
-                        <RefreshCw size={12} /> Refine
+                        <RefreshCw size={12} /> {t('proposalPanel.refine')}
                       </button>
                     </div>
                     <ul className="list-disc list-inside space-y-1 text-white/80">
@@ -118,7 +120,7 @@ const ProposalPanel: React.FC<ProposalPanelProps> = ({
               </div>
 
               <div className="bg-dark-900/70 border border-dark-700 rounded-xl p-5 mt-6">
-                <h2 className="font-medium mb-2">Cronograma</h2>
+                <h2 className="font-medium mb-2">{t('proposalPanel.schedule')}</h2>
                 <ul className="space-y-1 text-white/80">
                   {proposal.timeline.map((t, i) => (
                     <li key={i} className="flex items-baseline gap-2">
@@ -148,7 +150,7 @@ const ProposalPanel: React.FC<ProposalPanelProps> = ({
             </Button>
           </div>
           <Button size="lg" onClick={onContinue} className="group">
-            Continuar para contato
+            {t('proposalPanel.continue')}
             <ArrowRight size={18} className="ml-2 transition-transform group-hover:translate-x-1" />
           </Button>
         </div>

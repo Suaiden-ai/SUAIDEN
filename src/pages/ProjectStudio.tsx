@@ -9,6 +9,7 @@ import { solidIcons } from '../lib/icons';
 import FlowCanvas, { type NodeData, type FlowCanvasHandle } from '../components/ui/FlowCanvas';
 import { jsPDF } from 'jspdf';
 import { useLanguage } from '../context/LanguageContext';
+import LanguageSwitcher from '../components/ui/LanguageSwitcher';
 
 // Safe UUID generator: tries crypto.randomUUID, then getRandomValues, then Math.random
 function generateSafeUUID(): string {
@@ -244,6 +245,68 @@ const AssistantMessage: React.FC<{ content: string; isStreaming?: boolean }> = (
 };
 
 
+const MessageCopyButton: React.FC<{ text: string, t: (k: string) => string }> = ({ text, t }) => {
+  const [hasCopied, setHasCopied] = useState(false);
+
+  const handleCopy = () => {
+    // Tenta usar a API Clipboard
+    if (navigator?.clipboard?.writeText) {
+       navigator.clipboard.writeText(text).catch(() => {
+          // Fallback para execCommand
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.position = 'fixed';
+          ta.style.left = '-9999px';
+          document.body.appendChild(ta);
+          ta.select();
+          try { document.execCommand('copy'); } catch {}
+          document.body.removeChild(ta);
+       });
+    } else {
+       // Fallback simples
+       const ta = document.createElement('textarea');
+       ta.value = text;
+       ta.style.position = 'fixed';
+       ta.style.left = '-9999px';
+       document.body.appendChild(ta);
+       ta.select();
+       try { document.execCommand('copy'); } catch {}
+       document.body.removeChild(ta);
+    }
+    
+    // Ativa o estado de copiado para animar
+    setHasCopied(true);
+    setTimeout(() => setHasCopied(false), 2000);
+  };
+
+  return (
+    <div className="relative group inline-block">
+      <button
+        className={`p-1.5 rounded-md hover:bg-slate-800 transition-all duration-300 relative ${hasCopied ? 'bg-emerald-500/10 text-emerald-400' : ''}`}
+        aria-label={t('studio.copy')}
+        onClick={handleCopy}
+      >
+        {/* Espaçador invisível para manter o tamanho */}
+        <FontAwesomeIcon icon={solidIcons.faCopy} size="sm" className="opacity-0 pointer-events-none" />
+
+        {/* Ícone Copiar (Estado Normal) */}
+        <div className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${hasCopied ? 'blur-sm scale-50 opacity-0' : 'blur-0 scale-100 opacity-100'}`}>
+             <FontAwesomeIcon icon={solidIcons.faCopy} size="sm" />
+        </div>
+        
+        {/* Ícone Check (Estado Copiado) */}
+        <div className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${hasCopied ? 'blur-0 scale-100 opacity-100' : 'blur-sm scale-50 opacity-0'}`}>
+             <FontAwesomeIcon icon={solidIcons.faCheck} size="sm" />
+        </div>
+      </button>
+      <span className={`copy-tooltip pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap text-[11px] bg-slate-800 text-white px-2 py-1 rounded-md shadow transition-opacity duration-300 ${hasCopied ? 'opacity-100' : 'opacity-0 sm:group-hover:opacity-100'}`}>
+        {hasCopied ? (t('studio.copied') || 'Copiado!') : t('studio.copy')}
+        <span className="absolute left-1/2 -bottom-1 -translate-x-1/2 w-2 h-2 rotate-45 bg-slate-800"></span>
+      </span>
+    </div>
+  );
+};
+
 function useHashQuery(): URLSearchParams {
   const [params, setParams] = useState(() => new URLSearchParams(location.hash.split('?')[1] || ''));
   useEffect(() => {
@@ -255,16 +318,10 @@ function useHashQuery(): URLSearchParams {
 }
 
 const ProjectStudio: React.FC = () => {
-  const { t, language, setLanguage } = useLanguage();
+  const { t } = useLanguage();
   
   // Sync language with localStorage on mount
-  useEffect(() => {
-    const savedLanguage = localStorage.getItem('language') as 'pt' | 'en';
-    if (savedLanguage && savedLanguage !== language) {
-      console.log('🔄 Syncing language from localStorage:', savedLanguage);
-      setLanguage(savedLanguage);
-    }
-  }, [language, setLanguage]);
+
   
   const params = useHashQuery();
   const flowRef = useRef<FlowCanvasHandle>(null);
@@ -528,7 +585,7 @@ const ProjectStudio: React.FC = () => {
           });
         } else {
           console.log('❌ IA retornou null ou dados inválidos - sem proposta gerada');
-          const errorMessage = '⚠️ Cota da API excedida. Você já usou as 50 requisições gratuitas do dia. Aguarde 24h ou configure billing no Google Cloud Console.';
+          const errorMessage = t('studio.error.rateLimitExceeded');
           
           setMessages(prev => {
             const newMessages = [...prev, { role: 'assistant' as const, content: '', isStreaming: true }];
@@ -766,7 +823,7 @@ const ProjectStudio: React.FC = () => {
       const originalText = document.querySelector('.flow-container .absolute.bottom-20 button.bg-accent-700')?.textContent;
       const button = document.querySelector('.flow-container .absolute.bottom-20 button.bg-accent-700') as HTMLButtonElement;
       if (button) {
-        button.textContent = t('studio.generatingPDF') || 'Gerando PDF...';
+        button.textContent = t('studio.generatingPDF');
         button.disabled = true;
       }
       
@@ -1076,7 +1133,13 @@ const ProjectStudio: React.FC = () => {
             <FontAwesomeIcon icon={solidIcons.faArrowRight} size="sm" className="rotate-180" />
             <span className="font-medium text-sm">{t('studio.backToHome')}</span>
           </button>
+          
+          <div className="hidden md:block">
+            <LanguageSwitcher />
+          </div>
+
           <div className="md:hidden relative z-20 flex items-center gap-2">
+            <LanguageSwitcher />
             <button id="btn-view-flow" onClick={() => { setMobileView('flow'); dismissFlowTip(); }} disabled={!proposal} className={`text-xs px-3 py-2 rounded-lg border transition-colors relative z-20 ${proposal ? 'text-white border-slate-600 hover:bg-slate-800' : 'text-slate-500 border-slate-800 opacity-60'}`}>
               {t('studio.viewFlow')}
             </button>
@@ -1115,11 +1178,11 @@ const ProjectStudio: React.FC = () => {
                 >
                   <FontAwesomeIcon icon={solidIcons.faChevronRight} size="sm" />
                 </button>
-                <div className="text-[11px] text-white font-semibold mb-1">Visualize o fluxo do projeto</div>
-                <div className="text-[11px] text-slate-300">Toque em "{t('studio.viewFlow')}" para ver o cronograma gerado como etapas conectadas.</div>
+                <div className="text-[11px] text-white font-semibold mb-1">{t('studio.tips.mobile.viewFlow.title')}</div>
+                <div className="text-[11px] text-slate-300">{t('studio.tips.mobile.viewFlow.text')}</div>
                 <div className="mt-2 flex justify-end gap-2">
                   <button onClick={() => { setMobileView('flow'); dismissFlowTip(); }} className="px-2 py-1 rounded-md bg-violet-600 text-white text-[11px]">{t('studio.viewFlow')}</button>
-                  <button onClick={dismissFlowTip} className="px-2 py-1 rounded-md border border-slate-600 text-slate-200 text-[11px]">Fechar</button>
+                  <button onClick={dismissFlowTip} className="px-2 py-1 rounded-md border border-slate-600 text-slate-200 text-[11px]">{t('studio.tips.close')}</button>
                 </div>
                 <span className="absolute -top-2 right-3 w-3 h-3 rotate-45 bg-slate-900 border-l border-t border-slate-700" />
               </div>
@@ -1168,59 +1231,7 @@ const ProjectStudio: React.FC = () => {
                        <div className="mt-2 flex items-center gap-2 text-xs text-slate-400">
                         <button className={`p-1.5 rounded-md hover:bg-slate-800 transition-colors ${aiFeedback[i] === 'up' ? 'text-primary-400' : ''}`} aria-label={t('studio.like')} onClick={() => setAiFeedback(prev => ({ ...prev, [i]: prev[i] === 'up' ? undefined : 'up' }))}><FontAwesomeIcon icon={solidIcons.faThumbsUp} size="sm" /></button>
                         <button className={`p-1.5 rounded-md hover:bg-slate-800 transition-colors ${aiFeedback[i] === 'down' ? 'text-primary-400' : ''}`} aria-label={t('studio.dislike')} onClick={() => setAiFeedback(prev => ({ ...prev, [i]: prev[i] === 'down' ? undefined : 'down' }))}><FontAwesomeIcon icon={solidIcons.faThumbsDown} size="sm" /></button>
-                        <div className="relative group inline-block">
-                          <button
-                            className="p-1.5 rounded-md hover:bg-slate-800 transition-colors"
-                            aria-label={t('studio.copy')}
-                            onClick={() => {
-                            try {
-                              const text = m.content || '';
-                              if (navigator?.clipboard?.writeText) {
-                                navigator.clipboard.writeText(text).catch(() => {
-                                  // fallback
-                                  const ta = document.createElement('textarea');
-                                  ta.value = text;
-                                  ta.style.position = 'fixed';
-                                  ta.style.left = '-9999px';
-                                  document.body.appendChild(ta);
-                                  ta.select();
-                                  try { document.execCommand('copy'); } catch {}
-                                  document.body.removeChild(ta);
-                                });
-                              } else {
-                                const ta = document.createElement('textarea');
-                                ta.value = text;
-                                ta.style.position = 'fixed';
-                                ta.style.left = '-9999px';
-                                document.body.appendChild(ta);
-                                ta.select();
-                                try { document.execCommand('copy'); } catch {}
-                                document.body.removeChild(ta);
-                                // feedback visual rápido no tooltip
-                                const el = (event?.currentTarget as HTMLElement)?.parentElement?.querySelector('.copy-tooltip');
-                                if (el) {
-                                  const original = (el as HTMLElement).getAttribute('data-original') || el.textContent || '';
-                                  (el as HTMLElement).setAttribute('data-original', original);
-                                  el.textContent = t('studio.copied') || 'Copiado!';
-                                  el.classList.add('opacity-100');
-                                  el.classList.remove('opacity-0');
-                                  setTimeout(() => {
-                                    el.textContent = original;
-                                    el.classList.remove('opacity-100');
-                                    el.classList.add('opacity-0');
-                                  }, 1200);
-                                }
-                              }
-                            } catch {}
-                            }}
-                          >
-                            <FontAwesomeIcon icon={solidIcons.faCopy} size="sm" />
-                          </button>
-                          <span className="copy-tooltip pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap text-[11px] bg-slate-800 text-white px-2 py-1 rounded-md shadow opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                            {t('studio.copy')}
-                            <span className="absolute left-1/2 -bottom-1 -translate-x-1/2 w-2 h-2 rotate-45 bg-slate-800"></span>
-                          </span>
-                        </div>
+                        <MessageCopyButton text={m.content} t={t} />
                         
                       </div>
                     )}
@@ -1234,7 +1245,7 @@ const ProjectStudio: React.FC = () => {
                           onClick={() => { setIsSchedulingModalOpen(true); dismissConsultTip(); }}
                         >
                           <FontAwesomeIcon icon={solidIcons.faCalendar} className="text-slate-700" size="sm" />
-                          <span>{language === 'pt' ? 'Agendar consultoria' : t('studio.requestConsultation')}</span>
+                          <span>{t('studio.requestConsultation')}</span>
                           <FontAwesomeIcon icon={solidIcons.faChevronRight} className="text-slate-700 opacity-0 group-hover:opacity-100 transition-opacity" size="sm" />
                         </Button>
                         {/* Dica mobile ancorada ao botão */}
@@ -1249,11 +1260,11 @@ const ProjectStudio: React.FC = () => {
                             >
                               <FontAwesomeIcon icon={solidIcons.faChevronLeft} size="sm" />
                             </button>
-                            <div className="text-[11px] text-white font-semibold mb-1">Agende uma conversa de 60 minutos</div>
-                            <div className="text-[11px] text-slate-300">Toque em “{language === 'pt' ? 'Agendar consultoria' : t('studio.requestConsultation')}” para combinarmos uma call rápida e tirar dúvidas.</div>
+                            <div className="text-[11px] text-white font-semibold mb-1">{t('studio.tips.mobile.consult.title')}</div>
+                            <div className="text-[11px] text-slate-300">{t('studio.tips.mobile.consult.text')}</div>
                             <div className="mt-2 flex justify-end gap-2">
-                              <button onClick={() => { setIsSchedulingModalOpen(true); dismissConsultTip(); }} className="px-2 py-1 rounded-md bg-violet-600 text-white text-[11px]">{language === 'pt' ? 'Agendar consultoria' : t('studio.requestConsultation')}</button>
-                              <button onClick={dismissConsultTip} className="px-2 py-1 rounded-md border border-slate-600 text-slate-200 text-[11px]">Fechar</button>
+                              <button onClick={() => { setIsSchedulingModalOpen(true); dismissConsultTip(); }} className="px-2 py-1 rounded-md bg-violet-600 text-white text-[11px]">{t('studio.requestConsultation')}</button>
+                              <button onClick={dismissConsultTip} className="px-2 py-1 rounded-md border border-slate-600 text-slate-200 text-[11px]">{t('studio.tips.close')}</button>
                             </div>
                             <span className="absolute -top-2 left-10 w-3 h-3 rotate-45 bg-slate-900 border-l border-t border-slate-700" />
                           </div>
@@ -1346,18 +1357,18 @@ const ProjectStudio: React.FC = () => {
           >
             <FontAwesomeIcon icon={solidIcons.faCalendar} className="mr-1 sm:mr-2" size="sm" />
             <span className="truncate">
-              <span className="sm:hidden">Consultoria</span>
+              <span className="sm:hidden">{t('studio.consultationShort')}</span>
               <span className="hidden sm:inline">{t('studio.requestConsultation')}</span>
             </span>
           </Button>
           {/* Dica 3: Agendar consultoria (mobile) */}
           {showConsultTip && (
             <div className="sm:hidden absolute bottom-full mb-6 left-1/2 -translate-x-1/2 w-[min(92vw,360px)] bg-slate-900/95 border border-slate-700 rounded-lg shadow-lg p-3 z-40">
-              <div className="text-[11px] text-white font-semibold mb-1">Agende uma conversa de 60 minutos</div>
-              <div className="text-[11px] text-slate-300">Toque em “{t('studio.requestConsultation')}” para combinarmos uma call rápida e tirar dúvidas.</div>
+              <div className="text-[11px] text-white font-semibold mb-1">{t('studio.tips.mobile.consult.title')}</div>
+              <div className="text-[11px] text-slate-300">{t('studio.tips.mobile.consult.text')}</div>
               <div className="mt-2 flex justify-end gap-2">
                 <button onClick={() => { setIsSchedulingModalOpen(true); dismissConsultTip(); }} className="px-2 py-1 rounded-md bg-violet-600 text-white text-[11px]">{t('studio.requestConsultation')}</button>
-                <button onClick={dismissConsultTip} className="px-2 py-1 rounded-md border border-slate-600 text-slate-200 text-[11px]">Entendi</button>
+                <button onClick={dismissConsultTip} className="px-2 py-1 rounded-md border border-slate-600 text-slate-200 text-[11px]">{t('studio.tips.understand')}</button>
               </div>
               <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 bg-slate-900 border-r border-b border-slate-700" />
             </div>
@@ -1365,10 +1376,10 @@ const ProjectStudio: React.FC = () => {
           {/* Dica 2: Navegação no fluxo (mobile) */}
           {showFlowNavTip && mobileView === 'flow' && (
             <div className="sm:hidden absolute -top-24 left-1/2 -translate-x-1/2 w-[min(92vw,320px)] bg-slate-900/95 border border-slate-700 rounded-lg shadow-lg p-3 z-40">
-              <div className="text-[11px] text-white font-semibold mb-1">Navegue entre as etapas</div>
-              <div className="text-[11px] text-slate-300">Arraste para mover o canvas, dê pinça para zoom e toque nos cards para ler os detalhes.</div>
+              <div className="text-[11px] text-white font-semibold mb-1">{t('studio.tips.mobile.navigate.title')}</div>
+              <div className="text-[11px] text-slate-300">{t('studio.tips.mobile.navigate.text')}</div>
               <div className="mt-2 flex justify-end gap-2">
-                <button onClick={dismissFlowNavTip} className="px-2 py-1 rounded-md border border-slate-600 text-slate-200 text-[11px]">Fechar</button>
+                <button onClick={dismissFlowNavTip} className="px-2 py-1 rounded-md border border-slate-600 text-slate-200 text-[11px]">{t('studio.tips.close')}</button>
               </div>
               <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 bg-slate-900 border-r border-b border-slate-700" />
             </div>
@@ -1382,7 +1393,7 @@ const ProjectStudio: React.FC = () => {
           >
             <FontAwesomeIcon icon={solidIcons.faDownload} className="mr-1 sm:mr-2" size="sm" />
             <span className="truncate">
-              <span className="sm:hidden">Salvar PDF</span>
+              <span className="sm:hidden">{t('studio.savePDF')}</span>
               <span className="hidden sm:inline">{t('studio.savePDF')}</span>
             </span>
           </Button>

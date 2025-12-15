@@ -104,7 +104,7 @@
       "description": "Complete AI-powered translation platform that integrates multiple solutions to facilitate learning and document translation across different languages.",
       "solutions": [
         "Intelligent chatbot for user support",
-        "Advanced AI translation system", 
+        "Advanced AI translation system",
         "Zelle payment with AI validation",
         "CRM integration for post-sales"
       ],
@@ -312,6 +312,29 @@
     "en": "English",
     "pt": "Portuguese"
   },
+  "leadForm": {
+    "loadingStates": [
+      "Processing Idea...",
+      "Analyzing Requirements...",
+      "Structuring Project...",
+      "Generating Solution..."
+    ],
+    "submittingStates": [
+      "Saving information...",
+      "Preparing studio...",
+      "Redirecting..."
+    ]
+  },
+  "proposalPanel": {
+    "aiGenerated": "AI Generated Proposal",
+    "refine": "Refine your proposal",
+    "copyMarkdown": "Copy Markdown",
+    "continue": "Proceed to contact",
+    "schedule": "Timeline",
+    "phase": "Phase",
+    "duration": "Duration",
+    "inputPlaceholder": "Type an instruction to refine the proposal..."
+  },
   "studio": {
     "backToHome": "Back to Home",
     "viewFlow": "View Flow",
@@ -330,6 +353,7 @@
     "proposedFlow": "Proposed Flow",
     "backToChat": "Back to Chat",
     "savePDF": "Save PDF",
+    "consultationShort": "Consultation",
     "requestConsultation": "Request Consultation",
     "suggestedSchedule": "Suggested Schedule",
     "scheduleUpdated": "Schedule Updated",
@@ -375,7 +399,22 @@
           "title": "Export and share",
           "text": "Use \"Save PDF\" to generate a file with the timeline and flow details."
         }
-      }
+      },
+      "mobile": {
+        "viewFlow": {
+          "title": "View the project flow",
+          "text": "Tap \"View Flow\" to see the generated timeline as connected stages."
+        },
+        "consult": {
+          "title": "Schedule a 60-minute chat",
+          "text": "Tap \"Request Consultation\" to schedule a quick call and clarify questions."
+        },
+        "navigate": {
+          "title": "Navigate between stages",
+          "text": "Drag to pan the canvas, pinch to zoom, and tap cards to read details."
+        }
+      },
+      "understand": "Got it"
     }
   }
 }

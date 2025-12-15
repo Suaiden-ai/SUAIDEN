@@ -36,9 +36,12 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
 
   // Update localStorage when language changes
   useEffect(() => {
-    console.log('🌐 Language changed to:', language);
-    localStorage.setItem('language', language);
-    document.documentElement.lang = language;
+    const currentStored = localStorage.getItem('language');
+    if (currentStored !== language) {
+        console.log('🌐 Language changed to:', language);
+        localStorage.setItem('language', language);
+        document.documentElement.lang = language;
+    }
   }, [language]);
 
   const translations = {

@@ -313,6 +313,29 @@
     "en": "Inglês",
     "pt": "Português"
   },
+  "leadForm": {
+    "loadingStates": [
+      "Processando Ideia...",
+      "Analisando Requisitos...",
+      "Estruturando Projeto...",
+      "Gerando Solução..."
+    ],
+    "submittingStates": [
+      "Salvando informações...",
+      "Preparando estúdio...",
+      "Redirecionando..."
+    ]
+  },
+  "proposalPanel": {
+    "aiGenerated": "Proposta gerada por IA",
+    "refine": "Refine sua proposta",
+    "copyMarkdown": "Copiar Markdown",
+    "continue": "Avançar para contato",
+    "schedule": "Cronograma",
+    "phase": "Fase",
+    "duration": "Duração",
+    "inputPlaceholder": "Digite uma instrução para refinar a proposta..."
+  },
   "studio": {
     "backToHome": "Voltar para Página inicial",
     "viewFlow": "Visualizar fluxo",
@@ -327,10 +350,11 @@
     "copy": "Copiar resposta",
     "copied": "Copiado!",
     "startDescribing": "Comece descrevendo seu projeto",
-    "askSuaiden": "Ask Suaiden...",
+    "askSuaiden": "Pergunte à Suaiden...",
     "proposedFlow": "Fluxo Proposto",
     "backToChat": "Voltar para chat",
     "savePDF": "Salvar em PDF",
+    "consultationShort": "Consultoria",
     "requestConsultation": "Solicitar Consultoria",
     "suggestedSchedule": "Cronograma sugerido",
     "scheduleUpdated": "Cronograma atualizado",
@@ -376,7 +400,22 @@
           "title": "Exporte e compartilhe",
           "text": "Use \"Salvar em PDF\" para gerar um arquivo com o cronograma e os detalhes do fluxo."
         }
-      }
+      },
+      "mobile": {
+        "viewFlow": {
+          "title": "Visualize o fluxo do projeto",
+          "text": "Toque em \"Visualizar fluxo\" para ver o cronograma gerado como etapas conectadas."
+        },
+        "consult": {
+          "title": "Agendar consultoria",
+          "text": "Toque em \"Solicitar Consultoria\" para combinarmos uma call rápida e tirar dúvidas."
+        },
+        "navigate": {
+          "title": "Navegue entre as etapas",
+          "text": "Arraste para mover o canvas, dê pinça para zoom e toque nos cards para ler os detalhes."
+        }
+      },
+      "understand": "Entendi"
     }
   }
 }
