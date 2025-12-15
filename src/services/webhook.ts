@@ -35,12 +35,16 @@ export interface NewLeadPayload {
  * The final URL is `${VITE_N8N_URL}agendar-consultoria`.
  */
 export async function sendConsultationSchedule(payload: ConsultationSchedulePayload): Promise<Response> {
-  const baseUrl = import.meta.env.VITE_N8N_URL as string | undefined;
+  // Em desenvolvimento, usar o proxy para evitar CORS
+  const baseUrl = import.meta.env.DEV
+    ? '/n8n-webhook'
+    : import.meta.env.VITE_N8N_URL as string | undefined;
+
   if (!baseUrl) {
     throw new Error('VITE_N8N_URL não configurado');
   }
 
-  const url = `${baseUrl.replace(/\/?$/, '/') }agendar-consultoria`;
+  const url = `${baseUrl.replace(/\/?$/, '/')}agendar-consultoria`;
 
   const res = await fetch(url, {
     method: 'POST',
@@ -152,15 +156,15 @@ function getReferrerInfo() {
 
   const referrer = document.referrer;
   const hasReferrer = referrer && referrer.length > 0;
-  
+
   let referrerDomain = 'unknown';
   let referrerSource = 'none';
-  
+
   if (hasReferrer) {
     try {
       const referrerUrl = new URL(referrer);
       referrerDomain = referrerUrl.hostname;
-      
+
       // Classificar o tipo de referrer
       if (referrerDomain.includes('google')) {
         referrerSource = 'google';
@@ -197,7 +201,11 @@ function getReferrerInfo() {
 }
 
 export async function sendNewLead(payload: NewLeadPayload): Promise<Response> {
-  const baseUrl = import.meta.env.VITE_N8N_URL as string | undefined;
+  // Em desenvolvimento, usar o proxy para evitar CORS
+  const baseUrl = import.meta.env.DEV
+    ? '/n8n-webhook'
+    : import.meta.env.VITE_N8N_URL as string | undefined;
+
   if (!baseUrl) {
     throw new Error('VITE_N8N_URL não configurado');
   }
