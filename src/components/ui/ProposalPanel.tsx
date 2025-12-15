@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Button from './Button';
-import { X, RefreshCw, Download, Copy, ArrowRight } from 'lucide-react';
+import { X, RefreshCw, Download, Copy, ArrowRight, Check } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { GeneratedProposal } from '../../services/ai';
 
 interface ProposalPanelProps {
@@ -22,6 +23,8 @@ const ProposalPanel: React.FC<ProposalPanelProps> = ({
   onContinue,
   onCopyMarkdown
 }) => {
+  const [hasCopied, setHasCopied] = useState(false);
+
   if (!isOpen) return null;
 
   return (
@@ -35,8 +38,43 @@ const ProposalPanel: React.FC<ProposalPanelProps> = ({
           <Button variant="outline" size="sm" onClick={() => onRefine('Torne a proposta mais objetiva')}>
             <RefreshCw size={14} className="mr-2" /> Refine
           </Button>
-          <Button variant="outline" size="sm" onClick={onCopyMarkdown}>
-            <Copy size={14} className="mr-2" /> Copiar Markdown
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => {
+              onCopyMarkdown?.();
+              setHasCopied(true);
+              setTimeout(() => setHasCopied(false), 2000);
+            }}
+            className={`min-w-[140px] overflow-hidden relative transition-all duration-300 ${
+              hasCopied ? 'bg-emerald-500/10 border-emerald-500/50 hover:bg-emerald-500/20 hover:border-emerald-500/60' : ''
+            }`}
+          >
+            <AnimatePresence mode="wait">
+              {hasCopied ? (
+                <motion.span
+                  key="copied"
+                  initial={{ opacity: 0, filter: 'blur(8px)' }}
+                  animate={{ opacity: 1, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, filter: 'blur(8px)' }}
+                  transition={{ duration: 0.2 }}
+                  className="flex items-center text-emerald-400 absolute inset-0 justify-center w-full h-full"
+                >
+                  <Check size={14} className="mr-2" /> Copiado!
+                </motion.span>
+              ) : (
+                <motion.span
+                  key="copy"
+                  initial={{ opacity: 0, filter: 'blur(8px)' }}
+                  animate={{ opacity: 1, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, filter: 'blur(8px)' }}
+                  transition={{ duration: 0.2 }}
+                  className="flex items-center w-full justify-center"
+                >
+                  <Copy size={14} className="mr-2" /> Copiar Markdown
+                </motion.span>
+              )}
+            </AnimatePresence>
           </Button>
           <button onClick={onClose} className="p-2 rounded-md hover:bg-dark-800 text-white/70" aria-label="Fechar">
             <X size={18} />

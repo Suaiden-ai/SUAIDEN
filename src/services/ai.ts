@@ -50,14 +50,14 @@ function buildPrompt(description: string, locale: 'pt' | 'en'): string {
   ].join('\n- ');
 
   const schemaInstruction = `Return ONLY valid JSON that matches this TypeScript type:\n` +
-`type GeneratedProposal = {\n` +
-`  title: string;\n` +
-`  summary: string;\n` +
-`  sections: Array<{ heading: string; content: string[] }>;\n` +
-`  timeline: Array<{ phase: string; duration: string; details: string }>;\n` +
-`  budgetNote: string;\n` +
-`};\n` +
-`Do not include markdown code fences.`;
+    `type GeneratedProposal = {\n` +
+    `  title: string;\n` +
+    `  summary: string;\n` +
+    `  sections: Array<{ heading: string; content: string[] }>;\n` +
+    `  timeline: Array<{ phase: string; duration: string; details: string }>;\n` +
+    `  budgetNote: string;\n` +
+    `};\n` +
+    `Do not include markdown code fences.`;
 
   const formattingRules = [
     'title: 6–12 words, specific to the project.',
@@ -70,12 +70,12 @@ function buildPrompt(description: string, locale: 'pt' | 'en'): string {
 
   const localization = locale === 'pt'
     ? [
-        'Use units in Portuguese: dias, semanas, meses, Contínuo.',
-        'Use vírgula decimal apenas quando natural ao texto; evite números desnecessários.',
-      ].join('\n- ')
+      'Use units in Portuguese: dias, semanas, meses, Contínuo.',
+      'Use vírgula decimal apenas quando natural ao texto; evite números desnecessários.',
+    ].join('\n- ')
     : [
-        'Use units in English: days, weeks, months, Ongoing.',
-      ].join('\n- ');
+      'Use units in English: days, weeks, months, Ongoing.',
+    ].join('\n- ');
 
   const guardrails = `Global rules:\n- ${globalRules}`;
 
@@ -92,13 +92,13 @@ function buildPrompt(description: string, locale: 'pt' | 'en'): string {
 async function generateWithGemini(description: string, locale: 'pt' | 'en'): Promise<GeneratedProposal | null> {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
   const model = import.meta.env.VITE_GEMINI_MODEL || 'gemini-2.5-pro';
-  
-  console.log('🔧 Gemini config:', { 
-    hasApiKey: !!apiKey, 
-    model, 
+
+  console.log('🔧 Gemini config:', {
+    hasApiKey: !!apiKey,
+    model,
     apiKeyPreview: apiKey ? `${apiKey.substring(0, 10)}...` : 'undefined'
   });
-  
+
   if (!apiKey) {
     console.log('❌ Nenhuma chave de API encontrada');
     return null;
@@ -124,34 +124,34 @@ async function generateWithGemini(description: string, locale: 'pt' | 'en'): Pro
   } as any;
 
   console.log('🚀 Fazendo requisição para Gemini...', { endpoint, bodySize: JSON.stringify(body).length });
-  
+
   const res = await fetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
 
-  console.log('📡 Resposta da API:', { 
-    status: res.status, 
-    ok: res.ok, 
-    statusText: res.statusText 
+  console.log('📡 Resposta da API:', {
+    status: res.status,
+    ok: res.ok,
+    statusText: res.statusText
   });
 
   if (!res.ok) {
     const errorText = await res.text();
     console.log('❌ Erro na API:', errorText);
-    
+
     // Se for erro 429 (quota exceeded), tentar novamente após delay
     if (res.status === 429) {
       try {
         const errorData = JSON.parse(errorText);
         const retryDelay = errorData.error?.details?.find((d: any) => d['@type'] === 'type.googleapis.com/google.rpc.RetryInfo')?.retryDelay;
-        
+
         if (retryDelay) {
           const delayMs = parseInt(retryDelay) * 1000;
-          console.log(`⏳ Aguardando ${delayMs/1000}s antes de tentar novamente...`);
+          console.log(`⏳ Aguardando ${delayMs / 1000}s antes de tentar novamente...`);
           await new Promise(resolve => setTimeout(resolve, delayMs));
-          
+
           // Tentar novamente
           console.log('🔄 Tentando novamente após delay...');
           const retryRes = await fetch(endpoint, {
@@ -159,7 +159,7 @@ async function generateWithGemini(description: string, locale: 'pt' | 'en'): Pro
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body)
           });
-          
+
           if (retryRes.ok) {
             const retryData = await retryRes.json();
             const retryText = retryData?.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -174,21 +174,21 @@ async function generateWithGemini(description: string, locale: 'pt' | 'en'): Pro
         console.log('❌ Erro no retry:', retryError);
       }
     }
-    
+
     return null;
   }
-  
+
   const data = await res.json();
   console.log('📦 Dados recebidos:', data);
-  
+
   const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
   console.log('📝 Texto extraído:', text ? `${text.substring(0, 100)}...` : 'null');
-  
+
   if (!text) {
     console.log('❌ Nenhum texto encontrado na resposta');
     return null;
   }
-  
+
   try {
     const parsed = JSON.parse(text) as GeneratedProposal;
     console.log('✅ JSON parseado com sucesso:', parsed);
@@ -205,33 +205,33 @@ export async function generateProposal(
 ): Promise<GeneratedProposal | null | RateLimitError> {
   // Verificar rate limiting antes de processar
   const userIP = await getUserIP();
-  
+
   if (userIP) {
     try {
       const rateLimitInfo = await checkRateLimit(userIP, 'ai_generation', 10, 24);
-      
+
       if (rateLimitInfo.is_blocked) {
         console.log('🚫 Rate limit excedido para IP:', userIP, rateLimitInfo);
-        
+
         const resetTime = new Date(rateLimitInfo.reset_time);
         const now = new Date();
         const hoursUntilReset = Math.ceil((resetTime.getTime() - now.getTime()) / (1000 * 60 * 60));
-        
+
         return {
           type: 'RATE_LIMIT_EXCEEDED',
           message: `Limite de requisições excedido. Você pode tentar novamente em ${hoursUntilReset} horas.`,
           rateLimitInfo
         };
       }
-      
+
       // Registrar tentativa de requisição
       await logRequestAttempt(
-        userIP, 
-        'ai_generation', 
-        navigator.userAgent, 
+        userIP,
+        'ai_generation',
+        navigator.userAgent,
         document.referrer || undefined
       );
-      
+
       console.log('✅ Rate limit OK para IP:', userIP, `(${rateLimitInfo.remaining_attempts} tentativas restantes)`);
     } catch (error) {
       console.log('❌ Erro ao verificar rate limit:', error);
@@ -241,7 +241,10 @@ export async function generateProposal(
 
   const proxyUrl = import.meta.env.VITE_AI_PROXY_URL as string | undefined;
 
-  if (proxyUrl) {
+  // Ignore placeholder values from env.example
+  const isValidProxy = proxyUrl && !proxyUrl.includes('seu-proxy.com') && !proxyUrl.includes('your-proxy.com');
+
+  if (isValidProxy) {
     try {
       const res = await fetch(`${proxyUrl}/generate`, {
         method: 'POST',
