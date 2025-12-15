@@ -37,6 +37,46 @@ const LeadForm: React.FC<LeadFormProps> = ({ variant = 'default', className = ''
   const [charIdx, setCharIdx] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [loadingTextIndex, setLoadingTextIndex] = useState(0);
+
+  useEffect(() => {
+    if (!isGenerating) {
+      setLoadingTextIndex(0);
+      return;
+    }
+    const interval = setInterval(() => {
+      setLoadingTextIndex((prev) => (prev + 1) % 4);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [isGenerating]);
+
+  const getLoadingText = () => {
+    const texts = language === 'pt' 
+      ? ['Processando Ideia...', 'Analisando Requisitos...', 'Estruturando Projeto...', 'Gerando Solução...']
+      : ['Processing Idea...', 'Analyzing Requirements...', 'Structuring Project...', 'Generating Solution...'];
+    return texts[loadingTextIndex];
+  };
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submittingTextIndex, setSubmittingTextIndex] = useState(0);
+
+  useEffect(() => {
+    if (!isSubmitting) {
+      setSubmittingTextIndex(0);
+      return;
+    }
+    const interval = setInterval(() => {
+      setSubmittingTextIndex((prev) => (prev + 1) % 3);
+    }, 1500);
+    return () => clearInterval(interval);
+  }, [isSubmitting]);
+
+  const getSubmittingText = () => {
+     const texts = language === 'pt'
+        ? ['Salvando informaÃ§Ãµes...', 'Preparando estÃºdio...', 'Redirecionando...']
+        : ['Saving information...', 'Preparing studio...', 'Redirecting...'];
+     return texts[submittingTextIndex];
+  };
 
   const syncTextareaSize = () => {
     const el = textAreaRef.current;
@@ -143,6 +183,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ variant = 'default', className = ''
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     // In a real implementation, this would send data to your backend
     console.log('Form submitted:', formData);
     try {
@@ -190,6 +231,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ variant = 'default', className = ''
       }
     } catch (err) {
       console.error('Failed to save lead:', err);
+      setIsSubmitting(false);
       // proceed anyway to avoid blocking UX
     }
     // Store locally so the studio page can use it if needed
@@ -282,10 +324,53 @@ const LeadForm: React.FC<LeadFormProps> = ({ variant = 'default', className = ''
           <Button 
             type="submit" 
             size="lg" 
-            className="w-full group"
+            disabled={isGenerating}
+            className={`w-full group relative overflow-hidden transition-all duration-300 ${
+              isGenerating ? 'cursor-wait border-primary-500/30' : ''
+            }`}
           >
-            {t('contact.button')}
-            <ArrowRight size={16} className="ml-2 transition-transform group-hover:translate-x-1" />
+            {isGenerating ? (
+              <div className="flex items-center justify-center gap-3 relative z-10 w-full">                 
+                 <div className="relative h-10 overflow-hidden flex-1 min-w-[180px] text-center">
+                   <motion.div
+                     key={loadingTextIndex}
+                     initial={{ y: 20, opacity: 0 }}
+                     animate={{ y: 0, opacity: 1 }}
+                     exit={{ y: -20, opacity: 0 }}
+                     transition={{ duration: 0.3 }}
+                     className="absolute inset-0 flex items-center justify-center"
+                   >
+                    <div className="relative">
+                   <motion.div 
+                     animate={{ rotate: 360 }}
+                     transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                     className="w-5 h-5 rounded-full border-2 border-white/20 border-t-white"
+                   />
+                   <motion.div
+                      animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
+                      transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                      className="absolute inset-0 rounded-full bg-primary-400/30 blur-sm"
+                   />
+                 </div>
+                     <span className="pl-3 text-sm font-medium tracking-wide text-white/90 leading-tight">
+                       {getLoadingText()}
+                     </span>
+                   </motion.div>
+                 </div>
+
+                {/* Cyber-scan effect */}
+                <motion.div 
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-12"
+                  animate={{ x: ['-100%', '200%'] }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut", repeatDelay: 0.5 }}
+                />
+              </div>
+            ) : (
+              <>
+                {t('contact.button')}
+                <ArrowRight size={16} className="ml-2 transition-transform group-hover:translate-x-1" />
+              </>
+            )}
           </Button>
           
           <p className="text-white/60 text-sm text-center">
@@ -483,10 +568,53 @@ const LeadForm: React.FC<LeadFormProps> = ({ variant = 'default', className = ''
             <Button 
               type="submit" 
               size="lg" 
-              className="w-full mt-3 group"
+              disabled={isSubmitting}
+              className={`w-full mt-3 group relative overflow-hidden transition-all duration-300 ${
+                isSubmitting ? 'cursor-wait border-primary-500/30' : ''
+              }`}
             >
-              {t('contact.modal.button')}
-              <ArrowRight size={16} className="ml-2 transition-transform group-hover:translate-x-1" />
+              {isSubmitting ? (
+                <div className="flex items-center justify-center gap-3 relative z-10 w-full">                 
+                   <div className="relative h-10 overflow-hidden flex-1 min-w-[180px] text-center">
+                     <motion.div
+                       key={submittingTextIndex}
+                       initial={{ y: 20, opacity: 0 }}
+                       animate={{ y: 0, opacity: 1 }}
+                       exit={{ y: -20, opacity: 0 }}
+                       transition={{ duration: 0.3 }}
+                       className="absolute inset-0 flex items-center justify-center"
+                     >
+                      <div className="relative">
+                     <motion.div 
+                       animate={{ rotate: 360 }}
+                       transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                       className="w-5 h-5 rounded-full border-2 border-white/20 border-t-white"
+                     />
+                     <motion.div
+                        animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
+                        transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                        className="absolute inset-0 rounded-full bg-primary-400/30 blur-sm"
+                     />
+                   </div>
+                       <span className="pl-3 text-sm font-medium tracking-wide text-white/90 leading-tight">
+                         {getSubmittingText()}
+                       </span>
+                     </motion.div>
+                   </div>
+  
+                  {/* Cyber-scan effect */}
+                  <motion.div 
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-12"
+                    animate={{ x: ['-100%', '200%'] }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut", repeatDelay: 0.5 }}
+                  />
+                </div>
+              ) : (
+                <>
+                  {t('contact.modal.button')}
+                  <ArrowRight size={16} className="ml-2 transition-transform group-hover:translate-x-1" />
+                </>
+              )}
             </Button>
             
             <p className="text-center text-white/60 text-xs mt-2">
