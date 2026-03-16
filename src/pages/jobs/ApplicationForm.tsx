@@ -114,8 +114,20 @@ const ApplicationFormPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("🚀 [ApplicationForm] Tentando enviar formulário...");
 
     if (!name || !email || !whatsapp || !stableInternet || !understandsContract || !hasWebcam || weekDaySchedules.length === 0 || weekendSchedules.length === 0 || !resume) {
+      console.warn("⚠️ [ApplicationForm] Validação falhou. Campos ausentes:", {
+        name: !!name,
+        email: !!email,
+        whatsapp: !!whatsapp,
+        stableInternet: !!stableInternet,
+        understandsContract: !!understandsContract,
+        hasWebcam: !!hasWebcam,
+        weekDaySchedules: weekDaySchedules.length,
+        weekendSchedules: weekendSchedules.length,
+        resume: !!resume
+      });
       toast({
         title: t("jobs.form.validationError"),
         description: t("jobs.form.validationDesc"),
@@ -125,6 +137,7 @@ const ApplicationFormPage = () => {
     }
 
     setIsSubmitting(true);
+    console.log("⏳ [ApplicationForm] Iniciando upload do currículo...");
 
     try {
       let resumePath = null;
@@ -137,10 +150,15 @@ const ApplicationFormPage = () => {
           .from('curriculum-vitae')
           .upload(filePath, resume);
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error("❌ [ApplicationForm] Erro no upload:", uploadError);
+          throw uploadError;
+        }
         resumePath = filePath;
+        console.log("✅ [ApplicationForm] Currículo enviado:", resumePath);
       }
 
+      console.log("⏳ [ApplicationForm] Inserindo dados na tabela job_applications...");
       const { error, data } = await supabase.from("job_applications").insert({
         full_name: name,
         email,
@@ -157,7 +175,11 @@ const ApplicationFormPage = () => {
         resume_url: resumePath
       }).select();
 
-      if (error) throw error;
+      if (error) {
+        console.error("❌ [ApplicationForm] Erro ao inserir aplicação:", error);
+        throw error;
+      }
+      console.log("✅ [ApplicationForm] Aplicação salva com sucesso!");
 
       // --- Notificações por E-mail ---
       try {
@@ -228,9 +250,8 @@ const ApplicationFormPage = () => {
   return (
     <div className="relative bg-background">
       <div className="absolute inset-0 bg-[linear-gradient(hsl(210_100%_56%/0.03)_1px,transparent_1px),linear-gradient(90deg,hsl(210_100%_56%/0.03)_1px,transparent_1px)] bg-[size:60px_60px]" />
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-primary/5 rounded-full blur-[120px]" />
 
-      <div className="relative max-w-3xl mx-auto px-4 sm:px-6 pt-40 sm:pt-32 pb-24 sm:pb-32">
+      <div className="relative max-w-3xl mx-auto px-4 sm:px-6 pt-40 sm:pt-32 pb-40 sm:pb-32">
         {/* Back */}
         <motion.div initial="hidden" animate="visible" variants={fadeUp} custom={0}>
           <Button
