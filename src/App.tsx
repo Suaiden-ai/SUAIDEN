@@ -49,7 +49,7 @@ function AppContent() {
   const isAdminPath = location.pathname.startsWith('/admin');
 
   return (
-    <div className="relative flex flex-col min-h-screen">
+    <div className="relative flex flex-col min-h-screen overflow-x-hidden">
       {/* Animated gradient background across the entire app */}
       <div className="pointer-events-none fixed inset-0 -z-10">
         <AnimatedGradientBackground 
@@ -63,36 +63,37 @@ function AppContent() {
       
       {!isAdminPath && <Header />}
       
-      <main className="relative z-10">
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/vagas" element={<JobPostingPage />} />
-          <Route path="/vaga/:slug" element={<JobDetailView />} />
-          <Route path="/vaga/:slug/candidatar-se" element={<ApplicationFormPage />} />
-          <Route path="/vaga/sucesso" element={<ApplicationSuccessPage />} />
-          
-          {/* Admin Routes */}
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route 
-            path="/admin/*" 
-            element={
-              <AdminGuard>
-                <AdminLayout>
-                  <Routes>
-                    <Route path="dashboard" element={<CandidatesManagement />} />
-                    <Route path="candidates" element={<CandidatesManagement />} />
-                    <Route path="jobs" element={<JobsManagement />} />
-                    <Route path="jobs/new" element={<CreateJobPage />} />
-                    <Route path="jobs/edit/:id" element={<EditJobPage />} />
-                  </Routes>
-                </AdminLayout>
-              </AdminGuard>
-            } 
-          />
-        </Routes>
+      <main className="relative z-10 flex-1 flex flex-col">
+        <div className="flex-1">
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/vagas" element={<JobPostingPage />} />
+            <Route path="/vaga/:slug" element={<JobDetailView />} />
+            <Route path="/vaga/:slug/candidatar-se" element={<ApplicationFormPage />} />
+            <Route path="/vaga/sucesso" element={<ApplicationSuccessPage />} />
+            
+            {/* Admin Routes */}
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route 
+              path="/admin/*" 
+              element={
+                <AdminGuard>
+                  <AdminLayout>
+                    <Routes>
+                      <Route path="dashboard" element={<CandidatesManagement />} />
+                      <Route path="candidates" element={<CandidatesManagement />} />
+                      <Route path="jobs" element={<JobsManagement />} />
+                      <Route path="jobs/new" element={<CreateJobPage />} />
+                      <Route path="jobs/edit/:id" element={<EditJobPage />} />
+                    </Routes>
+                  </AdminLayout>
+                </AdminGuard>
+              } 
+            />
+          </Routes>
+        </div>
+        {!isAdminPath && <Footer />}
       </main>
-
-      {!isAdminPath && <Footer />}
     </div>
   );
 }
