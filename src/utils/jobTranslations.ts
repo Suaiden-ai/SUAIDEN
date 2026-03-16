@@ -28,17 +28,7 @@ export const localizeJob = (job: Job, t: any): Job => {
   // We check if "jobs.data.[slug]" exists
   const translatedData = t(`jobs.data.${job.slug}`, { returnObjects: true });
 
-  console.log(`[localizeJob] Slug: ${job.slug}`);
-  console.log(`[localizeJob] Job fields:`, {
-    hasBenefits: !!job.benefits,
-    hasWorkEnv: !!job.workEnvironment,
-    hasPayment: !!job.paymentTerms
-  });
-  console.log(`[localizeJob] Translated Data:`, translatedData);
-
-  // If the returned value is just the key string, it means it wasn't found
   if (typeof translatedData === 'string' || !translatedData || translatedData === `jobs.data.${job.slug}`) {
-    console.log(`[localizeJob] Translation NOT found for slug: ${job.slug}`);
     return job;
   }
 
