@@ -52,12 +52,6 @@ const Header: React.FC = () => {
             FAQ
           </a>
           <LanguageSwitcher />
-          <a 
-            href="#contato" 
-            className="px-5 py-2 rounded-lg bg-gradient-to-r from-primary-600 to-accent-600 text-white font-medium hover:shadow-[0_0_15px_rgba(154,103,255,0.5)] transition-shadow"
-          >
-            {t('header.contact')}
-          </a>
         </nav>
 
         {/* Mobile Menu Button */}
@@ -104,13 +98,6 @@ const Header: React.FC = () => {
               onClick={() => setIsMobileMenuOpen(false)}
             >
               FAQ
-            </a>
-            <a 
-              href="#contato" 
-              className="px-5 py-3 rounded-lg bg-gradient-to-r from-primary-600 to-accent-600 text-white font-medium text-center"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              {t('header.contact')}
             </a>
           </nav>
         </div>
