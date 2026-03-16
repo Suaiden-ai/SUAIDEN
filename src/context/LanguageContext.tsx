@@ -22,15 +22,12 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     try {
       const savedLanguage = localStorage.getItem('language') as Language;
       if (savedLanguage && (savedLanguage === 'pt' || savedLanguage === 'en')) {
-        console.log('🌐 LanguageProvider initialized with saved language:', savedLanguage);
         return savedLanguage;
       }
     } catch (error) {
-      console.warn('Failed to read language from localStorage:', error);
     }
     
     const detectedLanguage = navigator.language.startsWith('pt') ? 'pt' : 'en';
-    console.log('🌐 LanguageProvider initialized with detected language:', detectedLanguage, 'from navigator:', navigator.language);
     return detectedLanguage;
   });
 
@@ -38,7 +35,6 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
   useEffect(() => {
     const currentStored = localStorage.getItem('language');
     if (currentStored !== language) {
-        console.log('🌐 Language changed to:', language);
         localStorage.setItem('language', language);
         document.documentElement.lang = language;
     }
@@ -56,7 +52,6 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
 
     for (const k of keys) {
       if (!translation[k]) {
-        console.warn(`Translation key not found: ${key} for language: ${language}`);
         return key;
       }
       translation = translation[k];
