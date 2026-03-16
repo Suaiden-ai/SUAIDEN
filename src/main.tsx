@@ -5,7 +5,10 @@ import ProjectStudio from './pages/ProjectStudio';
 import { useEffect, useState } from 'react';
 import { ModalProvider } from './context/ModalContext';
 import { LanguageProvider } from './context/LanguageContext';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import './index.css';
+
+const queryClient = new QueryClient();
 
 function Router() {
   const [hash, setHash] = useState<string>(location.hash.replace('#', ''));
@@ -22,10 +25,12 @@ function Router() {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <LanguageProvider>
-      <ModalProvider>
-        <Router />
-      </ModalProvider>
-    </LanguageProvider>
+    <QueryClientProvider client={queryClient}>
+      <LanguageProvider>
+        <ModalProvider>
+          <Router />
+        </ModalProvider>
+      </LanguageProvider>
+    </QueryClientProvider>
   </StrictMode>
 );

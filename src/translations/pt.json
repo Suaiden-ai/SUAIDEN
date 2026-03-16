@@ -1,25 +1,25 @@
 {
   "header": {
     "solutions": "Soluções",
-    "cases": "Cases",
+    "cases": "Casos de Sucesso",
     "whyUs": "Por que nós?",
     "contact": "Contato"
   },
   "hero": {
-    "tagline": "Potencialize seu negócio com IA avançada",
+    "tagline": "Potencialize seus negócios com IA avançada",
     "title": "Automatize, inove e escale com IA.",
-    "description": "Conte-nos sobre seu projeto e nossa IA gera uma solução completa para você.",
-    "cta": "Receber projeto inteligente gratuitamente",
+    "description": "Conte-nos sobre o seu projeto e nossa IA gera uma solução completa personalizada para você.",
+    "cta": "Receber meu projeto gratuito com IA",
     "features": {
       "fastImplementation": "Implementação rápida",
       "advancedAI": "IA de última geração"
     },
-    "welcomeMessage": "Bem vindo a SU AI DEN",
+    "welcomeMessage": "Bem-vindo à SU AI DEN",
     "demoPrompts": [
-      "Descreva seu projeto à SU AI DEN",
-      "Quero um chatbot para suporte com WhatsApp e site",
-      "Quero automatizar relatórios do meu ERP e enviar no Slack",
-      "Quero um app para agendar consultas e lembrar por SMS"
+      "Descreva seu projeto para a SU AI DEN",
+      "Quero um chatbot para suporte no WhatsApp e site",
+      "Quero automatizar meus relatórios do ERP e enviar para o Slack",
+      "Quero um app para agendar consultas e enviar lembretes SMS"
     ]
   },
   "technologies": {
@@ -27,54 +27,54 @@
   },
   "services": {
     "title": "NOSSAS SOLUÇÕES INTELIGENTES",
-    "subtitle": "Desenvolvemos tecnologias que transformam a maneira como as empresas operam, com foco em resultados reais e mensuráveis.",
+    "subtitle": "Desenvolvemos tecnologias que transformam a forma como as empresas operam, com foco em resultados reais e mensuráveis.",
     "automation": {
       "title": "AUTOMAÇÃO INTELIGENTE",
-      "description": "Automatize processos repetitivos, integre sistemas e aumente a produtividade com bots personalizados para seu negócio.",
-      "longDescription": "Desenvolvemos soluções de automação que eliminam tarefas manuais, reduzem erros humanos e aumentam significativamente a produtividade da sua empresa. Integramos todas suas ferramentas em um fluxo contínuo.",
-      "benefits": "Reduza custos operacionais em até 40%",
+      "description": "Automatize processos repetitivos, integre sistemas e aumente a produtividade com robôs personalizados para o seu negócio.",
+      "longDescription": "Desenvolvemos soluções de automação que eliminam tarefas manuais, reduzem erros humanos e aumentam significativamente a produtividade da sua empresa. Integramos todas as suas ferramentas em um fluxo de trabalho contínuo.",
+      "benefits": "Redução de custos operacionais em até 40%",
       "features": [
-        "Chatbots de atendimento 24/7",
-        "Automação de processos (RPA)",
-        "Integração entre sistemas via API",
-        "Workflows personalizados"
+        "Chatbots inteligentes 24/7",
+        "RPA (Robotic Process Automation)",
+        "Integrações de API perfeitas",
+        "Fluxos de trabalho personalizados"
       ],
       "learnMore": "Saiba mais"
     },
     "ai": {
       "title": "SOLUÇÕES COM IA",
-      "description": "Chatbots avançados, processamento de linguagem natural e geração de conteúdo com as tecnologias mais recentes de IA.",
-      "longDescription": "Implementamos tecnologias de inteligência artificial que transformam dados em insights valiosos, automatizam decisões complexas e personalizam a experiência dos seus clientes a um novo nível.",
-      "benefits": "Aumente a eficiência operacional em até 60%",
+      "description": "Chatbots avançados, processamento de linguagem natural e geração de conteúdo com as tecnologias de IA mais modernas.",
+      "longDescription": "Implementamos tecnologias de inteligência artificial de ponta que transformam dados em insights valiosos, automatizam decisões complexas e elevam a experiência do seu cliente a níveis sem precedentes.",
+      "benefits": "Aumento da eficiência operacional em até 60%",
       "features": [
         "Análise preditiva de dados",
-        "Geração de textos e imagens",
-        "Recomendações inteligentes",
-        "Reconhecimento de padrões"
+        "Geração de conteúdo por IA",
+        "Motores de recomendação inteligentes",
+        "Reconhecimento de padrões avançado"
       ],
       "learnMore": "Saiba mais"
     },
     "custom": {
       "title": "SISTEMAS SOB MEDIDA",
-      "description": "Desenvolvimento de SaaS, plataformas internas e dashboards adaptados às necessidades específicas do seu negócio.",
-      "longDescription": "Criamos sistemas completos e personalizados que atendem exatamente às necessidades do seu negócio, desde dashboards gerenciais a plataformas complexas de e-commerce ou gestão.",
+      "description": "Desenvolvimento de plataformas SaaS, ferramentas internas e dashboards adaptados às necessidades do seu negócio.",
+      "longDescription": "Criamos sistemas completos e personalizados que atendem precisamente aos requisitos do seu negócio, desde dashboards executivos até plataformas complexas de e-commerce e gestão empresarial.",
       "benefits": "Tempo de desenvolvimento até 70% mais rápido",
       "features": [
-        "Aplicações web e mobile",
-        "Dashboards interativos",
-        "Plataformas SaaS",
+        "Apps web e mobile full-stack",
+        "Dashboards interativos de negócio",
+        "Plataformas SaaS escaláveis",
         "Sistemas de gestão integrados"
       ],
       "learnMore": "Saiba mais"
     },
     "data": {
-      "title": "DADOS + NUVEM",
-      "description": "Coleta, análise e visualização de dados com inteligência artificial para insights valiosos e tomada de decisão.",
-      "longDescription": "Oferecemos soluções completas para coletar, processar e visualizar dados em tempo real, permitindo que sua empresa tome decisões baseadas em informações concretas e não em intuição.",
-      "benefits": "Insights até 5x mais rápidos para decisões",
+      "title": "DADOS + CLOUD",
+      "description": "Coleta, análise e visualização de dados potencializada por IA para insights valiosos e decisões fundamentadas.",
+      "longDescription": "Oferecemos soluções completas para coletar, processar e visualizar dados em tempo real, permitindo que sua empresa tome decisões baseadas em dados concretos e não apenas em intuição.",
+      "benefits": "Insights 5x mais rápidos para tomada de decisão",
       "features": [
-        "Data lakes e warehouses",
-        "Processamento em tempo real",
+        "Data lakes e warehouses na nuvem",
+        "Processamento de dados em tempo real",
         "Visualização avançada de dados",
         "Big data e análise preditiva"
       ],
@@ -87,8 +87,8 @@
       "support": "Suporte disponível"
     },
     "cta": {
-      "title": "Pronto para transformar seu negócio com soluções de IA realmente aplicáveis?",
-      "subtitle": "Agende uma consulta gratuita com nossos especialistas e descubra como podemos criar soluções personalizadas para os desafios específicos do seu negócio.",
+      "title": "Pronto para transformar seu negócio com soluções de IA que realmente funcionam?",
+      "subtitle": "Agende uma consultoria gratuita com nossos especialistas e descubra como podemos criar soluções personalizadas para os desafios específicos da sua empresa.",
       "button": "Solicitar consultoria gratuita",
       "features": {
         "noCommitment": "Sem compromisso",
@@ -97,50 +97,50 @@
     }
   },
   "cases": {
-    "title": "NOSSOS PROJETOS REAIS COM RESULTADOS CONCRETOS",
-    "subtitle": "Conheça alguns dos projetos que desenvolvemos e os resultados mensuráveis que ajudamos nossos clientes a alcançar.",
+    "title": "PROJETOS REAIS COM RESULTADOS MENSURÁVEIS",
+    "subtitle": "Conheça alguns dos projetos que desenvolvemos e os resultados concretos que ajudamos nossos clientes a alcançar.",
     "case1": {
       "title": "The Future of English",
-      "description": "Desenvolvemos uma plataforma digital inovadora para facilitar a tradução de documentos em diferentes idiomas com o apoio da Inteligência Artificial, oferecendo uma experiência simples, rápida e confiável para pessoas e empresas.",
+      "description": "Plataforma completa de tradução baseada em IA que integra múltiplas soluções para facilitar o aprendizado e a tradução de documentos em diferentes idiomas.",
       "solutions": [
-        "Chatbot inteligente para suporte ao usuário",
-        "Sistema de tradução com IA avançada",
-        "Pagamento Zelle com validação por IA",
-        "Integração com CRM para pós-vendas"
+        "Chatbot inteligente para suporte aos usuários",
+        "Sistema de tradução avançado com IA",
+        "Pagamento via Zelle com validação por IA",
+        "Integração com CRM para pós-venda"
       ],
       "results": [
         "Redução de 85% no tempo de tradução",
         "Aumento de 90% na precisão das traduções",
-        "Atendimento a mais de 2.000 usuários mensalmente"
+        "Atendimento de mais de 2.000 usuários/mês"
       ]
     },
     "case2": {
       "title": "Lush America Translations",
-      "description": "Desenvolvemos uma plataforma inovadora de tradução de documentos oficiais e acadêmicos utilizando Inteligência Artificial de ponta, garantindo traduções rápidas, consistentes e seguras para diversos idiomas.",
+      "description": "Criamos uma plataforma inovadora para tradução de documentos oficiais e acadêmicos utilizando Inteligência Artificial de ponta, garantindo rapidez, consistência e segurança.",
       "results": [
         "Redução de 80% no tempo de tradução",
         "Aumento de 95% na precisão das traduções",
-        "Atendimento a mais de 1.000 usuários mensalmente"
+        "Atendimento de mais de 1.000 usuários/mês"
       ]
     },
     "case3": {
       "title": "Plataforma de Orientação Educacional",
-      "description": "Desenvolvemos a plataforma Matrícula USA, uma solução completa para estudantes internacionais que buscam oportunidades de estudo nos Estados Unidos, simplificando todo o processo de admissão.",
+      "description": "Desenvolvemos a plataforma Matrícula USA, uma solução completa para estudantes internacionais que buscam oportunidades educacionais nos EUA, simplificando todo o processo de admissão.",
       "results": [
         "Redução de 80% no tempo de pesquisa de bolsas",
-        "Aumento de 65% na taxa de aplicações bem-sucedidas",
-        "Atendimento a mais de 10.000 estudantes mensalmente"
+        "Aumento de 65% na taxa de sucesso em aplicações",
+        "Atendimento de mais de 10.000 estudantes/mês"
       ]
     },
     "viewDetails": "Ver detalhes"
   },
   "solutions": {
-    "title": "SOLUÇÕES QUE IMPLEMENTAMOS",
+    "title": "SOLUÇÕES QUE JÁ IMPLEMENTAMOS",
     "subtitle": "Conheça as tecnologias e sistemas específicos que desenvolvemos para nossos clientes.",
     "items": [
       {
         "title": "Chatbots com IA",
-        "description": "Atendimento inteligente com processamento de linguagem natural e integração WhatsApp",
+        "description": "Atendimento inteligente com processamento de linguagem natural e integração com WhatsApp",
         "icon": "chatbot"
       },
       {
@@ -149,82 +149,81 @@
         "icon": "translation"
       },
       {
-        "title": "Pagamento Zelle com Validação IA",
-        "description": "Processamento automatizado de pagamentos com detecção inteligente de fraudes",
+        "title": "Pagamento Zelle com Validação por IA",
+        "description": "Processamento automatizado de pagamentos com detecção inteligente de fraudes e validação",
         "icon": "payment"
       },
       {
-        "title": "Integração e Automação CRM",
-        "description": "Fluxo de dados perfeito entre sistemas com funcionalidades automatizadas de CRM",
+        "title": "Integração e Automação de CRM",
+        "description": "Fluxo contínuo de dados entre sistemas com funcionalidades automatizadas de CRM",
         "icon": "crm"
       },
       {
         "title": "Validação de Documentos com IA",
-        "description": "Validação inteligente de passaportes, extratos bancários e históricos escolares",
+        "description": "Validação inteligente de passaportes, extratos bancários e históricos acadêmicos",
         "icon": "validation"
       },
       {
-        "title": "Integração WhatsApp Business",
-        "description": "Integração completa da API WhatsApp Business para comunicação com clientes",
+        "title": "Integração com WhatsApp Business",
+        "description": "Integração completa com a API oficial do WhatsApp Business para comunicação com clientes",
         "icon": "whatsapp"
       },
       {
-        "title": "Automação de Emails com IA",
-        "description": "Respostas automáticas de email com geração de conteúdo por IA",
+        "title": "Automação de E-mails com IA",
+        "description": "Respostas automatizadas de e-mail com conteúdo gerado por IA de forma personalizada",
         "icon": "email"
       },
       {
-        "title": "Criação de Agentes IA",
+        "title": "Criação de Agentes de IA",
         "description": "Agentes de IA personalizados para processos específicos e interações com clientes",
         "icon": "agent"
       },
       {
-        "title": "Sistemas de Treinamento de Chatbot",
-        "description": "Sistemas avançados de treinamento para melhorar performance e precisão do chatbot",
+        "title": "Sistemas de Treinamento de Chatbots",
+        "description": "Sistemas avançados para treinar e melhorar a precisão de bots em domínios específicos",
         "icon": "training"
       }
     ],
     "clients": {
-      "title": "Confiado por empresas líderes"
+      "title": "Empresas que confiam em nós"
     }
   },
   "advantages": {
     "title": "Por que escolher a SUAIDEN?",
-    "subtitle": "Entregamos soluções de IA e automação que realmente funcionam e geram resultados concretos para o seu negócio.",
+    "subtitle": "Entregamos soluções de IA e automação que realmente funcionam e geram valor concreto para o seu negócio.",
     "advantage1": {
-      "title": "Projetos com IA real aplicada",
-      "description": "Não apenas falamos de IA, implementamos soluções reais que geram resultados tangíveis para o seu negócio."
+      "title": "IA Real, não apenas promessas",
+      "description": "Não apenas falamos sobre IA — implementamos soluções genuínas que trazem resultados tangíveis para sua empresa."
     },
     "advantage2": {
       "title": "Desenvolvimento rápido e iterativo",
-      "description": "Metodologia ágil com entregas contínuas, permitindo que você veja resultados desde o início do projeto."
+      "description": "Metodologia ágil com entregas contínuas, permitindo que você veja resultados desde os primeiros dias."
     },
     "advantage3": {
       "title": "Equipe experiente e multidisciplinar",
-      "description": "Profissionais especialistas em IA, desenvolvimento e automação, prontos para resolver seus desafios."
+      "description": "Especialistas em IA, desenvolvimento e automação prontos para resolver seus desafios mais complexos."
     },
     "advantage4": {
-      "title": "Suporte e evolução contínuos",
-      "description": "Oferecemos suporte constante e atualizações para garantir que sua solução evolua junto com seu negócio."
+      "title": "Suporte e evolução contínua",
+      "description": "Oferecemos acompanhamento constante para garantir que sua solução evolua junto com o seu negócio."
     },
     "advantage5": {
-      "title": "Integração com suas ferramentas atuais",
-      "description": "Nossas soluções se integram perfeitamente com as ferramentas que você já utiliza, sem necessidade de mudanças drásticas."
+      "title": "Integração perfeita com suas ferramentas",
+      "description": "Nossas soluções se conectam perfeitamente ao que você já usa, sem causar interrupções no seu fluxo."
     }
   },
   "comparison": {
     "title": "SUAIDEN vs alternativas",
     "subtitle": "Compare e entenda por que somos a escolha certa para sua empresa.",
     "features": {
-      "title": "Critérios de Comparação",
       "realAI": "Soluções com IA real aplicada",
       "scalable": "Automação escalável",
       "agile": "Desenvolvimento ágil",
-      "support": "Suporte 24/7",
-      "sourcecode": "Código fonte proprietário",
+      "support": "Suporte dedicado",
+      "sourcecode": "Código-fonte próprio",
       "experience": "Experiência comprovada",
       "team": "Equipe multidisciplinar",
-      "integration": "Integração com sistemas existentes"
+      "integration": "Integração com sistemas legados"
     },
     "options": {
       "suaiden": "SUAIDEN",
@@ -236,11 +235,11 @@
     "title": "O que sua empresa ganha com a SUAIDEN",
     "benefit1": {
       "title": "Produtividade imediata",
-      "description": "Implantação rápida que começa a gerar resultados desde os primeiros dias de uso."
+      "description": "Implementação rápida que começa a gerar resultados logo nos primeiros dias de uso."
     },
     "benefit2": {
       "title": "Atendimento 24/7 com IA",
-      "description": "Nunca mais perca um cliente. Nossa IA atende a qualquer hora sem necessidade de equipe adicional."
+      "description": "Nunca mais perca um cliente. Nossa IA atende a qualquer hora sem necessidade de equipe extra."
     },
     "benefit3": {
       "title": "Decisões baseadas em dados",
@@ -248,7 +247,7 @@
     },
     "benefit4": {
       "title": "Automação escalável",
-      "description": "Sistemas que crescem com sua empresa, sem necessidade de grandes investimentos adicionais."
+      "description": "Sistemas que crescem com sua empresa, sem necessidade de grandes novos investimentos."
     },
     "benefit5": {
       "title": "Segurança e personalização",
@@ -257,54 +256,55 @@
   },
   "faq": {
     "title": "Perguntas Frequentes",
-    "subtitle": "Tire suas dúvidas sobre nossos serviços e como podemos ajudar o seu negócio.",
+    "subtitle": "Tire suas dúvidas sobre nossos serviços e como podemos ajudar sua empresa.",
     "q1": {
-      "question": "É IA de verdade?",
-      "answer": "Sim, utilizamos tecnologias de IA avançadas como GPT-4, Claude e modelos próprios. Não é apenas marketing, são aplicações reais de inteligência artificial que geram resultados tangíveis para o seu negócio."
+      "question": "É tecnologia de IA real?",
+      "answer": "Sim. Utilizamos as tecnologias mais avançadas de IA, como GPT-4, Claude e modelos próprios treinados. Não é apenas automação simples, é inteligência artificial aplicada."
     },
     "q2": {
-      "question": "Preciso saber programar?",
-      "answer": "Absolutamente não. Nossas soluções são desenvolvidas para serem intuitivas e fáceis de usar, independente do seu conhecimento técnico. Nossa equipe cuida de toda a parte técnica para você."
+      "question": "Preciso saber programar para usar?",
+      "answer": "Não. Nossas soluções são entregues prontas para uso, com interfaces intuitivas. Nós cuidamos de toda a parte técnica para você focar no seu negócio."
     },
     "q3": {
-      "question": "Quanto custa?",
-      "answer": "Os valores variam de acordo com a complexidade e o escopo do projeto. Oferecemos planos personalizados que se adaptam às necessidades e ao orçamento da sua empresa. Entre em contato para receber uma proposta detalhada."
+      "question": "Como funciona o preço?",
+      "answer": "O investimento varia de acordo com a complexidade e o escopo do projeto. Oferecemos planos personalizados que cabem no orçamento da sua empresa."
     },
     "q4": {
-      "question": "Qual o prazo de entrega?",
-      "answer": "O prazo depende da complexidade do projeto, mas nosso processo ágil permite entregas incrementais desde as primeiras semanas. Projetos simples podem ser entregues em 2-4 semanas, enquanto projetos mais complexos podem levar de 2-3 meses."
+      "question": "Quanto tempo demora para entregar?",
+      "answer": "Depende da complexidade, mas nosso método ágil permite entregas incrementais já nas primeiras semanas de projeto."
     },
     "q5": {
-      "question": "Posso automatizar ferramentas que já uso?",
-      "answer": "Sim! Uma das nossas especialidades é integrar e automatizar ferramentas existentes. Podemos conectar suas ferramentas atuais (como CRM, ERP, planilhas) e automatizar fluxos de trabalho entre elas."
+      "question": "Vocês automatizam as ferramentas que eu já uso?",
+      "answer": "Sim! Especializamo-nos em integrar e automatizar sistemas existentes (CRM, ERP, planilhas, WhatsApp, etc) para criar fluxos contínuos."
     }
   },
   "contact": {
     "title": "Descreva seu projeto e receba uma proposta gerada por IA",
-    "subtitle": "Conte-nos sobre seu desafio e receba gratuitamente um diagnóstico e uma proposta personalizada gerada por nossa IA.",
-    "placeholder": "Descreva brevemente seu projeto ou desafio técnico...",
-    "button": "Receber projeto inteligente gratuitamente",
-    "privacy": "Seus dados estão seguros. Nada de spam.",
+    "subtitle": "Conte-nos o seu desafio e receba um diagnóstico e uma proposta personalizada gerada por nossa IA avançada de forma gratuita.",
+    "placeholder": "Descreva brevemente o seu projeto ou desafio tecnológico...",
+    "button": "Receber meu projeto gratuito com IA",
+    "privacy": "Seus dados estão seguros. Não enviamos spam.",
     "modal": {
-      "title": "Receba seu projeto personalizado",
-      "subtitle": "Estamos quase lá! Complete seu cadastro para receber seu projeto inteligente personalizado.",
-      "name": "Nome",
-      "email": "E-mail",
+      "title": "Receber seu projeto personalizado",
+      "subtitle": "Estamos quase lá! Complete seu cadastro para receber seu projeto gerado por IA.",
+      "name": "Nome Completo",
+      "email": "E-mail Corporativo",
       "whatsapp": "WhatsApp",
-      "button": "Receber projeto personalizado",
+      "button": "Gerar projeto personalizado",
       "privacy": "Seus dados estão seguros. Não enviamos spam."
     }
   },
   "footer": {
-    "description": "Soluções inovadoras em automação, inteligência artificial e desenvolvimento de software sob medida.",
+    "companyName": "SUAIDEN - Super Artificial Intelligence Development",
+    "description": "Soluções inovadoras em automação, inteligência artificial e desenvolvimento de software personalizado.",
     "quickLinks": "Links Rápidos",
     "links": {
       "home": "Home",
       "solutions": "Soluções",
-      "cases": "Cases",
+      "cases": "Casos de Sucesso",
       "contact": "Contato",
-      "privacy": "Política de Privacidade",
-      "terms": "Termos de Uso"
+      "privacy": "Privacidade",
+      "terms": "Termos"
     },
     "contact": "Contato",
     "rights": "Todos os direitos reservados."
@@ -327,38 +327,38 @@
     ]
   },
   "proposalPanel": {
-    "aiGenerated": "Proposta gerada por IA",
+    "aiGenerated": "Proposta Gerada por IA",
     "refine": "Refine sua proposta",
     "copyMarkdown": "Copiar Markdown",
-    "continue": "Avançar para contato",
+    "continue": "Seguir para contato",
     "schedule": "Cronograma",
     "phase": "Fase",
     "duration": "Duração",
     "inputPlaceholder": "Digite uma instrução para refinar a proposta..."
   },
   "studio": {
-    "backToHome": "Voltar para Página inicial",
-    "viewFlow": "Visualizar fluxo",
-    "hideChat": "Esconder chat",
-    "showChat": "Mostrar chat",
+    "backToHome": "Voltar para Home",
+    "viewFlow": "Ver Fluxo",
+    "hideChat": "Esconder Chat",
+    "showChat": "Mostrar Chat",
     "generatingFlow": "Gerando Fluxo",
     "creatingFlow": "Criando seu fluxo personalizado...",
     "thinking": "Pensando...",
     "suaidenAI": "Suaiden AI",
     "like": "Gostei",
     "dislike": "Não gostei",
-    "copy": "Copiar resposta",
+    "copy": "Copiar Resposta",
     "copied": "Copiado!",
     "startDescribing": "Comece descrevendo seu projeto",
     "askSuaiden": "Pergunte à Suaiden...",
     "proposedFlow": "Fluxo Proposto",
-    "backToChat": "Voltar para chat",
-    "savePDF": "Salvar em PDF",
+    "backToChat": "Voltar para o Chat",
+    "savePDF": "Salvar PDF",
     "consultationShort": "Consultoria",
     "requestConsultation": "Solicitar Consultoria",
-    "suggestedSchedule": "Cronograma sugerido",
-    "scheduleUpdated": "Cronograma atualizado",
-    "proposalUpdated": "Proposta atualizada",
+    "suggestedSchedule": "Cronograma Sugerido",
+    "scheduleUpdated": "Cronograma Atualizado",
+    "proposalUpdated": "Proposta Atualizada",
     "projectSummary": "Resumo do Projeto",
     "generatingPDF": "Gerando PDF...",
     "pdfTitle": "SUAIDEN AI",
@@ -375,13 +375,13 @@
       "estimatedDuration": "Duração estimada",
       "technicalSections": "seções técnicas",
       "nextSteps": "Próximos passos",
-      "implementation": "Implementação",
+      "implementation": "implementação",
       "phases": "fases"
     },
     "error": {
-      "communication": "Erro: Falha na comunicação com a IA. Verifique sua conexão e configurações.",
-      "updateFailed": "Erro: Não foi possível atualizar a proposta. Verifique a configuração da IA.",
-      "rateLimitExceeded": "🚫 Limite diário de requisições atingido!\n\nVocê já utilizou suas 10 requisições gratuitas de hoje. O limite será resetado em 24 horas.\n\nPara continuar usando agora, entre em contato conosco para conhecer nossos planos premium."
+      "communication": "Erro: Falha na comunicação com a IA. Verifique sua conexão.",
+      "updateFailed": "Erro: Não foi possível atualizar a proposta.",
+      "rateLimitExceeded": "🚫 Limite diário atingido!\n\nVocê usou todos os 10 pedidos gratuitos de hoje. O limite será resetado em 24 horas.\n\nPara continuar usando agora mesmo, entre em contato conosco para conhecer nossos planos premium."
     },
     "tips": {
       "prev": "Anterior",
@@ -389,33 +389,258 @@
       "close": "Fechar",
       "flow": {
         "navigate": {
-          "title": "Navegue entre as etapas",
+          "title": "Navegue pelas etapas",
           "text": "Use o mouse para arrastar o canvas, a roda para zoom e clique nos cards para ler os detalhes."
         },
         "consult": {
-          "title": "Agendar consultoria",
-          "text": "Clique em \"Solicitar Consultoria\" para combinarmos uma call rápida e tirar dúvidas sobre o projeto."
+          "title": "Solicite uma consultoria",
+          "text": "Clique em \"Solicitar Consultoria\" para agendar uma call rápida e tirar dúvidas sobre o projeto."
         },
         "export": {
           "title": "Exporte e compartilhe",
-          "text": "Use \"Salvar em PDF\" para gerar um arquivo com o cronograma e os detalhes do fluxo."
+          "text": "Use o \"Salvar PDF\" para gerar um arquivo com o cronograma e os detalhes do fluxo."
         }
       },
       "mobile": {
         "viewFlow": {
-          "title": "Visualize o fluxo do projeto",
-          "text": "Toque em \"Visualizar fluxo\" para ver o cronograma gerado como etapas conectadas."
+          "title": "Veja o fluxo do projeto",
+          "text": "Toque em \"Ver Fluxo\" para visualizar o cronograma gerado em etapas conectadas."
         },
         "consult": {
-          "title": "Agendar consultoria",
-          "text": "Toque em \"Solicitar Consultoria\" para combinarmos uma call rápida e tirar dúvidas."
+          "title": "Agende um papo de 60min",
+          "text": "Toque em \"Solicitar Consultoria\" para marcar uma call rápida e tirar suas dúvidas."
         },
         "navigate": {
-          "title": "Navegue entre as etapas",
-          "text": "Arraste para mover o canvas, dê pinça para zoom e toque nos cards para ler os detalhes."
+          "title": "Navegue pelas etapas",
+          "text": "Arraste para mover o canvas, use dois dedos para zoom e toque nos cards para ler os detalhes."
         }
       },
       "understand": "Entendi"
+    }
+  },
+  "jobs": {
+    "common": {
+      "remote": "Remoto",
+      "international": "Contrato Internacional",
+      "back": "Voltar",
+      "loading": "Carregando vaga...",
+      "optional": "(opcional)",
+      "required": "*"
+    },
+    "posting": {
+      "badge": "Carreiras",
+      "heroText": "Faça parte de um time inovador e ajude a transformar o mercado com soluções de Inteligência Artificial de ponta.",
+      "viewDetails": "Ver Detalhes",
+      "noJobs": "Novas oportunidades em breve. Fique atento!"
+    },
+    "form": {
+      "badge": "Candidatura",
+      "title": "Candidatura para",
+      "subtitle": "Preencha as informações abaixo para se candidatar à vaga.",
+      "nameLabel": "Qual seu nome completo?",
+      "emailLabel": "Qual seu e-mail?",
+      "whatsappLabel": "Qual seu WhatsApp?",
+      "internetLabel": "Você possui uma conexão de internet estável?",
+      "contractLabel": "Modelo de Contratação",
+      "contractInfo": "Esta vaga não é CLT. O contrato segue os padrões americanos do estado do Arizona (EUA) e os feriados seguem o calendário americano. Você entende e concorda com este modelo?",
+      "contractAgree": "Sim, entendo e concordo",
+      "contractDisagree": "Não concordo",
+      "webcamLabel": "Você possui webcam e microfone para reuniões diárias via Zoom?",
+      "scheduleTitle": "IMPORTANTE: Esta vaga possui carga horária de 40h semanais.",
+      "scheduleInfo": "Selecione todas as opções em que você teria disponibilidade. Você trabalhará 7h/dia nos dias de semana e 5h em um dia do final de semana.",
+      "weekdayLabel": "Disponibilidade em dias de semana (Selecione uma ou mais)",
+      "weekendLabel": "Disponibilidade em final de semana (Selecione uma ou mais)",
+      "resumeLabel": "Faça o upload do seu currículo (PDF)",
+      "resumeDrop": "Arraste e solte",
+      "resumeOr": "ou",
+      "resumeBrowse": "Procurar Arquivo",
+      "resumeChange": "Alterar Arquivo",
+      "linkedinLabel": "Seu LinkedIn",
+      "githubLabel": "GitHub",
+      "portfolioLabel": "Portfólio",
+      "submitButton": "Enviar Candidatura",
+      "submitting": "Enviando...",
+      "footer": "© 2026 • Vaga remota com contrato direto com empresa americana",
+      "validationError": "Campos obrigatórios",
+      "validationDesc": "Por favor, preencha todos os campos obrigatórios, incluindo o currículo."
+    },
+    "success": {
+      "badge": "Tudo recebido!",
+      "title": "Candidatura",
+      "confirmed": "Confirmada!",
+      "description": "Sua candidatura foi enviada com sucesso para nosso time de talentos. Fique de olho no seu e-mail e WhatsApp, entraremos em contato em breve!",
+      "backHome": "Voltar para Home",
+      "seeOther": "Ver outras vagas"
+    },
+    "detail": {
+      "notFound": "Vaga não encontrada",
+      "backToList": "Voltar para a lista",
+      "remoteJob": "Vaga Remota",
+      "applyNow": "Candidatar-me agora",
+      "whyWorkWithUs": "Por que trabalhar conosco?",
+      "techStack": "Stack Tecnológico",
+      "requirements": "Requisitos Obrigatórios",
+      "responsibilities": "Responsabilidades da Vaga",
+      "workEnvironment": "Ambiente de Trabalho",
+      "conditions": "Condições e Pagamentos",
+      "currentTeam": "Time Atual",
+      "readyNextStep": "Pronto para o próximo passo?",
+      "ctaText": "Junte-se a nós para construir o futuro da Inteligência Artificial. Finalize sua candidatura agora."
+    },
+    "data": {
+      "desenvolvedor-full-stack": {
+        "title": "Desenvolvedor(a) Full Stack - Controle de Qualidade",
+        "shortDescription": "Integre o time da Suaiden, empresa focada em construção de aplicações web com uso de Inteligência Artificial.",
+        "salary": "USD 500,00 / mês",
+        "type": "Full-time (40h)",
+        "location": "Remoto (Arizona Timezone)",
+        "benefits": [
+          "Autonomia para propor e implementar soluções",
+          "Contato direto com decisões estratégicas",
+          "Oportunidade real de crescimento"
+        ],
+        "requirements": [
+          "Experiência em desenvolvimento Full Stack (Node.js, Vue.js, React, TypeScript, TailwindCSS)",
+          "Familiarity com ferramentas de IA para desenvolvimento ágil (Lovable, Bolt.new, Cursor, MCPs)",
+          "Integração com bancos de dados relacionais e não-relacionais (Supabase)",
+          "Consumo e criação de APIs (Node.js/Nest.js)",
+          "Versionamento de código (GitHub)",
+          "Integrações com CRMs"
+        ],
+        "responsibilities": [
+          "Atuar no desenvolvimento, manutenção e evolução dos sistemas e projetos da empresa",
+          "Garantir a qualidade dos produtos, realizando testes e validações antes de publicações e atualizações",
+          "Monitorar o funcionamento das plataformas, identificando falhas, gargalos e oportunidades de melhoria",
+          "Participar ativamente da estruturação e evolução dos nossos produtos SaaS, focando em performance, estabilidade e escalabilidade",
+          "Operar e otimizar o sistema de IA/SDR, ajustando fluxos, integrações e scripts conforme necessário",
+          "Atuar na área comercial realizando o atendimento inicial (SDR), entendendo a jornada do cliente na prática",
+          "Identificar pontos de melhoria no funil de vendas, propondo ajustes em processos, automações e integrações",
+          "Conectar o desenvolvimento, marketing e comercial, garantindo que os sistemas estejam alinhados aos objetivos de conversão",
+          "Contribuir estrategicamente com ideias para a melhoria contínua dos produtos, serviços e processos internos"
+        ],
+        "workEnvironment": [
+          "100% remoto (home office)",
+          "Carga horária: 40 horas semanais (Segunda a Sábado / Domingo a Sexta)",
+          "Horário: Alinhado ao fuso do Arizona (EUA)",
+          "Daily: De segunda a sexta-feria às 13h do Brasil",
+          "Durante o expediente, é necessário permanecer online com Zoom aberto e câmera ligada"
+        ],
+        "paymentTerms": [
+          "Remuneração: USD 500,00 por mês",
+          "Bônus: Por projetos e de acordo com o crescimento da empresa",
+          "Pagamento: Via PayPal, efetuado quinzenalmente nos dias 5 e 20 de cada mês",
+          "Contrato: Segue os padrões americanos do estado do Arizona",
+          "Feriados: Seguimos o calendário de feriados dos Estados Unidos",
+          "Período de experiência remunerado: 15 dias, para avaliar o desempenho e integração com o time"
+        ],
+        "team": [
+          "2 Desenvolvedores Full Stack",
+          "1 Especialista em Automação com n8n",
+          "1 Tech Lead"
+        ]
+      },
+      "desenvolvedor-full-stack-controle-de-qualidade": {
+        "title": "Desenvolvedor(a) Full Stack - Controle de Qualidade",
+        "shortDescription": "Integre o time da Suaiden, empresa focada em construção de aplicações web com uso de Inteligência Artificial.",
+        "salary": "USD 500,00 / mês",
+        "type": "Full-time (40h)",
+        "location": "Remoto (Arizona Timezone)",
+        "benefits": [
+          "Autonomia para propor e implementar soluções",
+          "Contato direto com decisões estratégicas",
+          "Oportunidade real de crescimento"
+        ],
+        "requirements": [
+          "Experiência em desenvolvimento Full Stack (Node.js, Vue.js, React, TypeScript, TailwindCSS)",
+          "Familiarity com ferramentas de IA para desenvolvimento ágil (Lovable, Bolt.new, Cursor, MCPs)",
+          "Integração com bancos de dados relacionais e não-relacionais (Supabase)",
+          "Consumo e criação de APIs (Node.js/Nest.js)",
+          "Versionamento de código (GitHub)",
+          "Integrações com CRMs"
+        ],
+        "responsibilities": [
+          "Atuar no desenvolvimento, manutenção e evolução dos sistemas e projetos da empresa",
+          "Garantir a qualidade dos produtos, realizando testes e validações antes de publicações e atualizações",
+          "Monitorar o funcionamento das plataformas, identificando falhas, gargalos e oportunidades de melhoria",
+          "Participar ativamente da estruturação e evolução dos nossos produtos SaaS, focando em performance, estabilidade e escalabilidade",
+          "Operar e otimizar o sistema de IA/SDR, ajustando fluxos, integrações e scripts conforme necessário",
+          "Atuar na área comercial realizando o atendimento inicial (SDR), entendendo a jornada do cliente na prática",
+          "Identificar pontos de melhoria no funil de vendas, propondo ajustes em processos, automações e integrações",
+          "Conectar o desenvolvimento, marketing e comercial, garantindo que os sistemas estejam alinhados aos objetivos de conversão",
+          "Contribuir estrategicamente com ideias para a melhoria contínua dos produtos, serviços e processos internos"
+        ],
+        "workEnvironment": [
+          "100% remoto (home office)",
+          "Carga horária: 40 horas semanais (Segunda a Sábado / Domingo a Sexta)",
+          "Horário: Alinhado ao fuso do Arizona (EUA)",
+          "Daily: De segunda a sexta-feria às 13h do Brasil",
+          "Durante o expediente, é necessário permanecer online com Zoom aberto e câmera ligada"
+        ],
+        "paymentTerms": [
+          "Remuneração: USD 500,00 por mês",
+          "Bônus: Por projetos e de acordo com o crescimento da empresa",
+          "Pagamento: Via PayPal, efetuado quinzenalmente nos dias 5 e 20 de cada mês",
+          "Contrato: Segue os padrões americanos do estado do Arizona",
+          "Feriados: Seguimos o calendário de feriados dos Estados Unidos",
+          "Período de experiência remunerado: 15 dias, para avaliar o desempenho e integração com o time"
+        ],
+        "team": [
+          "2 Desenvolvedores Full Stack",
+          "1 Especialista em Automação com n8n",
+          "1 Tech Lead"
+        ]
+      },
+      "desenvolvedora-full-stack-controle-de-qualidade": {
+        "title": "Desenvolvedor(a) Full Stack - Controle de Qualidade",
+        "shortDescription": "Integre o time da Suaiden, empresa focada em construção de aplicações web com uso de Inteligência Artificial.",
+        "salary": "USD 500,00 / mês",
+        "type": "Full-time (40h)",
+        "location": "Remoto (Arizona Timezone)",
+        "benefits": [
+          "Autonomia para propor e implementar soluções",
+          "Contato direto com decisões estratégicas",
+          "Oportunidade real de crescimento"
+        ],
+        "requirements": [
+          "Experiência em desenvolvimento Full Stack (Node.js, Vue.js, React, TypeScript, TailwindCSS)",
+          "Familiarity com ferramentas de IA para desenvolvimento ágil (Lovable, Bolt.new, Cursor, MCPs)",
+          "Integração com bancos de dados relacionais e não-relacionais (Supabase)",
+          "Consumo e criação de APIs (Node.js/Nest.js)",
+          "Versionamento de código (GitHub)",
+          "Integrações com CRMs"
+        ],
+        "responsibilities": [
+          "Atuar no desenvolvimento, manutenção e evolução dos sistemas e projetos da empresa",
+          "Garantir a qualidade dos produtos, realizando testes e validações antes de publicações e atualizações",
+          "Monitorar o funcionamento das plataformas, identificando falhas, gargalos e oportunidades de melhoria",
+          "Participar ativamente da estruturação e evolução dos nossos produtos SaaS, focando em performance, estabilidade e escalabilidade",
+          "Operar e otimizar o sistema de IA/SDR, ajustando fluxos, integrações e scripts conforme necessário",
+          "Atuar na área comercial realizando o atendimento inicial (SDR), entendendo a jornada do cliente na prática",
+          "Identificar pontos de melhoria no funil de vendas, propondo ajustes em processos, automações e integrações",
+          "Conectar o desenvolvimento, marketing e comercial, garantindo que os sistemas estejam alinhados aos objetivos de conversão",
+          "Contribuir estrategicamente com ideias para a melhoria contínua dos produtos, serviços e processos internos"
+        ],
+        "workEnvironment": [
+          "100% remoto (home office)",
+          "Carga horária: 40 horas semanais (Segunda a Sábado / Domingo a Sexta)",
+          "Horário: Alinhado ao fuso do Arizona (EUA)",
+          "Daily: De segunda a sexta-feria às 13h do Brasil",
+          "Durante o expediente, é necessário permanecer online com Zoom aberto e câmera ligada"
+        ],
+        "paymentTerms": [
+          "Remuneração: USD 500,00 por mês",
+          "Bônus: Por projetos e de acordo com o crescimento da empresa",
+          "Pagamento: Via PayPal, efetuado quinzenalmente nos dias 5 e 20 de cada mês",
+          "Contrato: Segue os padrões americanos do estado do Arizona",
+          "Feriados: Seguimos o calendário de feriados dos Estados Unidos",
+          "Período de experiência remunerado: 15 dias, para avaliar o desempenho e integração com o time"
+        ],
+        "team": [
+          "2 Desenvolvedores Full Stack",
+          "1 Especialista em Automação com n8n",
+          "1 Tech Lead"
+        ]
+      }
     }
   }
 }
