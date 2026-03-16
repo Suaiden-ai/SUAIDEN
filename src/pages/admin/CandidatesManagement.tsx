@@ -62,6 +62,13 @@ const WhatsAppIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
+const ensureExternalLink = (url: string | undefined | null) => {
+  if (!url) return '#';
+  const trimmedUrl = url.trim();
+  if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) return trimmedUrl;
+  return `https://${trimmedUrl}`;
+};
+
 const CandidatesManagement: React.FC = () => {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [filteredCandidates, setFilteredCandidates] = useState<Candidate[]>([]);
@@ -375,37 +382,38 @@ const CandidatesManagement: React.FC = () => {
                     <div className="p-4 bg-white/[0.03] rounded-xl border border-white/5 flex gap-3 items-start">
                       <Clock className="w-4 h-4 text-primary/60 mt-0.5" />
                       <span className="text-xs font-bold leading-relaxed text-white/80">
-                        {selectedCandidate.schedule_option === 'opcao1' ? 'Turno 1: 13h - 20h (Seg-Sex) + Sáb 10h-15h' :
-                         selectedCandidate.schedule_option === 'opcao2' ? 'Turno 2: 10h - 17h (Seg-Sex) + Dom 15h-20h' :
-                         selectedCandidate.schedule_option === 'opcao3' ? 'Turno 3: 13h - 20h (Seg-Sex) + Dom 10h-15h' :
-                         'Horário a definir'}
+                        {selectedCandidate.schedule_option || 'Horário a definir'}
                       </span>
                     </div>
                   </div>
                 </div>
 
                 {/* Links Profissionais */}
-                <div className="space-y-3">
-                  <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/70">Portfólio & Redes</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <a href={selectedCandidate.linkedin_url} target="_blank" rel="noreferrer" className="flex items-center gap-3 p-3 bg-white/[0.03] rounded-xl border border-white/5 hover:border-blue-500/30 hover:bg-blue-500/5 transition-all group">
-                      <Linkedin className="w-4 h-4 text-blue-500" />
-                      <span className="text-[10px] font-bold text-white/80">LinkedIn</span>
-                    </a>
-                    {selectedCandidate.github_url && (
-                      <a href={selectedCandidate.github_url} target="_blank" rel="noreferrer" className="flex items-center gap-3 p-3 bg-white/[0.03] rounded-xl border border-white/5 hover:border-white/20 hover:bg-white/5 transition-all group">
-                        <Github className="w-4 h-4 text-white" />
-                        <span className="text-[10px] font-bold text-white/80">GitHub</span>
-                      </a>
-                    )}
-                    {selectedCandidate.portfolio_url && (
-                      <a href={selectedCandidate.portfolio_url} target="_blank" rel="noreferrer" className="flex items-center gap-3 p-3 bg-white/[0.03] rounded-xl border border-white/5 hover:border-primary/30 hover:bg-primary/5 transition-all group">
-                        <Globe className="w-4 h-4 text-primary" />
-                        <span className="text-[10px] font-bold text-white/80">Portfólio</span>
-                      </a>
-                    )}
+                {(selectedCandidate.linkedin_url || selectedCandidate.github_url || selectedCandidate.portfolio_url) && (
+                  <div className="space-y-3">
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/70">Portfólio & Redes</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {selectedCandidate.linkedin_url && (
+                        <a href={ensureExternalLink(selectedCandidate.linkedin_url)} target="_blank" rel="noreferrer" className="flex items-center gap-3 p-3 bg-white/[0.03] rounded-xl border border-white/5 hover:border-blue-500/30 hover:bg-blue-500/5 transition-all group">
+                          <Linkedin className="w-4 h-4 text-blue-500" />
+                          <span className="text-[10px] font-bold text-white/80">LinkedIn</span>
+                        </a>
+                      )}
+                      {selectedCandidate.github_url && (
+                        <a href={ensureExternalLink(selectedCandidate.github_url)} target="_blank" rel="noreferrer" className="flex items-center gap-3 p-3 bg-white/[0.03] rounded-xl border border-white/5 hover:border-white/20 hover:bg-white/5 transition-all group">
+                          <Github className="w-4 h-4 text-white" />
+                          <span className="text-[10px] font-bold text-white/80">GitHub</span>
+                        </a>
+                      )}
+                      {selectedCandidate.portfolio_url && (
+                        <a href={ensureExternalLink(selectedCandidate.portfolio_url)} target="_blank" rel="noreferrer" className="flex items-center gap-3 p-3 bg-white/[0.03] rounded-xl border border-white/5 hover:border-primary/30 hover:bg-primary/5 transition-all group">
+                          <Globe className="w-4 h-4 text-primary" />
+                          <span className="text-[10px] font-bold text-white/80">Portfólio</span>
+                        </a>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Requisitos Checklist */}
                 <div className="space-y-4 p-5 bg-primary/5 rounded-2xl border border-primary/10">
