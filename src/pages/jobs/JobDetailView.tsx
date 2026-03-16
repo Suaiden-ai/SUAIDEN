@@ -86,11 +86,11 @@ const JobDetailView = () => {
   const localizedJob = localizeJob(job, t);
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
+    <div className="relative bg-background">
       <div className="absolute inset-0 bg-[linear-gradient(hsl(210_100%_56%/0.03)_1px,transparent_1px),linear-gradient(90deg,hsl(210_100%_56%/0.03)_1px,transparent_1px)] bg-[size:60px_60px]" />
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-primary/5 rounded-full blur-[120px]" />
 
-      <div className="relative max-w-4xl mx-auto px-4 sm:px-6 py-12 sm:py-20">
+      <div className="relative max-w-4xl mx-auto px-4 sm:px-6 pt-40 sm:pt-32 pb-24 sm:pb-32">
         <motion.div initial="hidden" animate="visible" variants={fadeUp} custom={0}>
           <Button
             variant="ghost"
