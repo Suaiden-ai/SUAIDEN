@@ -114,20 +114,8 @@ const ApplicationFormPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("🚀 [ApplicationForm] Tentando enviar formulário...");
 
     if (!name || !email || !whatsapp || !stableInternet || !understandsContract || !hasWebcam || weekDaySchedules.length === 0 || weekendSchedules.length === 0 || !resume) {
-      console.warn("⚠️ [ApplicationForm] Validação falhou. Campos ausentes:", {
-        name: !!name,
-        email: !!email,
-        whatsapp: !!whatsapp,
-        stableInternet: !!stableInternet,
-        understandsContract: !!understandsContract,
-        hasWebcam: !!hasWebcam,
-        weekDaySchedules: weekDaySchedules.length,
-        weekendSchedules: weekendSchedules.length,
-        resume: !!resume
-      });
       toast({
         title: t("jobs.form.validationError"),
         description: t("jobs.form.validationDesc"),
@@ -137,7 +125,6 @@ const ApplicationFormPage = () => {
     }
 
     setIsSubmitting(true);
-    console.log("⏳ [ApplicationForm] Iniciando upload do currículo...");
 
     try {
       let resumePath = null;
@@ -150,15 +137,10 @@ const ApplicationFormPage = () => {
           .from('curriculum-vitae')
           .upload(filePath, resume);
 
-        if (uploadError) {
-          console.error("❌ [ApplicationForm] Erro no upload:", uploadError);
-          throw uploadError;
-        }
+        if (uploadError) throw uploadError;
         resumePath = filePath;
-        console.log("✅ [ApplicationForm] Currículo enviado:", resumePath);
       }
 
-      console.log("⏳ [ApplicationForm] Inserindo dados na tabela job_applications...");
       const { error, data } = await supabase.from("job_applications").insert({
         full_name: name,
         email,
@@ -175,11 +157,7 @@ const ApplicationFormPage = () => {
         resume_url: resumePath
       }).select();
 
-      if (error) {
-        console.error("❌ [ApplicationForm] Erro ao inserir aplicação:", error);
-        throw error;
-      }
-      console.log("✅ [ApplicationForm] Aplicação salva com sucesso!");
+      if (error) throw error;
 
       // --- Notificações por E-mail ---
       try {
