@@ -52,16 +52,12 @@ const Footer: React.FC = () => {
                 <FontAwesomeIcon icon={solidIcons.faEnvelope} size="sm" className="mr-2" />
                 admin@suaiden.com
               </a>
-              <a href="tel:+5500000000000" className="flex items-center text-white/70 hover:text-white transition-colors">
-                <FontAwesomeIcon icon={solidIcons.faPhone} size="sm" className="mr-2" />
-                +55 00 00000-0000
-              </a>
             </div>
           </div>
         </div>
 
         <div className="border-t border-white/10 mt-8 pt-8 text-center text-white/50">
-          <p>&copy; {currentYear} SUAIDEN - Super Artificial Inteligência Desenvolvimento. {t('footer.rights')}</p>
+          <p>&copy; {currentYear} {t('footer.companyName')}. {t('footer.rights')}</p>
         </div>
       </div>
     </footer>

@@ -262,8 +262,8 @@
       "answer": "Absolutely. We utilize cutting-edge AI technologies including GPT-4, Claude, and proprietary models. This isn't just marketing—we implement genuine artificial intelligence applications that deliver tangible, measurable results for your business."
     },
     "q2": {
-      "question": "Do I need programming knowledge?",
-      "answer": "Not at all. Our solutions are designed to be intuitive and user-friendly, regardless of your technical background. Our expert team handles all the technical aspects, so you can focus on your business goals."
+      "question": "Not at all. Our solutions are designed to be intuitive and user-friendly, regardless of your technical background. Our expert team handles all the technical aspects, so you can focus on your business goals.",
+      "answer": "Do I need programming knowledge?"
     },
     "q3": {
       "question": "What are your pricing options?",
@@ -295,6 +295,7 @@
     }
   },
   "footer": {
+    "companyName": "SUAIDEN - Super Artificial Intelligence Development",
     "description": "Innovative solutions in automation, artificial intelligence, and custom software development.",
     "quickLinks": "Quick Links",
     "links": {
@@ -415,6 +416,231 @@
         }
       },
       "understand": "Got it"
+    }
+  },
+  "jobs": {
+    "common": {
+      "remote": "Remote",
+      "international": "International Contract",
+      "back": "Back",
+      "loading": "Loading job...",
+      "optional": "(optional)",
+      "required": "*"
+    },
+    "posting": {
+      "badge": "Careers",
+      "heroText": "Join an innovative team and help transform the market with cutting-edge Artificial Intelligence solutions.",
+      "viewDetails": "View Details",
+      "noJobs": "New opportunities coming soon. Stay tuned!"
+    },
+    "form": {
+      "badge": "Application",
+      "title": "Application for",
+      "subtitle": "Fill in the information below to apply for the position.",
+      "nameLabel": "What is your full name?",
+      "emailLabel": "What is your email?",
+      "whatsappLabel": "What is your WhatsApp?",
+      "internetLabel": "Do you have a stable internet connection?",
+      "contractLabel": "Contract Model",
+      "contractInfo": "This position is not CLT. The contract follows US standards for the state of Arizona (USA), and holidays follow the US calendar. Do you understand and agree to this model?",
+      "contractAgree": "Yes, I understand and agree",
+      "contractDisagree": "I do not agree",
+      "webcamLabel": "Do you have a webcam and microphone for daily Zoom meetings?",
+      "scheduleTitle": "IMPORTANT: This position has a 40-hour weekly workload.",
+      "scheduleInfo": "Select all options where you would be available. You will work 7h/day on weekdays and 5h on one weekend day.",
+      "weekdayLabel": "Weekday Availability (Select one or more)",
+      "weekendLabel": "Weekend Availability (Select one or more)",
+      "resumeLabel": "Upload your resume (PDF)",
+      "resumeDrop": "Drag and Drop",
+      "resumeOr": "or",
+      "resumeBrowse": "Browse File",
+      "resumeChange": "Change File",
+      "linkedinLabel": "Your LinkedIn",
+      "githubLabel": "GitHub",
+      "portfolioLabel": "Portfolio",
+      "submitButton": "Submit Application",
+      "submitting": "Sending...",
+      "footer": "© 2026 • Remote position with direct contract with US company",
+      "validationError": "Required fields",
+      "validationDesc": "Please fill in all required fields, including your resume."
+    },
+    "success": {
+      "badge": "Everything received!",
+      "title": "Application",
+      "confirmed": "Confirmed!",
+      "description": "Your application has been successfully sent to our talent team. Keep an eye on your email and WhatsApp, we'll be in touch soon!",
+      "backHome": "Back to Home",
+      "seeOther": "See other jobs"
+    },
+    "detail": {
+      "notFound": "Job not found",
+      "backToList": "Back to list",
+      "remoteJob": "Remote Position",
+      "applyNow": "Apply Now",
+      "whyWorkWithUs": "Why work with us?",
+      "techStack": "Tech Stack",
+      "requirements": "Mandatory Requirements",
+      "responsibilities": "Job Responsibilities",
+      "workEnvironment": "Work Environment",
+      "conditions": "Conditions and Payments",
+      "currentTeam": "Current Team",
+      "readyNextStep": "Ready for the next step?",
+      "ctaText": "Join us to build the future of Artificial Intelligence. Finalize your application now."
+    },
+    "data": {
+      "desenvolvedor-full-stack": {
+        "title": "Full Stack Developer - Quality Control",
+        "shortDescription": "Join the Suaiden team, a company focused on building web applications using Artificial Intelligence.",
+        "salary": "USD 500.00 / month",
+        "type": "Full-time (40h)",
+        "location": "Remote (Arizona Timezone)",
+        "benefits": [
+          "Autonomy to propose and implement solutions",
+          "Direct contact with strategic decisions",
+          "Real opportunity for growth"
+        ],
+        "requirements": [
+          "Experience in Full Stack development (Node.js, Vue.js, React, TypeScript, TailwindCSS)",
+          "Familiarity with AI tools for agile development (Lovable, Bolt.new, Cursor, MCPs)",
+          "Integration with relational and non-relational databases (Supabase)",
+          "Consumption and creation of APIs (Node.js/Nest.js)",
+          "Code versioning (GitHub)",
+          "CRM integrations"
+        ],
+        "responsibilities": [
+          "Act in the development, maintenance, and evolution of the company's systems and projects",
+          "Ensure product quality, performing tests and validations before publications and updates",
+          "Monitor platform functioning, identifying flaws, bottlenecks, and opportunities for improvement",
+          "Actively participate in the structuring and evolution of our SaaS products, focusing on performance, stability, and scalability",
+          "Operate and optimize the AI/SDR system, adjusting flows, integrations, and scripts as needed",
+          "Act in the commercial area performing initial service (SDR), understanding the client's journey in practice",
+          "Identify points of improvement in the sales funnel, proposing adjustments in processes, automations, and integrations",
+          "Connect development, marketing, and commercial, ensuring systems are aligned with conversion goals",
+          "Strategically contribute ideas for continuous improvement of products, services, and internal processes"
+        ],
+        "workEnvironment": [
+          "100% remote (home office)",
+          "Workload: 40 hours per week (Monday to Saturday / Sunday to Friday)",
+          "Schedule: Aligned with Arizona (USA) timezone",
+          "Daily: Monday to Friday at 1 PM Brazil time",
+          "During working hours, it is necessary to remain online with Zoom open and camera on"
+        ],
+        "paymentTerms": [
+          "Remuneration: USD 500.00 per month",
+          "Bonuses: By projects and according to the company's growth",
+          "Payment: Via PayPal, performed bi-weekly on the 5th and 20th of each month",
+          "Contract: Follows US standards for the state of Arizona",
+          "Holidays: We follow the US holiday calendar",
+          "Paid trial period: 15 days, to evaluate performance and integration with the team"
+        ],
+        "team": [
+          "2 Full Stack Developers",
+          "1 Automation Specialist with n8n",
+          "1 Tech Lead"
+        ]
+      },
+      "desenvolvedor-full-stack-controle-de-qualidade": {
+        "title": "Full Stack Developer - Quality Control",
+        "shortDescription": "Join the Suaiden team, a company focused on building web applications using Artificial Intelligence.",
+        "salary": "USD 500.00 / month",
+        "type": "Full-time (40h)",
+        "location": "Remote (Arizona Timezone)",
+        "benefits": [
+          "Autonomy to propose and implement solutions",
+          "Direct contact with strategic decisions",
+          "Real opportunity for growth"
+        ],
+        "requirements": [
+          "Experience in Full Stack development (Node.js, Vue.js, React, TypeScript, TailwindCSS)",
+          "Familiarity with AI tools for agile development (Lovable, Bolt.new, Cursor, MCPs)",
+          "Integration with relational and non-relational databases (Supabase)",
+          "Consumption and creation of APIs (Node.js/Nest.js)",
+          "Code versioning (GitHub)",
+          "CRM integrations"
+        ],
+        "responsibilities": [
+          "Act in the development, maintenance, and evolution of the company's systems and projects",
+          "Ensure product quality, performing tests and validations before publications and updates",
+          "Monitor platform functioning, identifying flaws, bottlenecks, and opportunities for improvement",
+          "Actively participate in the structuring and evolution of our SaaS products, focusing on performance, stability, and scalability",
+          "Operate and optimize the AI/SDR system, adjusting flows, integrations, and scripts as needed",
+          "Act in the commercial area performing initial service (SDR), understanding the client's journey in practice",
+          "Identify points of improvement in the sales funnel, proposing adjustments in processes, automations, and integrations",
+          "Connect development, marketing, and commercial, ensuring systems are aligned with conversion goals",
+          "Strategically contribute ideas for continuous improvement of products, services, and internal processes"
+        ],
+        "workEnvironment": [
+          "100% remote (home office)",
+          "Workload: 40 hours per week (Monday to Saturday / Sunday to Friday)",
+          "Schedule: Aligned with Arizona (USA) timezone",
+          "Daily: Monday to Friday at 1 PM Brazil time",
+          "During working hours, it is necessary to remain online with Zoom open and camera on"
+        ],
+        "paymentTerms": [
+          "Remuneration: USD 500.00 per month",
+          "Bonuses: By projects and according to the company's growth",
+          "Payment: Via PayPal, performed bi-weekly on the 5th and 20th of each month",
+          "Contract: Follows US standards for the state of Arizona",
+          "Holidays: We follow the US holiday calendar",
+          "Paid trial period: 15 days, to evaluate performance and integration with the team"
+        ],
+        "team": [
+          "2 Full Stack Developers",
+          "1 Automation Specialist with n8n",
+          "1 Tech Lead"
+        ]
+      },
+      "desenvolvedora-full-stack-controle-de-qualidade": {
+        "title": "Full Stack Developer - Quality Control",
+        "shortDescription": "Join the Suaiden team, a company focused on building web applications using Artificial Intelligence.",
+        "salary": "USD 500.00 / month",
+        "type": "Full-time (40h)",
+        "location": "Remote (Arizona Timezone)",
+        "benefits": [
+          "Autonomy to propose and implement solutions",
+          "Direct contact with strategic decisions",
+          "Real opportunity for growth"
+        ],
+        "requirements": [
+          "Experience in Full Stack development (Node.js, Vue.js, React, TypeScript, TailwindCSS)",
+          "Familiarity with AI tools for agile development (Lovable, Bolt.new, Cursor, MCPs)",
+          "Integration with relational and non-relational databases (Supabase)",
+          "Consumption and creation of APIs (Node.js/Nest.js)",
+          "Code versioning (GitHub)",
+          "CRM integrations"
+        ],
+        "responsibilities": [
+          "Act in the development, maintenance, and evolution of the company's systems and projects",
+          "Ensure product quality, performing tests and validations before publications and updates",
+          "Monitor platform functioning, identifying flaws, bottlenecks, and opportunities for improvement",
+          "Actively participate in the structuring and evolution of our SaaS products, focusing on performance, stability, and scalability",
+          "Operate and optimize the AI/SDR system, adjusting flows, integrations, and scripts as needed",
+          "Act in the commercial area performing initial service (SDR), understanding the client's journey in practice",
+          "Identify points of improvement in the sales funnel, proposing adjustments in processes, automations, and integrations",
+          "Connect development, marketing, and commercial, ensuring systems are aligned with conversion goals",
+          "Strategically contribute ideas for continuous improvement of products, services, and internal processes"
+        ],
+        "workEnvironment": [
+          "100% remote (home office)",
+          "Workload: 40 hours per week (Monday to Saturday / Sunday to Friday)",
+          "Schedule: Aligned with Arizona (USA) timezone",
+          "Daily: Monday to Friday at 1 PM Brazil time",
+          "During working hours, it is necessary to remain online with Zoom open and camera on"
+        ],
+        "paymentTerms": [
+          "Remuneration: USD 500.00 per month",
+          "Bonuses: By projects and according to the company's growth",
+          "Payment: Via PayPal, performed bi-weekly on the 5th and 20th of each month",
+          "Contract: Follows US standards for the state of Arizona",
+          "Holidays: We follow the US holiday calendar",
+          "Paid trial period: 15 days, to evaluate performance and integration with the team"
+        ],
+        "team": [
+          "2 Full Stack Developers",
+          "1 Automation Specialist with n8n",
+          "1 Tech Lead"
+        ]
+      }
     }
   }
 }

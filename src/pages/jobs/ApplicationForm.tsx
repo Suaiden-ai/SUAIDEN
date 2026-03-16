@@ -3,6 +3,7 @@ import { Badge } from "@/components/jobs/ui/badge";
 import { Button } from "@/components/jobs/ui/button";
 import { Input } from "@/components/jobs/ui/input";
 import { Label } from "@/components/jobs/ui/label";
+import { Checkbox } from "@/components/jobs/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/jobs/ui/radio-group";
 import {
   ArrowLeft,
@@ -15,14 +16,18 @@ import {
   Camera,
   Clock,
   Linkedin,
+  Github,
+  Globe,
   ClipboardCheck,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useState } from "react";
-import { jobs } from "../../data/jobs";
+import { useState, useEffect } from "react";
+import type { Job } from "../../services/jobs";
+import { localizeJob } from "../../utils/jobTranslations";
 import { useToast } from "@/hooks/jobs/use-toast";
 import { supabase } from "@/services/supabase";
 import { emailService } from "@/services/email";
+import { useLanguage } from "../../context/LanguageContext";
 
 import type { Easing } from "framer-motion";
 
@@ -36,30 +41,84 @@ const fadeUp = {
 };
 
 const ApplicationFormPage = () => {
-  const { slug } = useParams();
+  const params = useParams();
+  const slug = params.slug || "";
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useLanguage();
   
-  const job = jobs.find(j => j.slug === slug);
+  const [job, setJob] = useState<Job | null>(null);
+  const [isLoadingJob, setIsLoadingJob] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [whatsapp, setWhatsapp] = useState("");
-  const [stableInternet, setStableInternet] = useState("");
-  const [understandsContract, setUnderstandsContract] = useState("");
-  const [hasWebcam, setHasWebcam] = useState("");
-  const [schedule, setSchedule] = useState("");
-  const [linkedin, setLinkedin] = useState("");
+  // Buscar detalhes da vaga no banco
+  useEffect(() => {
+    const fetchJob = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("jobs")
+          .select("*")
+          .eq("slug", slug)
+          .single();
+
+        if (error) throw error;
+        setJob(data);
+      } catch (err) {
+        console.error("Erro ao carregar vaga:", err);
+      } finally {
+        setIsLoadingJob(false);
+      }
+    };
+
+    if (slug) {
+      fetchJob();
+    }
+  }, [slug]);
+  
+  const localizedJob = job ? localizeJob(job, t) : null;
+
+  const [name, setName] = useState(() => localStorage.getItem("app_name") || "");
+  const [email, setEmail] = useState(() => localStorage.getItem("app_email") || "");
+  const [whatsapp, setWhatsapp] = useState(() => localStorage.getItem("app_whatsapp") || "");
+  const [stableInternet, setStableInternet] = useState(() => localStorage.getItem("app_internet") || "");
+  const [understandsContract, setUnderstandsContract] = useState(() => localStorage.getItem("app_contract") || "");
+  const [hasWebcam, setHasWebcam] = useState(() => localStorage.getItem("app_webcam") || "");
+  const [weekDaySchedules, setWeekDaySchedules] = useState<string[]>(() => {
+    const saved = localStorage.getItem("app_weekday_schedules");
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [weekendSchedules, setWeekendSchedules] = useState<string[]>(() => {
+    const saved = localStorage.getItem("app_weekend_schedules");
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [linkedin, setLinkedin] = useState(() => localStorage.getItem("app_linkedin") || "");
+  const [portfolio, setPortfolio] = useState(() => localStorage.getItem("app_portfolio") || "");
+  const [github, setGithub] = useState(() => localStorage.getItem("app_github") || "");
   const [resume, setResume] = useState<File | null>(null);
+
+  // Efeito para persistir dados no LocalStorage
+  useEffect(() => {
+    localStorage.setItem("app_name", name);
+    localStorage.setItem("app_email", email);
+    localStorage.setItem("app_whatsapp", whatsapp);
+    localStorage.setItem("app_internet", stableInternet);
+    localStorage.setItem("app_contract", understandsContract);
+    localStorage.setItem("app_webcam", hasWebcam);
+    localStorage.setItem("app_weekday_schedules", JSON.stringify(weekDaySchedules));
+    localStorage.setItem("app_weekend_schedules", JSON.stringify(weekendSchedules));
+    localStorage.setItem("app_linkedin", linkedin);
+    localStorage.setItem("app_portfolio", portfolio);
+    localStorage.setItem("app_github", github);
+  }, [name, email, whatsapp, stableInternet, understandsContract, hasWebcam, weekDaySchedules, weekendSchedules, linkedin, portfolio, github]);
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!name || !email || !whatsapp || !stableInternet || !understandsContract || !hasWebcam || !schedule || !resume) {
+    if (!name || !email || !whatsapp || !stableInternet || !understandsContract || !hasWebcam || weekDaySchedules.length === 0 || weekendSchedules.length === 0 || !resume) {
       toast({
-        title: "Campos obrigatórios",
-        description: "Por favor, preencha todos os campos obrigatórios, incluindo o currículo.",
+        title: t("jobs.form.validationError"),
+        description: t("jobs.form.validationDesc"),
         variant: "destructive",
       });
       return;
@@ -89,10 +148,12 @@ const ApplicationFormPage = () => {
         internet_stable: stableInternet,
         contract_agreement: understandsContract,
         webcam_ready: hasWebcam,
-        schedule_option: schedule,
+        schedule_option: `Semana: ${weekDaySchedules.join(", ")} / Fim de Semana: ${weekendSchedules.join(", ")}`,
         linkedin_url: linkedin,
+        portfolio_url: portfolio,
+        github_url: github,
         job_slug: slug,
-        job_title: job?.title,
+        job_title: localizedJob?.title || job?.title,
         resume_url: resumePath
       }).select();
 
@@ -103,7 +164,7 @@ const ApplicationFormPage = () => {
         const applicationData = data[0];
         
         // 1. Notificar Candidato
-        await emailService.sendCandidateConfirmation(email, name, job?.title || "Vaga");
+        await emailService.sendCandidateConfirmation(email, name, localizedJob?.title || job?.title || "Vaga");
 
         // 2. Notificar Administradores
         const { data: adminProfiles } = await supabase
@@ -119,7 +180,7 @@ const ApplicationFormPage = () => {
                 emailService.sendAdminNotification(profile.email, {
                   fullName: name,
                   email: email,
-                  jobTitle: job?.title || "Vaga",
+                  jobTitle: localizedJob?.title || job?.title || "Vaga",
                   id: applicationData.id
                 })
               )
@@ -130,16 +191,24 @@ const ApplicationFormPage = () => {
         // Não travamos o fluxo se o e-mail falhar, pois os dados já foram salvos
       }
 
-      toast({
-        title: "Candidatura enviada com sucesso!",
-        description: "Entraremos em contato em breve. Obrigado!",
-      });
-      
-      setTimeout(() => navigate("/"), 2000);
+      // Limpando o localStorage após sucesso
+      localStorage.removeItem("app_name");
+      localStorage.removeItem("app_email");
+      localStorage.removeItem("app_whatsapp");
+      localStorage.removeItem("app_internet");
+      localStorage.removeItem("app_contract");
+      localStorage.removeItem("app_webcam");
+      localStorage.removeItem("app_weekday_schedules");
+      localStorage.removeItem("app_weekend_schedules");
+      localStorage.removeItem("app_linkedin");
+      localStorage.removeItem("app_portfolio");
+      localStorage.removeItem("app_github");
+
+      navigate("/vaga/sucesso");
     } catch (error: any) {
       toast({
-        title: "Erro ao enviar",
-        description: error.message || "Ocorreu um erro inesperado.",
+        title: "Error",
+        description: error.message || "An unexpected error occurred.",
         variant: "destructive",
       });
     } finally {
@@ -147,6 +216,14 @@ const ApplicationFormPage = () => {
     }
   };
 
+
+  if (isLoadingJob) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
@@ -162,7 +239,7 @@ const ApplicationFormPage = () => {
             onClick={() => navigate(-1)}
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Voltar
+            {t("jobs.common.back")}
           </Button>
         </motion.div>
 
@@ -170,13 +247,13 @@ const ApplicationFormPage = () => {
         <motion.div initial="hidden" animate="visible" variants={fadeUp} custom={0} className="text-center mb-14">
           <Badge variant="tech" className="mb-6 text-sm px-4 py-1.5">
             <ClipboardCheck className="w-3.5 h-3.5 mr-1.5" />
-            Candidatura
+            {t("jobs.form.badge")}
           </Badge>
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground mb-4 leading-tight">
-            Candidatura para <span className="text-primary">{job?.title || "Vaga"}</span>
+            {t("jobs.form.title")} <span className="text-primary">{localizedJob?.title || job?.title || "Vaga"}</span>
           </h1>
           <p className="text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">
-            Preencha as informações abaixo para se candidatar à vaga.
+            {t("jobs.form.subtitle")}
           </p>
         </motion.div>
 
@@ -190,7 +267,7 @@ const ApplicationFormPage = () => {
             <motion.div variants={fadeUp} custom={1} className="space-y-2">
               <Label className="flex items-center gap-2 text-foreground font-medium">
                 <User className="w-4 h-4 text-primary" />
-                Qual seu nome completo? <span className="text-destructive">*</span>
+                {t("jobs.form.nameLabel")} <span className="text-destructive">*</span>
               </Label>
               <Input
                 value={name}
@@ -203,7 +280,7 @@ const ApplicationFormPage = () => {
             <motion.div variants={fadeUp} custom={2} className="space-y-2">
               <Label className="flex items-center gap-2 text-foreground font-medium">
                 <Mail className="w-4 h-4 text-primary" />
-                Qual seu e-mail? <span className="text-destructive">*</span>
+                {t("jobs.form.emailLabel")} <span className="text-destructive">*</span>
               </Label>
               <Input
                 type="email"
@@ -217,7 +294,7 @@ const ApplicationFormPage = () => {
             <motion.div variants={fadeUp} custom={3} className="space-y-2">
               <Label className="flex items-center gap-2 text-foreground font-medium">
                 <Phone className="w-4 h-4 text-primary" />
-                Qual seu WhatsApp? <span className="text-destructive">*</span>
+                {t("jobs.form.whatsappLabel")} <span className="text-destructive">*</span>
               </Label>
               <Input
                 value={whatsapp}
@@ -230,7 +307,7 @@ const ApplicationFormPage = () => {
             <motion.div variants={fadeUp} custom={4} className="space-y-3">
               <Label className="flex items-center gap-2 text-foreground font-medium">
                 <Wifi className="w-4 h-4 text-primary" />
-                Você tem conexão estável com a internet? <span className="text-destructive">*</span>
+                {t("jobs.form.internetLabel")} <span className="text-destructive">*</span>
               </Label>
               <RadioGroup value={stableInternet} onValueChange={setStableInternet} className="flex gap-6">
                 <div className="flex items-center gap-2">
@@ -248,20 +325,19 @@ const ApplicationFormPage = () => {
             <motion.div variants={fadeUp} custom={5} className="space-y-3">
               <Label className="flex items-center gap-2 text-foreground font-medium">
                 <FileText className="w-4 h-4 text-primary" />
-                Modelo de contrato <span className="text-destructive">*</span>
+                {t("jobs.form.contractLabel")} <span className="text-destructive">*</span>
               </Label>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Esta vaga <strong className="text-foreground">não é CLT</strong>. O contrato segue as normas americanas do estado do Arizona (EUA), 
-                e os feriados seguem o calendário americano. Você entende e concorda com esse modelo?
+                {t("jobs.form.contractInfo")}
               </p>
               <RadioGroup value={understandsContract} onValueChange={setUnderstandsContract} className="flex gap-6">
                 <div className="flex items-center gap-2">
                   <RadioGroupItem value="sim" id="contrato-sim" />
-                  <Label htmlFor="contrato-sim" className="text-card-foreground cursor-pointer">Sim, entendo e concordo</Label>
+                  <Label htmlFor="contrato-sim" className="text-card-foreground cursor-pointer">{t("jobs.form.contractAgree")}</Label>
                 </div>
                 <div className="flex items-center gap-2">
                   <RadioGroupItem value="nao" id="contrato-nao" />
-                  <Label htmlFor="contrato-nao" className="text-card-foreground cursor-pointer">Não concordo</Label>
+                  <Label htmlFor="contrato-nao" className="text-card-foreground cursor-pointer">{t("jobs.form.contractDisagree")}</Label>
                 </div>
               </RadioGroup>
             </motion.div>
@@ -270,7 +346,7 @@ const ApplicationFormPage = () => {
             <motion.div variants={fadeUp} custom={6} className="space-y-3">
               <Label className="flex items-center gap-2 text-foreground font-medium">
                 <Camera className="w-4 h-4 text-primary" />
-                Você tem webcam e microfone para reuniões diárias via Zoom? <span className="text-destructive">*</span>
+                {t("jobs.form.webcamLabel")} <span className="text-destructive">*</span>
               </Label>
               <RadioGroup value={hasWebcam} onValueChange={setHasWebcam} className="flex gap-6">
                 <div className="flex items-center gap-2">
@@ -285,38 +361,98 @@ const ApplicationFormPage = () => {
             </motion.div>
 
             {/* Horários */}
-            <motion.div variants={fadeUp} custom={7} className="space-y-3">
-              <Label className="flex items-center gap-2 text-foreground font-medium">
-                <Clock className="w-4 h-4 text-primary" />
-                Quais horários você tem disponibilidade para trabalhar? (40h semanais) <span className="text-destructive">*</span>
-              </Label>
-              <RadioGroup value={schedule} onValueChange={setSchedule} className="space-y-3">
-                <div className="flex items-start gap-3 bg-muted/50 border border-border rounded-lg p-4 hover:border-primary/30 transition-colors">
-                  <RadioGroupItem value="opcao1" id="horario-1" className="mt-0.5" />
-                  <Label htmlFor="horario-1" className="text-card-foreground cursor-pointer leading-relaxed">
-                    <strong>Opção 1:</strong> 13h às 20h (seg a sexta) / Sábado 10h às 15h
-                  </Label>
+            <motion.div variants={fadeUp} custom={7} className="space-y-8">
+              <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 mb-6">
+                <p className="text-sm text-primary font-semibold flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  {t("jobs.form.scheduleTitle")}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {t("jobs.form.scheduleInfo")}
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <Label className="flex items-center gap-2 text-foreground font-medium text-lg">
+                  <Clock className="w-5 h-5 text-primary" />
+                  {t("jobs.form.weekdayLabel")} <span className="text-destructive">*</span>
+                </Label>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {[
+                    { id: "week-10-17", value: "10h às 17h" },
+                    { id: "week-13-20", value: "13h às 20h" },
+                    { id: "week-14-21", value: "14h às 21h" },
+                  ].map((item) => (
+                    <div 
+                      key={item.id}
+                      className="flex items-center gap-3 bg-muted/50 border border-border rounded-lg p-4 hover:border-primary/30 transition-all group"
+                    >
+                      <Checkbox 
+                        id={item.id} 
+                        checked={weekDaySchedules.includes(item.value)}
+                        onCheckedChange={(checked) => {
+                          setWeekDaySchedules(prev => 
+                            checked 
+                              ? [...prev, item.value] 
+                              : prev.filter(v => v !== item.value)
+                          );
+                        }}
+                      />
+                      <Label 
+                        htmlFor={item.id} 
+                        className="text-card-foreground cursor-pointer text-sm font-medium group-hover:text-primary transition-colors flex-1"
+                      >
+                        {item.value}
+                      </Label>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex items-start gap-3 bg-muted/50 border border-border rounded-lg p-4 hover:border-primary/30 transition-colors">
-                  <RadioGroupItem value="opcao2" id="horario-2" className="mt-0.5" />
-                  <Label htmlFor="horario-2" className="text-card-foreground cursor-pointer leading-relaxed">
-                    <strong>Opção 2:</strong> 10h às 17h (seg a sexta) / Domingo 15h às 20h
-                  </Label>
+              </div>
+
+              <div className="space-y-4">
+                <Label className="flex items-center gap-2 text-foreground font-medium text-lg">
+                  <Clock className="w-5 h-5 text-primary" />
+                  {t("jobs.form.weekendLabel")} <span className="text-destructive">*</span>
+                </Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {[
+                    { id: "sat-10-15", value: "Sábado: 10h às 15h" },
+                    { id: "sat-13-18", value: "Sábado: 13h às 18h" },
+                    { id: "sun-10-15", value: "Domingo: 10h às 15h" },
+                    { id: "sun-15-20", value: "Domingo: 15h às 20h" },
+                  ].map((item) => (
+                    <div 
+                      key={item.id}
+                      className="flex items-center gap-3 bg-muted/50 border border-border rounded-lg p-4 hover:border-primary/30 transition-all group"
+                    >
+                      <Checkbox 
+                        id={item.id} 
+                        checked={weekendSchedules.includes(item.value)}
+                        onCheckedChange={(checked) => {
+                          setWeekendSchedules(prev => 
+                            checked 
+                              ? [...prev, item.value] 
+                              : prev.filter(v => v !== item.value)
+                          );
+                        }}
+                      />
+                      <Label 
+                        htmlFor={item.id} 
+                        className="text-card-foreground cursor-pointer text-sm font-medium group-hover:text-primary transition-colors flex-1"
+                      >
+                        {item.value}
+                      </Label>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex items-start gap-3 bg-muted/50 border border-border rounded-lg p-4 hover:border-primary/30 transition-colors">
-                  <RadioGroupItem value="opcao3" id="horario-3" className="mt-0.5" />
-                  <Label htmlFor="horario-3" className="text-card-foreground cursor-pointer leading-relaxed">
-                    <strong>Opção 3:</strong> 13h às 20h (seg a sexta) / Domingo 10h às 15h
-                  </Label>
-                </div>
-              </RadioGroup>
+              </div>
             </motion.div>
 
             {/* Currículo */}
             <motion.div variants={fadeUp} custom={8} className="space-y-4">
               <Label className="flex items-center gap-2 text-foreground font-medium">
                 <FileText className="w-4 h-4 text-primary" />
-                Envie seu currículo (PDF) <span className="text-destructive">*</span>
+                {t("jobs.form.resumeLabel")} <span className="text-destructive">*</span>
               </Label>
               
               <div className="flex justify-center">
@@ -329,11 +465,11 @@ const ApplicationFormPage = () => {
                       <path d="M144 480C64.5 480 0 415.5 0 336c0-62.8 40.2-116.2 96.2-135.9c-.1-2.7-.2-5.4-.2-8.1c0-88.4 71.6-160 160-160c59.3 0 111 32.2 138.7 80.2C409.9 102 428.3 96 448 96c53 0 96 43 96 96c0 12.2-2.3 23.8-6.4 34.6C596 238.4 640 290.1 640 352c0 70.7-57.3 128-128 128H144zm79-217c-9.4 9.4-9.4 24.6 0 33.9s24.6 9.4 33.9 0l39-39V392c0 13.3 10.7 24 24 24s24-10.7 24-24V257.9l39 39c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-80-80c-9.4-9.4-24.6-9.4-33.9 0l-80 80z" />
                     </svg>
                     <p className="text-[#eee] font-medium leading-tight">
-                      {resume ? resume.name : "Arraste e Solte"}
+                      {resume ? resume.name : t("jobs.form.resumeDrop")}
                     </p>
-                    <p className="text-[#eee] text-sm opacity-60 italic">ou</p>
+                    <p className="text-[#eee] text-sm opacity-60 italic">{t("jobs.form.resumeOr")}</p>
                     <span className="mt-1 bg-[#666] group-hover:bg-[#888] px-4 py-1.5 rounded-xl text-[#eee] group-hover:text-white text-sm font-medium transition-all">
-                      {resume ? "Alterar Arquivo" : "Procurar Arquivo"}
+                      {resume ? t("jobs.form.resumeChange") : t("jobs.form.resumeBrowse")}
                     </span>
                   </div>
                   <input 
@@ -351,7 +487,7 @@ const ApplicationFormPage = () => {
             <motion.div variants={fadeUp} custom={9} className="space-y-2">
               <Label className="flex items-center gap-2 text-foreground font-medium">
                 <Linkedin className="w-4 h-4 text-primary" />
-                Seu LinkedIn (opcional)
+                {t("jobs.form.linkedinLabel")} {t("jobs.common.optional")}
               </Label>
               <Input
                 value={linkedin}
@@ -360,17 +496,44 @@ const ApplicationFormPage = () => {
               />
             </motion.div>
 
-            <motion.div variants={fadeUp} custom={10} className="pt-4">
+            {/* GitHub e Portfólio */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <motion.div variants={fadeUp} custom={10} className="space-y-2">
+                <Label className="flex items-center gap-2 text-foreground font-medium">
+                  <Github className="w-4 h-4 text-primary" />
+                  {t("jobs.form.githubLabel")} {t("jobs.common.optional")}
+                </Label>
+                <Input
+                  value={github}
+                  onChange={(e) => setGithub(e.target.value)}
+                  className="bg-muted border-border"
+                />
+              </motion.div>
+
+              <motion.div variants={fadeUp} custom={11} className="space-y-2">
+                <Label className="flex items-center gap-2 text-foreground font-medium">
+                  <Globe className="w-4 h-4 text-primary" />
+                  {t("jobs.form.portfolioLabel")} {t("jobs.common.optional")}
+                </Label>
+                <Input
+                  value={portfolio}
+                  onChange={(e) => setPortfolio(e.target.value)}
+                  className="bg-muted border-border"
+                />
+              </motion.div>
+            </div>
+
+            <motion.div variants={fadeUp} custom={12} className="pt-4">
               <Button type="submit" variant="hero" size="lg" className="w-full" disabled={isSubmitting}>
                 <Send className="w-4 h-4 mr-2" />
-                {isSubmitting ? "Enviando..." : "Enviar Candidatura"}
+                {isSubmitting ? t("jobs.form.submitting") : t("jobs.form.submitButton")}
               </Button>
             </motion.div>
           </motion.div>
         </form>
 
         <p className="text-center text-muted-foreground text-sm mt-12">
-          © 2026 • Vaga remota com contrato direto com empresa americana
+          {t("jobs.form.footer")}
         </p>
       </div>
     </div>

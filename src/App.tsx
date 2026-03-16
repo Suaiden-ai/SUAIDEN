@@ -17,6 +17,7 @@ import ScrollToTop from './components/ui/ScrollToTop';
 import JobPostingPage from './pages/jobs/JobPosting';
 import JobDetailView from './pages/jobs/JobDetailView';
 import ApplicationFormPage from './pages/jobs/ApplicationForm';
+import ApplicationSuccessPage from './pages/jobs/ApplicationSuccess';
 
 // Páginas de Admin
 import AdminLogin from './pages/admin/Login';
@@ -68,6 +69,7 @@ function AppContent() {
           <Route path="/vagas" element={<JobPostingPage />} />
           <Route path="/vaga/:slug" element={<JobDetailView />} />
           <Route path="/vaga/:slug/candidatar-se" element={<ApplicationFormPage />} />
+          <Route path="/vaga/sucesso" element={<ApplicationSuccessPage />} />
           
           {/* Admin Routes */}
           <Route path="/admin/login" element={<AdminLogin />} />
