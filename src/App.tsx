@@ -46,7 +46,7 @@ function HomePage() {
 
 function AppContent() {
   const location = useLocation();
-  const isAdminPath = location.pathname.startsWith('/admin');
+  const isAdminPath = location.pathname.startsWith('/admin') || location.pathname === '/login';
 
   return (
     <div className="relative flex flex-col min-h-screen overflow-x-hidden">
@@ -73,7 +73,7 @@ function AppContent() {
             <Route path="/vaga/sucesso" element={<ApplicationSuccessPage />} />
             
             {/* Admin Routes */}
-            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/login" element={<AdminLogin />} />
             <Route 
               path="/admin/*" 
               element={

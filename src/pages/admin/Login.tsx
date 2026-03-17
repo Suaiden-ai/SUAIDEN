@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../services/supabase';
 import { useToast } from '../../hooks/jobs/use-toast';
-import { Lock, Mail, LogIn, Loader2 } from 'lucide-react';
+import { Lock, Mail, Loader2 } from 'lucide-react';
 import { Button } from '../../components/jobs/ui/button';
 import { Input } from '../../components/jobs/ui/input';
 import { Label } from '../../components/jobs/ui/label';
@@ -62,18 +62,14 @@ const AdminLogin: React.FC = () => {
       <div className="absolute inset-0 bg-[linear-gradient(hsl(210_100%_56%/0.03)_1px,transparent_1px),linear-gradient(90deg,hsl(210_100%_56%/0.03)_1px,transparent_1px)] bg-[size:40px_40px]" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px]" />
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         className="w-full max-w-md relative z-10"
       >
         <div className="bg-card/50 backdrop-blur-xl border border-border p-8 rounded-2xl shadow-2xl">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4 border border-primary/20">
-              <Lock className="w-8 h-8 text-primary" />
-            </div>
-            <h1 className="text-2xl font-bold text-foreground mb-2">Painel de Acesso</h1>
-            <p className="text-muted-foreground">Área Restrita Suaiden Admin</p>
+            <h1 className="text-2xl font-bold text-white mb-2">Login</h1>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
@@ -84,7 +80,6 @@ const AdminLogin: React.FC = () => {
               </Label>
               <Input
                 type="email"
-                placeholder="seu@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -99,7 +94,6 @@ const AdminLogin: React.FC = () => {
               </Label>
               <Input
                 type="password"
-                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -107,9 +101,9 @@ const AdminLogin: React.FC = () => {
               />
             </div>
 
-            <Button 
-              type="submit" 
-              variant="hero" 
+            <Button
+              type="submit"
+              variant="hero"
               className="w-full h-12 text-base font-semibold"
               disabled={isLoading}
             >
@@ -120,16 +114,13 @@ const AdminLogin: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <LogIn className="w-5 h-5 mr-2" />
-                  Entrar no Dashboard
+                  Entrar
                 </>
               )}
             </Button>
           </form>
 
-          <p className="mt-8 text-center text-xs text-muted-foreground">
-            Protegido por criptografia end-to-end.
-          </p>
+
         </div>
       </motion.div>
     </div>
