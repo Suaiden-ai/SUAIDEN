@@ -460,6 +460,16 @@
       "portfolioLabel": "Portfolio",
       "submitButton": "Submit Application",
       "submitting": "Sending...",
+      "options": {
+        "week10-17": "10 AM to 5 PM",
+        "week13-20": "1 PM to 8 PM",
+        "week14-21": "2 PM to 9 PM",
+        "week17-00": "5 PM to 12 AM",
+        "sat10-15": "Saturday: 10 AM to 3 PM",
+        "sat13-18": "Saturday: 1 PM to 6 PM",
+        "sun10-15": "Sunday: 10 AM to 3 PM",
+        "sun15-20": "Sunday: 3 PM to 8 PM"
+      },
       "footer": "© 2026 • Remote position with direct contract with US company",
       "validationError": "Required fields",
       "validationDesc": "Please fill in all required fields, including your resume."

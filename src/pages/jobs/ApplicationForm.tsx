@@ -376,11 +376,12 @@ const ApplicationFormPage = () => {
                   <Clock className="w-5 h-5 text-primary" />
                   {t("jobs.form.weekdayLabel")} <span className="text-destructive">*</span>
                 </Label>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {[
-                    { id: "week-10-17", value: "10h às 17h" },
-                    { id: "week-13-20", value: "13h às 20h" },
-                    { id: "week-14-21", value: "14h às 21h" },
+                    { id: "week-10-17", key: "week10-17" },
+                    { id: "week-13-20", key: "week13-20" },
+                    { id: "week-14-21", key: "week14-21" },
+                    { id: "week-17-00", key: "week17-00" },
                   ].map((item) => (
                     <div 
                       key={item.id}
@@ -388,12 +389,13 @@ const ApplicationFormPage = () => {
                     >
                       <Checkbox 
                         id={item.id} 
-                        checked={weekDaySchedules.includes(item.value)}
+                        checked={weekDaySchedules.includes(t(`jobs.form.options.${item.key}`))}
                         onCheckedChange={(checked) => {
+                          const value = t(`jobs.form.options.${item.key}`);
                           setWeekDaySchedules(prev => 
                             checked 
-                              ? [...prev, item.value] 
-                              : prev.filter(v => v !== item.value)
+                              ? [...prev, value] 
+                              : prev.filter(v => v !== value)
                           );
                         }}
                       />
@@ -401,7 +403,7 @@ const ApplicationFormPage = () => {
                         htmlFor={item.id} 
                         className="text-card-foreground cursor-pointer text-sm font-medium group-hover:text-primary transition-colors flex-1"
                       >
-                        {item.value}
+                        {t(`jobs.form.options.${item.key}`)}
                       </Label>
                     </div>
                   ))}
@@ -415,10 +417,10 @@ const ApplicationFormPage = () => {
                 </Label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {[
-                    { id: "sat-10-15", value: "Sábado: 10h às 15h" },
-                    { id: "sat-13-18", value: "Sábado: 13h às 18h" },
-                    { id: "sun-10-15", value: "Domingo: 10h às 15h" },
-                    { id: "sun-15-20", value: "Domingo: 15h às 20h" },
+                    { id: "sat-10-15", key: "sat10-15" },
+                    { id: "sat-13-18", key: "sat13-18" },
+                    { id: "sun-10-15", key: "sun10-15" },
+                    { id: "sun-15-20", key: "sun15-20" },
                   ].map((item) => (
                     <div 
                       key={item.id}
@@ -426,12 +428,13 @@ const ApplicationFormPage = () => {
                     >
                       <Checkbox 
                         id={item.id} 
-                        checked={weekendSchedules.includes(item.value)}
+                        checked={weekendSchedules.includes(t(`jobs.form.options.${item.key}`))}
                         onCheckedChange={(checked) => {
+                          const value = t(`jobs.form.options.${item.key}`);
                           setWeekendSchedules(prev => 
                             checked 
-                              ? [...prev, item.value] 
-                              : prev.filter(v => v !== item.value)
+                              ? [...prev, value] 
+                              : prev.filter(v => v !== value)
                           );
                         }}
                       />
@@ -439,7 +442,7 @@ const ApplicationFormPage = () => {
                         htmlFor={item.id} 
                         className="text-card-foreground cursor-pointer text-sm font-medium group-hover:text-primary transition-colors flex-1"
                       >
-                        {item.value}
+                        {t(`jobs.form.options.${item.key}`)}
                       </Label>
                     </div>
                   ))}

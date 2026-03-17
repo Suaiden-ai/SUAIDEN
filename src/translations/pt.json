@@ -460,6 +460,16 @@
       "portfolioLabel": "Portfólio",
       "submitButton": "Enviar Candidatura",
       "submitting": "Enviando...",
+      "options": {
+        "week10-17": "10h às 17h",
+        "week13-20": "13h às 20h",
+        "week14-21": "14h às 21h",
+        "week17-00": "17h às 00:00",
+        "sat10-15": "Sábado: 10h às 15h",
+        "sat13-18": "Sábado: 13h às 18h",
+        "sun10-15": "Domingo: 10h às 15h",
+        "sun15-20": "Domingo: 15h às 20h"
+      },
       "footer": "© 2026 • Vaga remota com contrato direto com empresa americana",
       "validationError": "Campos obrigatórios",
       "validationDesc": "Por favor, preencha todos os campos obrigatórios, incluindo o currículo."
