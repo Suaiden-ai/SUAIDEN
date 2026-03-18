@@ -650,6 +650,49 @@
           "1 Especialista em Automação com n8n",
           "1 Tech Lead"
         ]
+      },
+      "criador-de-conteudo-estrategico": {
+        "title": "Criador de Conteúdo Estratégico",
+        "shortDescription": "Estamos contratando um Criador de Conteúdo para atuar na criação de conteúdo e gestão de redes sociais de clientes de uma Agência Americana de Automações e Marketing.",
+        "salary": "USD 400,00 / mês",
+        "type": "Full-time (40h)",
+        "location": "Remoto (Home Office)",
+        "benefits": [
+          "Autonomia para propor ideias e testar formatos de conteúdo",
+          "Oportunidade real de crescimento baseada em performance",
+          "Ambiente orientado a dados, resultado e melhoria contínua"
+        ],
+        "requirements": [
+          "Entendimento de personas e públicos-alvo",
+          "Organização de calendário editorial",
+          "Edição de Reels (cortes, ritmo, legendas e CTA)",
+          "Criação de carrosséis no Canva ou Figma",
+          "Uso de Inteligência Artificial em todo o processo criativo",
+          "Noção de funis de vendas e estratégias de marketing",
+          "Análise de métricas básicas (alcance, engajamento, conversão)"
+        ],
+        "responsibilities": [
+          "Criação de conteúdo e gestão de redes sociais de clientes"
+        ],
+        "workEnvironment": [
+          "Formato: Home Office",
+          "Horário: 40h semanais, com disponibilidade para reuniões de alinhamento diárias",
+          "Contrato: Direto com empresa americana"
+        ],
+        "paymentTerms": [
+          "400 dólares por mês",
+          "Bônus por performance baseado em crescimento orgânico, geração de leads e faturamento."
+        ],
+        "team": [
+          "2 Desenvolvedores Full Stack",
+          "1 Especialista em Automação com n8n",
+          "1 Tech Lead"
+        ],
+        "softSkills": [
+          "Experiência prévia como Social Media",
+          "Portfólio ou perfis já gerenciados",
+          "Experiência ou familiaridade com conteúdo médico ou área da saúde"
+        ]
       }
     }
   }
