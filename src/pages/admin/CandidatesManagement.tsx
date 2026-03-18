@@ -19,7 +19,8 @@ import {
   Github,
   Globe,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Instagram
 } from 'lucide-react';
 import { Button } from '../../components/jobs/ui/button';
 import { Input } from '../../components/jobs/ui/input';
@@ -46,6 +47,7 @@ interface Candidate {
   linkedin_url: string;
   github_url?: string;
   portfolio_url?: string;
+  instagram_url?: string;
   internet_stable: string;
   contract_agreement: string;
   webcam_ready: string;
@@ -389,14 +391,20 @@ const CandidatesManagement: React.FC = () => {
                 </div>
 
                 {/* Links Profissionais */}
-                {(selectedCandidate.linkedin_url || selectedCandidate.github_url || selectedCandidate.portfolio_url) && (
+                {(selectedCandidate.linkedin_url || selectedCandidate.github_url || selectedCandidate.portfolio_url || selectedCandidate.instagram_url) && (
                   <div className="space-y-3">
                     <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/70">Portfólio & Redes</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                       {selectedCandidate.linkedin_url && (
                         <a href={ensureExternalLink(selectedCandidate.linkedin_url)} target="_blank" rel="noreferrer" className="flex items-center gap-3 p-3 bg-white/[0.03] rounded-xl border border-white/5 hover:border-blue-500/30 hover:bg-blue-500/5 transition-all group">
                           <Linkedin className="w-4 h-4 text-blue-500" />
                           <span className="text-[10px] font-bold text-white/80">LinkedIn</span>
+                        </a>
+                      )}
+                      {selectedCandidate.instagram_url && (
+                        <a href={ensureExternalLink(selectedCandidate.instagram_url)} target="_blank" rel="noreferrer" className="flex items-center gap-3 p-3 bg-white/[0.03] rounded-xl border border-white/5 hover:border-pink-500/30 hover:bg-pink-500/5 transition-all group">
+                          <Instagram className="w-4 h-4 text-pink-500" />
+                          <span className="text-[10px] font-bold text-white/80">Instagram</span>
                         </a>
                       )}
                       {selectedCandidate.github_url && (

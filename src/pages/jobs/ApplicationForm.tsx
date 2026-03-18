@@ -19,6 +19,7 @@ import {
   Github,
   Globe,
   ClipboardCheck,
+  Instagram,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -94,6 +95,7 @@ const ApplicationFormPage = () => {
   const [linkedin, setLinkedin] = useState(() => localStorage.getItem("app_linkedin") || "");
   const [portfolio, setPortfolio] = useState(() => localStorage.getItem("app_portfolio") || "");
   const [github, setGithub] = useState(() => localStorage.getItem("app_github") || "");
+  const [instagram, setInstagram] = useState(() => localStorage.getItem("app_instagram") || "");
   const [resume, setResume] = useState<File | null>(null);
 
   // Efeito para persistir dados no LocalStorage
@@ -109,13 +111,19 @@ const ApplicationFormPage = () => {
     localStorage.setItem("app_linkedin", linkedin);
     localStorage.setItem("app_portfolio", portfolio);
     localStorage.setItem("app_github", github);
-  }, [name, email, whatsapp, stableInternet, understandsContract, hasWebcam, weekDaySchedules, weekendSchedules, linkedin, portfolio, github]);
+    localStorage.setItem("app_instagram", instagram);
+  }, [name, email, whatsapp, stableInternet, understandsContract, hasWebcam, weekDaySchedules, weekendSchedules, linkedin, portfolio, github, instagram]);
 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!name || !email || !whatsapp || !stableInternet || !understandsContract || !hasWebcam || weekDaySchedules.length === 0 || weekendSchedules.length === 0 || !resume) {
+    const isSocialMedia = slug === 'social-media-criador-de-conteudo';
+    const isMainFormValid = name && email && whatsapp && stableInternet && understandsContract && hasWebcam && weekDaySchedules.length > 0 && resume;
+    const isWeekendValid = isSocialMedia || weekendSchedules.length > 0;
+    const isPortfolioValid = !isSocialMedia || portfolio;
+
+    if (!isMainFormValid || !isWeekendValid || !isPortfolioValid) {
       toast({
         title: t("jobs.form.validationError"),
         description: t("jobs.form.validationDesc"),
@@ -152,6 +160,7 @@ const ApplicationFormPage = () => {
         linkedin_url: linkedin,
         portfolio_url: portfolio,
         github_url: github,
+        instagram_url: instagram,
         job_slug: slug,
         job_title: localizedJob?.title || job?.title,
         resume_url: resumePath
@@ -203,6 +212,7 @@ const ApplicationFormPage = () => {
       localStorage.removeItem("app_linkedin");
       localStorage.removeItem("app_portfolio");
       localStorage.removeItem("app_github");
+      localStorage.removeItem("app_instagram");
 
       navigate("/vaga/sucesso");
     } catch (error: any) {
@@ -367,7 +377,9 @@ const ApplicationFormPage = () => {
                   {t("jobs.form.scheduleTitle")}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {t("jobs.form.scheduleInfo")}
+                  {slug === 'social-media-criador-de-conteudo' 
+                    ? "Esta vaga possui carga horária de 40h semanais distribuídas de segunda a sexta." 
+                    : t("jobs.form.scheduleInfo")}
                 </p>
               </div>
 
@@ -377,21 +389,27 @@ const ApplicationFormPage = () => {
                   {t("jobs.form.weekdayLabel")} <span className="text-destructive">*</span>
                 </Label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {[
-                    { id: "week-10-17", key: "week10-17" },
-                    { id: "week-13-20", key: "week13-20" },
-                    { id: "week-14-21", key: "week14-21" },
-                    { id: "week-17-00", key: "week17-00" },
-                  ].map((item) => (
+                  {(slug === 'social-media-criador-de-conteudo'
+                    ? [
+                        { id: "week-10-18", key: "week10-18", label: "10h às 18h" },
+                        { id: "week-13-21", key: "week13-21", label: "13h às 21h" },
+                      ]
+                    : [
+                        { id: "week-10-17", key: "week10-17", label: t(`jobs.form.options.week10-17`) },
+                        { id: "week-13-20", key: "week13-20", label: t(`jobs.form.options.week13-20`) },
+                        { id: "week-14-21", key: "week14-21", label: t(`jobs.form.options.week14-21`) },
+                        { id: "week-17-00", key: "week17-00", label: t(`jobs.form.options.week17-00`) },
+                      ]
+                  ).map((item) => (
                     <div 
                       key={item.id}
                       className="flex items-center gap-3 bg-muted/50 border border-border rounded-lg p-4 hover:border-primary/30 transition-all group"
                     >
                       <Checkbox 
                         id={item.id} 
-                        checked={weekDaySchedules.includes(t(`jobs.form.options.${item.key}`))}
+                        checked={weekDaySchedules.includes(item.label)}
                         onCheckedChange={(checked) => {
-                          const value = t(`jobs.form.options.${item.key}`);
+                          const value = item.label;
                           setWeekDaySchedules(prev => 
                             checked 
                               ? [...prev, value] 
@@ -403,51 +421,53 @@ const ApplicationFormPage = () => {
                         htmlFor={item.id} 
                         className="text-card-foreground cursor-pointer text-sm font-medium group-hover:text-primary transition-colors flex-1"
                       >
-                        {t(`jobs.form.options.${item.key}`)}
+                        {item.label}
                       </Label>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <Label className="flex items-center gap-2 text-foreground font-medium text-lg">
-                  <Clock className="w-5 h-5 text-primary" />
-                  {t("jobs.form.weekendLabel")} <span className="text-destructive">*</span>
-                </Label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {[
-                    { id: "sat-10-15", key: "sat10-15" },
-                    { id: "sat-13-18", key: "sat13-18" },
-                    { id: "sun-10-15", key: "sun10-15" },
-                    { id: "sun-15-20", key: "sun15-20" },
-                  ].map((item) => (
-                    <div 
-                      key={item.id}
-                      className="flex items-center gap-3 bg-muted/50 border border-border rounded-lg p-4 hover:border-primary/30 transition-all group"
-                    >
-                      <Checkbox 
-                        id={item.id} 
-                        checked={weekendSchedules.includes(t(`jobs.form.options.${item.key}`))}
-                        onCheckedChange={(checked) => {
-                          const value = t(`jobs.form.options.${item.key}`);
-                          setWeekendSchedules(prev => 
-                            checked 
-                              ? [...prev, value] 
-                              : prev.filter(v => v !== value)
-                          );
-                        }}
-                      />
-                      <Label 
-                        htmlFor={item.id} 
-                        className="text-card-foreground cursor-pointer text-sm font-medium group-hover:text-primary transition-colors flex-1"
+              {slug !== 'social-media-criador-de-conteudo' && (
+                <div className="space-y-4">
+                  <Label className="flex items-center gap-2 text-foreground font-medium text-lg">
+                    <Clock className="w-5 h-5 text-primary" />
+                    {t("jobs.form.weekendLabel")} <span className="text-destructive">*</span>
+                  </Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {[
+                      { id: "sat-10-15", key: "sat10-15" },
+                      { id: "sat-13-18", key: "sat13-18" },
+                      { id: "sun-10-15", key: "sun10-15" },
+                      { id: "sun-15-20", key: "sun15-20" },
+                    ].map((item) => (
+                      <div 
+                        key={item.id}
+                        className="flex items-center gap-3 bg-muted/50 border border-border rounded-lg p-4 hover:border-primary/30 transition-all group"
                       >
-                        {t(`jobs.form.options.${item.key}`)}
-                      </Label>
-                    </div>
-                  ))}
+                        <Checkbox 
+                          id={item.id} 
+                          checked={weekendSchedules.includes(t(`jobs.form.options.${item.key}`))}
+                          onCheckedChange={(checked) => {
+                            const value = t(`jobs.form.options.${item.key}`);
+                            setWeekendSchedules(prev => 
+                              checked 
+                                ? [...prev, value] 
+                                : prev.filter(v => v !== value)
+                            );
+                          }}
+                        />
+                        <Label 
+                          htmlFor={item.id} 
+                          className="text-card-foreground cursor-pointer text-sm font-medium group-hover:text-primary transition-colors flex-1"
+                        >
+                          {t(`jobs.form.options.${item.key}`)}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </motion.div>
 
             {/* Currículo */}
@@ -498,24 +518,26 @@ const ApplicationFormPage = () => {
               />
             </motion.div>
 
-            {/* GitHub e Portfólio */}
+            {/* Redes Sociais e Portfólio */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <motion.div variants={fadeUp} custom={10} className="space-y-2">
-                <Label className="flex items-center gap-2 text-foreground font-medium">
-                  <Github className="w-4 h-4 text-primary" />
-                  {t("jobs.form.githubLabel")} {t("jobs.common.optional")}
-                </Label>
-                <Input
-                  value={github}
-                  onChange={(e) => setGithub(e.target.value)}
-                  className="bg-muted border-border"
-                />
-              </motion.div>
+              {slug === 'social-media-criador-de-conteudo' && (
+                <motion.div variants={fadeUp} custom={10} className="space-y-2">
+                  <Label className="flex items-center gap-2 text-foreground font-medium">
+                    <Instagram className="w-4 h-4 text-primary" />
+                    Instagram
+                  </Label>
+                  <Input
+                    value={instagram}
+                    onChange={(e) => setInstagram(e.target.value)}
+                    className="bg-muted border-border"
+                  />
+                </motion.div>
+              )}
 
               <motion.div variants={fadeUp} custom={11} className="space-y-2">
                 <Label className="flex items-center gap-2 text-foreground font-medium">
                   <Globe className="w-4 h-4 text-primary" />
-                  {t("jobs.form.portfolioLabel")} {t("jobs.common.optional")}
+                  {t("jobs.form.portfolioLabel")} {slug === 'social-media-criador-de-conteudo' ? null : t("jobs.common.optional")}
                 </Label>
                 <Input
                   value={portfolio}
@@ -523,6 +545,20 @@ const ApplicationFormPage = () => {
                   className="bg-muted border-border"
                 />
               </motion.div>
+
+              {slug !== 'social-media-criador-de-conteudo' && (
+                <motion.div variants={fadeUp} custom={12} className="space-y-2">
+                  <Label className="flex items-center gap-2 text-foreground font-medium">
+                    <Github className="w-4 h-4 text-primary" />
+                    {t("jobs.form.githubLabel")} {t("jobs.common.optional")}
+                  </Label>
+                  <Input
+                    value={github}
+                    onChange={(e) => setGithub(e.target.value)}
+                    className="bg-muted border-border"
+                  />
+                </motion.div>
+              )}
             </div>
 
             <motion.div variants={fadeUp} custom={12} className="pt-4">
