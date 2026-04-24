@@ -23,3 +23,10 @@ dist-ssr
 *.sln
 *.sw?
 .env
+env.example
+
+# Claude Code local config
+.claude/
+
+# Internal reports
+RELATORIO_DESENVOLVIMENTO_*.md
