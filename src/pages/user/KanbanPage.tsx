@@ -73,6 +73,7 @@ const KanbanPage: React.FC = () => {
   const [editingColumnTitle, setEditingColumnTitle] = useState('');
   const [newColumnTitle, setNewColumnTitle] = useState('');
   const [newCardTitles, setNewCardTitles] = useState<Record<string, string>>({});
+  const [activeAddCardColId, setActiveAddCardColId] = useState<string | null>(null);
 
   // Menu "..." das colunas
   const [openColMenuId, setOpenColMenuId] = useState<string | null>(null);
@@ -828,16 +829,53 @@ const KanbanPage: React.FC = () => {
             </div>
 
             {/* Adicionar card */}
-            <div className="p-2.5 border-t border-white/5 bg-black/20 rounded-b-2xl">
-              <div className="flex items-center gap-2">
-                <input type="text" placeholder="Adicionar tarefa..." value={newCardTitles[column.id] || ''}
-                  onChange={e => setNewCardTitles({ ...newCardTitles, [column.id]: e.target.value })}
-                  onKeyDown={e => { if (e.key === 'Enter') handleAddCard(column.id); }}
-                  className="flex-1 bg-[#1e2126] border border-white/5 focus:border-primary/50 rounded-xl px-3 py-1.5 text-xs text-white placeholder:text-muted-foreground outline-none" />
-                <button onClick={() => handleAddCard(column.id)} className="p-2 bg-primary hover:bg-primary/95 text-white rounded-xl shadow-lg shadow-primary/20">
-                  <Plus className="w-3.5 h-3.5" />
+            <div className="p-2 border-t border-white/5 bg-black/20 rounded-b-2xl">
+              {activeAddCardColId === column.id ? (
+                <div className="space-y-2">
+                  <textarea
+                    autoFocus
+                    placeholder="Insira um título ou cole um link"
+                    value={newCardTitles[column.id] || ''}
+                    onChange={e => setNewCardTitles({ ...newCardTitles, [column.id]: e.target.value })}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleAddCard(column.id);
+                      }
+                      if (e.key === 'Escape') {
+                        setActiveAddCardColId(null);
+                      }
+                    }}
+                    rows={2}
+                    className="w-full bg-[#22252a] border border-white/5 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 rounded-xl px-3 py-2 text-xs text-white placeholder:text-muted-foreground outline-none resize-none shadow-inner"
+                  />
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleAddCard(column.id)}
+                      className="px-4 py-1.5 bg-primary hover:bg-primary/95 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-primary/10"
+                    >
+                      Adicionar Cartão
+                    </button>
+                    <button
+                      onClick={() => {
+                        setActiveAddCardColId(null);
+                        setNewCardTitles({ ...newCardTitles, [column.id]: '' });
+                      }}
+                      className="p-1.5 hover:bg-white/10 text-muted-foreground hover:text-white rounded-xl transition-all"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setActiveAddCardColId(column.id)}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-muted-foreground hover:text-white hover:bg-white/5 rounded-xl transition-all group"
+                >
+                  <Plus className="w-4 h-4 text-muted-foreground group-hover:text-white" />
+                  <span>Adicionar um cartão</span>
                 </button>
-              </div>
+              )}
             </div>
           </div>
         ))}
