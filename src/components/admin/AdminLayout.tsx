@@ -8,7 +8,8 @@ import {
   LayoutDashboard,
   ChevronRight,
   Menu,
-  X
+  X,
+  LayoutGrid
 } from 'lucide-react';
 import { Button } from '../jobs/ui/button';
 import { supabase } from '../../services/supabase';
@@ -29,6 +30,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/admin/dashboard' },
+    { icon: LayoutGrid, label: 'Quadros (Kanban)', path: '/admin/boards' },
     { icon: Users, label: 'Candidatos', path: '/admin/candidates' },
     { icon: Briefcase, label: 'Gerenciar Vagas', path: '/admin/jobs' },
     { icon: PlusCircle, label: 'Criar Vaga', path: '/admin/jobs/new' },

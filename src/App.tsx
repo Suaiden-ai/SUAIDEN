@@ -25,8 +25,17 @@ import CandidatesManagement from './pages/admin/CandidatesManagement';
 import JobsManagement from './pages/admin/JobsManagement';
 import CreateJobPage from './pages/admin/CreateJobPage';
 import EditJobPage from './pages/admin/EditJobPage';
+import BoardsManagement from './pages/admin/BoardsManagement';
 import AdminGuard from './components/admin/AdminGuard';
 import AdminLayout from './components/admin/AdminLayout';
+
+// Páginas e componentes de Usuário
+import UserGuard from './components/user/UserGuard';
+import UserLayout from './components/user/UserLayout';
+import { BoardBackgroundProvider } from './context/BoardBackgroundContext';
+import UserDashboard from './pages/user/Dashboard';
+import KanbanGuard from './components/user/KanbanGuard';
+import KanbanPage from './pages/user/KanbanPage';
 
 function HomePage() {
   return (
@@ -46,7 +55,11 @@ function HomePage() {
 
 function AppContent() {
   const location = useLocation();
-  const isAdminPath = location.pathname.startsWith('/admin') || location.pathname === '/login';
+  const isAdminPath = 
+    location.pathname.startsWith('/admin') || 
+    location.pathname === '/login' || 
+    location.pathname === '/dashboard' || 
+    location.pathname.startsWith('/quadro');
 
   return (
     <div className="relative flex flex-col min-h-screen overflow-x-hidden">
@@ -72,6 +85,35 @@ function AppContent() {
             <Route path="/vaga/:slug/candidatar-se" element={<ApplicationFormPage />} />
             <Route path="/vaga/sucesso" element={<ApplicationSuccessPage />} />
             
+            {/* User Routes */}
+            <Route 
+              path="/dashboard" 
+              element={
+                <UserGuard>
+                  <BoardBackgroundProvider>
+                    <UserLayout>
+                      <UserDashboard />
+                    </UserLayout>
+                  </BoardBackgroundProvider>
+                </UserGuard>
+              } 
+            />
+            
+            <Route 
+              path="/quadro/:boardId" 
+              element={
+                <UserGuard>
+                  <KanbanGuard>
+                    <BoardBackgroundProvider>
+                      <UserLayout fluid>
+                        <KanbanPage />
+                      </UserLayout>
+                    </BoardBackgroundProvider>
+                  </KanbanGuard>
+                </UserGuard>
+              } 
+            />
+
             {/* Admin Routes */}
             <Route path="/login" element={<AdminLogin />} />
             <Route 
@@ -85,6 +127,7 @@ function AppContent() {
                       <Route path="jobs" element={<JobsManagement />} />
                       <Route path="jobs/new" element={<CreateJobPage />} />
                       <Route path="jobs/edit/:id" element={<EditJobPage />} />
+                      <Route path="boards" element={<BoardsManagement />} />
                     </Routes>
                   </AdminLayout>
                 </AdminGuard>

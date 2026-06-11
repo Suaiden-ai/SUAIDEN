@@ -27,16 +27,16 @@ const AdminLogin: React.FC = () => {
 
       if (error) throw error;
 
-      // Verificar se é admin através do perfil
+      // Verificar se é admin ou user através do perfil
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', data.user.id)
         .single();
 
-      if (profileError || profile?.role !== 'admin') {
+      if (profileError || !profile || (profile.role !== 'admin' && profile.role !== 'user')) {
         await supabase.auth.signOut();
-        throw new Error('Acesso restrito a administradores.');
+        throw new Error('Acesso restrito a administradores e usuários cadastrados.');
       }
 
       toast({
@@ -44,7 +44,11 @@ const AdminLogin: React.FC = () => {
         description: "Login realizado com sucesso.",
       });
 
-      navigate('/admin/dashboard');
+      if (profile.role === 'admin') {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (error: any) {
       toast({
         title: "Erro no login",
