@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, ChevronDown } from 'lucide-react';
+import { LogOut, ChevronDown, LayoutDashboard } from 'lucide-react';
 import { supabase } from '../../services/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useBoardBackground } from '../../context/BoardBackgroundContext';
@@ -13,6 +13,7 @@ interface UserLayoutProps {
 interface UserProfile {
   full_name: string;
   email: string;
+  role?: string;
 }
 
 const UserLayout: React.FC<UserLayoutProps> = ({ children, fluid }) => {
@@ -28,7 +29,7 @@ const UserLayout: React.FC<UserLayoutProps> = ({ children, fluid }) => {
       if (session) {
         const { data } = await supabase
           .from('profiles')
-          .select('full_name, email')
+          .select('full_name, email, role')
           .eq('id', session.user.id)
           .single();
         
@@ -94,7 +95,9 @@ const UserLayout: React.FC<UserLayoutProps> = ({ children, fluid }) => {
           />
           <div>
             <h1 className="font-bold text-sm tracking-tight text-white leading-none">Suaiden</h1>
-            <span className="text-[8px] text-primary font-black uppercase tracking-[0.15em] leading-none mt-0.5 block">Painel do Usuário</span>
+            <span className="text-[8px] text-primary font-black uppercase tracking-[0.15em] leading-none mt-0.5 block">
+              {profile?.role === 'admin' ? 'Painel Administrativo' : 'Painel do Usuário'}
+            </span>
           </div>
         </div>
 
@@ -137,6 +140,20 @@ const UserLayout: React.FC<UserLayoutProps> = ({ children, fluid }) => {
                 </div>
 
                 <div className="h-px bg-white/5 my-1" />
+
+                {/* Voltar ao Painel do Admin se aplicável */}
+                {profile?.role === 'admin' && (
+                  <>
+                    <button
+                      onClick={() => navigate('/admin/boards')}
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold text-muted-foreground hover:text-white hover:bg-primary/10 transition-all group"
+                    >
+                      <LayoutDashboard className="w-4 h-4 group-hover:text-primary transition-colors" />
+                      <span>Ir para Painel Admin</span>
+                    </button>
+                    <div className="h-px bg-white/5 my-1" />
+                  </>
+                )}
 
                 {/* Logout Action Button */}
                 <button
