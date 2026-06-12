@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Plus, X, LayoutGrid, List, Search,
   MoreHorizontal, SortAsc, SortDesc, Paintbrush, Copy,
-  Paperclip, FileIcon, ImageIcon, Trash2, CheckSquare, AlignLeft as AlignLeftIcon, Check, Loader2
+  Paperclip, FileIcon, ImageIcon, Trash2, CheckSquare, AlignLeft as AlignLeftIcon, Check, Loader2, Upload, MessageSquare
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../services/supabase';
@@ -15,7 +15,7 @@ import { useBoardBackground } from '../../context/BoardBackgroundContext';
 // Tipos
 // ────────────────────────────────────────────
 
-interface Board { id: string; title: string; background: string; bg_type: 'gradient' | 'image'; owner_id: string; ticket_column_id?: string | null; }
+interface Board { id: string; title: string; background: string; bg_type: 'gradient' | 'image'; owner_id: string; ticket_column_id?: string | null; cover_image?: string | null; }
 
 // ────────────────────────────────────────────
 // Constantes
@@ -126,7 +126,9 @@ const KanbanPage: React.FC = () => {
 
   // Painel de background
   const [isBackgroundPanelOpen, setIsBackgroundPanelOpen] = useState(false);
+  const [isUploadingBg, setIsUploadingBg] = useState(false);
   const bgPanelRef = useRef<HTMLDivElement>(null);
+  const bgFileInputRef = useRef<HTMLInputElement>(null);
 
   // Modal do card
   const [activeTask, setActiveTask] = useState<Task | null>(null);
@@ -140,8 +142,9 @@ const KanbanPage: React.FC = () => {
 
   // Filtros
   const [searchText, setSearchText] = useState('');
-  const [filterLabelColor] = useState<string | null>(null);
-  const [filterAssigneeId] = useState<string | null>(null);
+  const [filterLabelColor, setFilterLabelColor] = useState<string | null>(null);
+  const [filterAssigneeId, setFilterAssigneeId] = useState<string | null>(null);
+  const [filterPriorities, setFilterPriorities] = useState<string[]>([]);
 
   // Modo de Visualização
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
@@ -156,6 +159,7 @@ const KanbanPage: React.FC = () => {
   const [ticketDesc, setTicketDesc] = useState('');
   const [ticketSector, setTicketSector] = useState('');
   const [ticketPriority, setTicketPriority] = useState<{text: string, color: string} | null>(null);
+  const [ticketDueDate, setTicketDueDate] = useState('');
   const [ticketChecklist, setTicketChecklist] = useState<string[]>([]);
   const [newChecklistItem, setNewChecklistItem] = useState('');
   const [ticketFiles, setTicketFiles] = useState<File[]>([]);
@@ -184,7 +188,21 @@ const KanbanPage: React.FC = () => {
     due_date: t.due_date || null,
     cover_color: t.cover_color || null,
     is_done: !!t.is_done,
+    comments_count: t.card_comments?.[0]?.count || 0,
   });
+
+  const getDueDateInfo = (dueDate: string | null, isDone: boolean) => {
+    if (!dueDate) return null;
+    const now = new Date();
+    const date = new Date(dueDate);
+    const diff = date.getTime() - now.getTime();
+    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+    const formattedDate = date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' }).replace('.', '');
+    if (isDone) return { text: formattedDate, className: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' };
+    if (diff < 0) return { text: `${formattedDate} (Atrasado)`, className: 'bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse' };
+    if (days <= 1) return { text: `${formattedDate} (Breve)`, className: 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' };
+    return { text: formattedDate, className: 'bg-white/5 text-muted-foreground border border-white/5' };
+  };
 
   const fetchBoardData = async () => {
     if (!boardId) return;
@@ -201,7 +219,7 @@ const KanbanPage: React.FC = () => {
       }
 
       const { data: boardData, error: boardError } = await supabase
-        .from('boards').select('id, title, background, bg_type, owner_id, ticket_column_id').eq('id', boardId).single();
+        .from('boards').select('id, title, background, bg_type, owner_id, ticket_column_id, cover_image').eq('id', boardId).single();
       if (boardError) throw boardError;
       setBoard(boardData);
       setBoardBackground({ bg_type: boardData.bg_type, background: boardData.background });
@@ -228,7 +246,7 @@ const KanbanPage: React.FC = () => {
       if (colsData.length > 0) {
         const colIds = colsData.map(c => c.id);
         const { data: tasksData, error: tasksError } = await supabase
-          .from('tasks').select('*').in('column_id', colIds).order('position', { ascending: true });
+          .from('tasks').select('*, card_comments(count)').in('column_id', colIds).order('position', { ascending: true });
         if (tasksError) throw tasksError;
 
         setColumns(colsData.map(col => ({
@@ -259,6 +277,7 @@ const KanbanPage: React.FC = () => {
     const sub = supabase.channel(`kanban-rt-${boardId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'columns', filter: `board_id=eq.${boardId}` }, () => fetchBoardDataRef.current())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => fetchBoardDataRef.current())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'card_comments' }, () => fetchBoardDataRef.current())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'board_members', filter: `board_id=eq.${boardId}` }, () => fetchBoardDataRef.current())
       .subscribe();
 
@@ -316,9 +335,34 @@ const KanbanPage: React.FC = () => {
     } catch (err) { console.error('Erro ao alterar background:', err); }
   };
 
+  const handleUploadBackground = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0 || !boardId || !currentUserId) return;
+    const file = e.target.files[0];
+    try {
+      setIsUploadingBg(true);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `boards/${boardId}/${fileName}`;
+      
+      const { error: uploadError } = await supabase.storage.from('card-attachments').upload(filePath, file);
+      if (uploadError) throw uploadError;
+      
+      const { data: { publicUrl } } = supabase.storage.from('card-attachments').getPublicUrl(filePath);
+      
+      await supabase.from('boards').update({ cover_image: publicUrl }).eq('id', boardId);
+      setBoard(prev => prev ? { ...prev, cover_image: publicUrl } : null);
+    } catch (err) {
+      console.error('Erro ao fazer upload da imagem de capa:', err);
+      alert('Erro ao fazer upload da imagem.');
+    } finally {
+      setIsUploadingBg(false);
+      if (bgFileInputRef.current) bgFileInputRef.current.value = '';
+    }
+  };
+
   // ── Filtros ──
   const filteredColumns = useMemo(() => {
-    const hasFilter = searchText.trim() || filterLabelColor || filterAssigneeId;
+    const hasFilter = searchText.trim() || filterLabelColor || filterAssigneeId || filterPriorities.length > 0;
     if (!hasFilter) return columns;
     return columns.map(col => ({
       ...col,
@@ -326,10 +370,14 @@ const KanbanPage: React.FC = () => {
         const matchText = !searchText.trim() || task.title.toLowerCase().includes(searchText.toLowerCase());
         const matchLabel = !filterLabelColor || task.labels.some(l => l.color === filterLabelColor);
         const matchAssignee = !filterAssigneeId || task.assignees.some(a => a.user_id === filterAssigneeId);
-        return matchText && matchLabel && matchAssignee;
+        const matchPriority = filterPriorities.length === 0 || task.labels.some(l => filterPriorities.includes(l.text.toUpperCase()));
+        return matchText && matchLabel && matchAssignee && matchPriority;
       })
     }));
-  }, [columns, searchText, filterLabelColor, filterAssigneeId]);
+  }, [columns, searchText, filterLabelColor, filterAssigneeId, filterPriorities]);
+
+  const hasActiveFilter = !!(searchText.trim() || filterLabelColor || filterAssigneeId || filterPriorities.length > 0);
+  const totalFilteredCards = hasActiveFilter ? filteredColumns.reduce((s, c) => s + c.tasks.length, 0) : null;
 
 
   // ── Callbacks do Modal ──
@@ -527,7 +575,11 @@ const KanbanPage: React.FC = () => {
         description: ticketDesc.trim(),
         position,
         labels: newLabels,
-        checklist: checklistItems, assignees: [], due_date: null, cover_color: null, is_done: false
+        checklist: checklistItems,
+        assignees: [],
+        due_date: ticketDueDate || null,
+        cover_color: null,
+        is_done: false
       }).select().single();
 
       if (taskError) throw taskError;
@@ -558,6 +610,7 @@ const KanbanPage: React.FC = () => {
       setTicketDesc('');
       setTicketSector('');
       setTicketPriority(null);
+      setTicketDueDate('');
       setTicketChecklist([]);
       setNewChecklistItem('');
       setTicketFiles([]);
@@ -775,10 +828,55 @@ const KanbanPage: React.FC = () => {
               className="pl-8 pr-3 h-8 bg-black/30 border border-white/10 focus:border-primary/50 rounded-xl text-xs text-white placeholder:text-muted-foreground outline-none w-32 focus:w-40 transition-all duration-200" 
             />
           </div>
+
+          {/* Filtros de Prioridade */}
+          <div className="flex items-center gap-1 bg-black/20 p-1 rounded-xl border border-white/10 h-8">
+            {PRESET_LABELS.map(p => {
+              const isSelected = filterPriorities.includes(p.text);
+              return (
+                <button
+                  key={p.text}
+                  onClick={() => {
+                    setFilterPriorities(prev => 
+                      prev.includes(p.text) 
+                        ? prev.filter(x => x !== p.text) 
+                        : [...prev, p.text]
+                    );
+                  }}
+                  className={`px-2 py-0.5 rounded-lg text-[9px] font-extrabold transition-all border ${
+                    isSelected 
+                      ? 'border-white/30 text-white scale-105 shadow-md shadow-black/40' 
+                      : 'border-transparent text-white/50 hover:text-white/80'
+                  }`}
+                  style={{ backgroundColor: isSelected ? p.color : 'transparent' }}
+                >
+                  {p.text}
+                </button>
+              );
+            })}
+          </div>
  
           {/* Filtro de Membros & Gerenciar */}
           <div className="relative" ref={membersRef}>
             <div className="flex items-center gap-2 bg-black/30 border border-white/10 rounded-xl px-2 py-0.5 h-8">
+              <div className="flex items-center -space-x-1.5 shrink-0">
+                {members.slice(0, 3).map(m => (
+                  <button 
+                    key={m.user_id} 
+                    onClick={() => setFilterAssigneeId(filterAssigneeId === m.user_id ? null : m.user_id)} 
+                    title={m.full_name}
+                    className={`w-6 h-6 rounded-full text-[9px] font-bold text-white flex items-center justify-center transition-all border border-black/40 shrink-0 ${filterAssigneeId === m.user_id ? 'ring-2 ring-white scale-110' : 'opacity-80 hover:opacity-100'}`}
+                    style={{ backgroundColor: avatarColor(m.user_id) }}
+                  >
+                    {initials(m.full_name)}
+                  </button>
+                ))}
+                {members.length > 3 && (
+                  <div className="w-6 h-6 rounded-full bg-white/10 border border-black/40 text-[9px] font-bold text-white flex items-center justify-center shrink-0">
+                    +{members.length - 3}
+                  </div>
+                )}
+              </div>
                <button 
                  onClick={() => setIsMembersModalOpen(!isMembersModalOpen)} 
                  className="p-0.5 hover:bg-white/10 text-muted-foreground hover:text-white rounded-lg transition-colors shrink-0" 
@@ -903,7 +1001,50 @@ const KanbanPage: React.FC = () => {
                          <X className="w-4 h-4 text-muted-foreground hover:text-white" />
                        </button>
                      </div>
-                     <div className="grid grid-cols-3 gap-2">
+                      <div className="flex flex-col gap-2 mb-3">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          ref={bgFileInputRef}
+                          className="hidden"
+                          onChange={handleUploadBackground}
+                        />
+                        <button
+                          onClick={() => bgFileInputRef.current?.click()}
+                          disabled={isUploadingBg}
+                          className="w-full flex items-center justify-center gap-2 py-2 bg-primary/10 hover:bg-primary/20 border border-primary/30 rounded-xl text-xs font-semibold text-primary transition-all disabled:opacity-50"
+                        >
+                          {isUploadingBg ? (
+                            <>
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              Enviando...
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="w-4 h-4" />
+                              Fazer upload de capa
+                            </>
+                          )}
+                        </button>
+                        {board?.cover_image && (
+                          <button
+                            onClick={async () => {
+                              try {
+                                const { error } = await supabase.from('boards').update({ cover_image: null }).eq('id', boardId);
+                                if (error) throw error;
+                                setBoard(prev => prev ? { ...prev, cover_image: null } : null);
+                              } catch (err) {
+                                console.error('Erro ao remover imagem de capa:', err);
+                              }
+                            }}
+                            className="w-full py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 rounded-xl text-xs font-semibold transition-all"
+                          >
+                            Remover imagem de capa
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2">
                        {BOARD_GRADIENTS.map(g => (
                          <button
                            key={g.value}
@@ -925,6 +1066,23 @@ const KanbanPage: React.FC = () => {
                  )}
                </AnimatePresence>
              </div>
+           )}
+
+           {/* Limpar filtros */}
+           {hasActiveFilter && (
+             <button 
+               onClick={() => { setSearchText(''); setFilterLabelColor(null); setFilterAssigneeId(null); setFilterPriorities([]); }}
+               className="flex items-center justify-center w-8 h-8 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 rounded-xl transition-all h-8 shrink-0"
+               title="Limpar todos os filtros"
+             >
+               <X className="w-4 h-4" />
+             </button>
+           )}
+
+           {totalFilteredCards !== null && (
+             <span className="text-[10px] text-muted-foreground font-semibold bg-white/5 px-2.5 py-1 rounded-xl border border-white/5 h-8 flex items-center shrink-0">
+               {totalFilteredCards} card{totalFilteredCards !== 1 ? 's' : ''}
+             </span>
            )}
         </div>
       </div>
@@ -1112,6 +1270,30 @@ const KanbanPage: React.FC = () => {
                                 <CheckSquare className="w-3 h-3" /><span>{task.checklist.filter(i => i.done).length}/{task.checklist.length}</span>
                               </div>
                             )}
+
+                            {/* SLA/Prazo */}
+                            {task.due_date && (() => {
+                              const info = getDueDateInfo(task.due_date, !!task.is_done);
+                              if (!info) return null;
+                              return (
+                                <div className={`flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${info.className}`}>
+                                  <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                                  <span>{info.text}</span>
+                                </div>
+                              );
+                            })()}
+
+                            {/* Indicador de Comentários com Pontinho Laranja Pulsante */}
+                            {(task.comments_count ?? 0) > 0 && (
+                              <div className="flex items-center gap-1 text-muted-foreground/70 relative pr-2" title={`${task.comments_count ?? 0} comentário(s)`}>
+                                <MessageSquare className="w-3 h-3" />
+                                <span className="text-[10px] font-semibold">{task.comments_count}</span>
+                                <span className="absolute top-0 right-0 flex h-1.5 w-1.5">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-orange-500"></span>
+                                </span>
+                              </div>
+                            )}
                           </div>
                           {task.assignees?.length > 0 && (
                             <div className="flex -space-x-1.5">
@@ -1132,6 +1314,11 @@ const KanbanPage: React.FC = () => {
                     </div>
                   );
                 })}
+                {column.tasks.length === 0 && (
+                  <div className="h-full flex items-center justify-center py-8 text-xs text-muted-foreground/40">
+                    {hasActiveFilter ? 'Nenhum card corresponde ao filtro' : 'Sem tarefas nesta lista'}
+                  </div>
+                )}
                 
                 {/* Prévia do input do novo card (Trello style) */}
                 {activeAddCardColId === column.id && (
@@ -1336,6 +1523,17 @@ const KanbanPage: React.FC = () => {
                       ))}
                     </div>
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-white">Prazo de Resolução (SLA / Opcional)</label>
+                  <input
+                    type="date"
+                    value={ticketDueDate}
+                    onChange={(e) => setTicketDueDate(e.target.value)}
+                    className="w-full bg-[#1d2125] border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-sm text-white placeholder:text-gray-400 outline-none transition-all"
+                    style={{ colorScheme: 'dark' }}
+                  />
                 </div>
 
                 <div className="space-y-2">

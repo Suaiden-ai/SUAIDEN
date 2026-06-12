@@ -22,6 +22,7 @@ interface Board {
   title: string;
   bg_type: 'gradient' | 'image';
   background: string;
+  cover_image?: string | null;
 }
 
 const BoardsManagement: React.FC = () => {
@@ -66,7 +67,7 @@ const BoardsManagement: React.FC = () => {
       // Buscar quadros que o usuário é dono ou membro
       const { data: boardsData, error } = await supabase
         .from('boards')
-        .select('id, title, bg_type, background')
+        .select('id, title, bg_type, background, cover_image')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -180,7 +181,12 @@ const BoardsManagement: React.FC = () => {
             >
               {/* Parte Superior: Background do Quadro */}
               <div className="relative flex-1 w-full overflow-hidden">
-                {board.bg_type === 'gradient' ? (
+                {board.cover_image ? (
+                  <div 
+                    className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" 
+                    style={{ backgroundImage: `url(${board.cover_image})` }}
+                  />
+                ) : board.bg_type === 'gradient' ? (
                   <div className="absolute inset-0" style={{ background: board.background }} />
                 ) : (
                   <div 
