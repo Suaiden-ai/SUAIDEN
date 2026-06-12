@@ -24,6 +24,7 @@ export interface Task {
   is_done?: boolean;
   checklist_title?: string | null;
   cover_image?: string | null;
+  comments_count?: number;
 }
 
 export interface Column { id: string; title: string; position: number; tasks: Task[]; }
@@ -179,7 +180,7 @@ const CardModal: React.FC<CardModalProps> = ({
   // ── Carregar comentários e anexos ──
   const fetchExtras = async () => {
     const [{ data: commentsData }, { data: attachmentsData }] = await Promise.all([
-      supabase.from('card_comments').select('*, profiles:user_id (full_name)').eq('task_id', task.id).order('created_at', { ascending: true }),
+      supabase.from('card_comments').select('*, profiles:user_id (full_name)').eq('task_id', task.id).order('created_at', { ascending: false }),
       supabase.from('card_attachments').select('*').eq('task_id', task.id).order('created_at', { ascending: false }),
     ]);
     if (commentsData) setComments(commentsData);
@@ -362,7 +363,7 @@ const CardModal: React.FC<CardModalProps> = ({
       }).select('*, profiles:user_id (full_name)').single();
       
       if (!error && newComment) {
-        setComments(prev => [...prev, newComment]);
+        setComments(prev => [newComment, ...prev]);
       } else {
         fetchExtras();
       }
@@ -435,6 +436,7 @@ const CardModal: React.FC<CardModalProps> = ({
   }, [task.id, currentUserId]);
 
   const handleDeleteAttachment = async (attachment: Attachment) => {
+    if (currentUserRole !== 'admin') return;
     try {
       // Se o anexo deletado for a capa atual, removemos ela da task
       if (taskData.cover_image === attachment.file_url) {
@@ -556,11 +558,11 @@ const CardModal: React.FC<CardModalProps> = ({
             <div className={`${currentUserRole === 'admin' ? 'md:col-span-3' : 'md:col-span-4'} h-full overflow-y-auto pr-4 custom-scrollbar space-y-6`}>
 
               {/* Fileira de Badges (Membros, Etiquetas) */}
-              {(taskData.assignees.length > 0 || taskData.labels.length > 0) && (
+              {(taskData.assignees.length > 0 || taskData.labels.length > 0 || currentUserRole === 'admin') && (
                 <div className="flex flex-wrap gap-6 pb-2">
                   
                   {/* Membros / Responsáveis */}
-                  {taskData.assignees.length > 0 && (
+                  {(taskData.assignees.length > 0 || currentUserRole === 'admin') && (
                     <div className="space-y-1.5">
                       <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Responsáveis</span>
                       <div className="flex flex-wrap gap-1 items-center">
@@ -588,7 +590,7 @@ const CardModal: React.FC<CardModalProps> = ({
                   )}
 
                   {/* Etiquetas */}
-                  {taskData.labels.length > 0 && (
+                  {(taskData.labels.length > 0 || currentUserRole === 'admin') && (
                     <div className="space-y-1.5">
                       <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Etiquetas</span>
                       <div className="flex flex-wrap gap-1.5 items-center">
@@ -622,6 +624,37 @@ const CardModal: React.FC<CardModalProps> = ({
                             <Plus className="w-3.5 h-3.5" />
                           </button>
                         )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Prazo */}
+                  {(taskData.due_date || currentUserRole === 'admin') && (
+                    <div className="space-y-1.5">
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Prazo</span>
+                      <div className="flex items-center gap-2">
+                        {currentUserRole === 'admin' ? (
+                          <input 
+                            type="date"
+                            value={taskData.due_date ? taskData.due_date.substring(0, 10) : ''}
+                            onChange={async (e) => {
+                              const newVal = e.target.value;
+                              await update({ due_date: newVal ? newVal : null });
+                            }}
+                            className="bg-[#1d2125] border border-white/10 focus:border-primary/50 rounded-xl px-2.5 py-1 text-xs text-white outline-none transition-all cursor-pointer h-7"
+                            style={{ colorScheme: 'dark' }}
+                          />
+                        ) : taskData.due_date ? (
+                          (() => {
+                            const date = new Date(taskData.due_date);
+                            const formattedDate = date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' }).replace('.', '');
+                            return (
+                              <div className="h-7 px-2.5 bg-white/5 border border-white/5 text-xs text-white rounded-xl flex items-center font-medium">
+                                {formattedDate}
+                              </div>
+                            );
+                          })()
+                        ) : null}
                       </div>
                     </div>
                   )}
@@ -956,7 +989,7 @@ const CardModal: React.FC<CardModalProps> = ({
                               className="p-1.5 hover:bg-white/10 text-muted-foreground hover:text-white rounded-xl transition-colors" title="Baixar">
                               <Download className="w-3.5 h-3.5" />
                             </a>
-                            {att.user_id === currentUserId && currentUserRole === 'admin' && (
+                            {currentUserRole === 'admin' && (
                               <button onClick={() => handleDeleteAttachment(att)}
                                 className="p-1.5 hover:bg-destructive/10 text-muted-foreground hover:text-destructive rounded-xl transition-colors" title="Remover">
                                 <Trash2 className="w-3.5 h-3.5" />
