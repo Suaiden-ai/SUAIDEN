@@ -1,20 +1,21 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { supabase } from '../../services/supabase';
-import { useBoardBackground } from '../../context/BoardBackgroundContext';
-import {
-  ArrowLeft, Trash2, Plus, Loader2, X, Check,
-  CheckSquare, Calendar, AlignLeft, Search,
-  MoreHorizontal, SortAsc, SortDesc, Paintbrush
+import { 
+  ArrowLeft, Plus, X, LayoutGrid, List, Search,
+  MoreHorizontal, SortAsc, SortDesc, Paintbrush, Copy,
+  Paperclip, FileIcon, ImageIcon, Trash2, CheckSquare, AlignLeft as AlignLeftIcon, Check, Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '../../services/supabase';
 import CardModal, { Task, Column, MemberInfo, initials, avatarColor } from '../../components/user/CardModal';
+import BoardListView from '../../components/user/BoardListView';
+import { useBoardBackground } from '../../context/BoardBackgroundContext';
 
 // ────────────────────────────────────────────
 // Tipos
 // ────────────────────────────────────────────
 
-interface Board { id: string; title: string; background: string; bg_type: 'gradient' | 'image'; owner_id: string; }
+interface Board { id: string; title: string; background: string; bg_type: 'gradient' | 'image'; owner_id: string; ticket_column_id?: string | null; }
 
 // ────────────────────────────────────────────
 // Constantes
@@ -37,20 +38,62 @@ const BOARD_GRADIENTS = [
   { name: 'Neon',           value: 'linear-gradient(135deg, #4f46e5 0%, #06b6d4 50%, #10b981 100%)' },
 ];
 
-// ────────────────────────────────────────────
-// Helpers
-// ────────────────────────────────────────────
 
-function formatDueDate(dateStr: string | null): { text: string; status: 'overdue' | 'soon' | 'ok' } | null {
-  if (!dateStr) return null;
-  const date = new Date(dateStr);
-  const diff = date.getTime() - Date.now();
-  const days = Math.ceil(diff / 86400000);
-  const text = date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
-  if (diff < 0) return { text, status: 'overdue' };
-  if (days <= 2) return { text, status: 'soon' };
-  return { text, status: 'ok' };
-}
+
+const PRESET_LABELS = [
+  { text: 'BAIXA', color: '#22c55e' },
+  { text: 'MÉDIA', color: '#eab308' },
+  { text: 'ALTA', color: '#ef4444' },
+];
+
+const formatSize = (bytes: number) => {
+  if (bytes === 0) return '0 B';
+  const k = 1024, sizes = ['B', 'KB', 'MB', 'GB'], i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+};
+
+// Sub-componente para gerenciar o layout de capa do card no Kanban de forma dinâmica (como o Trello)
+const TaskCardCover: React.FC<{ imageUrl: string }> = ({ imageUrl }) => {
+  const [isLandscape, setIsLandscape] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const img = new Image();
+    img.src = imageUrl;
+    img.onload = () => {
+      if (img.height > 0) {
+        setIsLandscape(img.width >= img.height);
+      }
+    };
+  }, [imageUrl]);
+
+  if (isLandscape === null) {
+    // Container vazio/esqueleto de carregamento com altura média
+    return <div className="h-32 w-full bg-white/5 animate-pulse shrink-0 border-b border-white/5" />;
+  }
+
+  if (isLandscape) {
+    // Imagem horizontal (Landscape) -> bg-cover com altura de 114px (Trello usa ~114px, máximo de 129px)
+    return (
+      <div 
+        className="w-full h-[114px] max-h-[129px] shrink-0 border-b border-white/5 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${imageUrl})` }}
+      />
+    );
+  } else {
+    // Imagem vertical (Portrait) -> bg-contain com altura de 260px e preenchimento de bordas (backdrop blur)
+    return (
+      <div className="h-[260px] max-h-[260px] w-full shrink-0 overflow-hidden relative border-b border-white/5 bg-black/40">
+        {/* Background desfocado da imagem para preencher as bordas com cores compatíveis */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center filter blur-lg opacity-40 scale-110 select-none pointer-events-none"
+          style={{ backgroundImage: `url(${imageUrl})` }}
+        />
+        {/* Imagem principal contida e centralizada */}
+        <img src={imageUrl} alt="" className="w-full h-full object-contain relative z-10 select-none pointer-events-none" />
+      </div>
+    );
+  }
+};
 
 // ────────────────────────────────────────────
 // Componente
@@ -72,6 +115,7 @@ const KanbanPage: React.FC = () => {
   const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
   const [editingColumnTitle, setEditingColumnTitle] = useState('');
   const [newColumnTitle, setNewColumnTitle] = useState('');
+  const [isAddingColumn, setIsAddingColumn] = useState(false);
   const [newCardTitles, setNewCardTitles] = useState<Record<string, string>>({});
   const [activeAddCardColId, setActiveAddCardColId] = useState<string | null>(null);
 
@@ -96,8 +140,37 @@ const KanbanPage: React.FC = () => {
 
   // Filtros
   const [searchText, setSearchText] = useState('');
-  const [filterLabelColor, setFilterLabelColor] = useState<string | null>(null);
-  const [filterAssigneeId, setFilterAssigneeId] = useState<string | null>(null);
+  const [filterLabelColor] = useState<string | null>(null);
+  const [filterAssigneeId] = useState<string | null>(null);
+
+  // Modo de Visualização
+  const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
+
+  // Edição do título do quadro
+  const [isEditingBoardTitle, setIsEditingBoardTitle] = useState(false);
+  const [editingBoardTitle, setEditingBoardTitle] = useState('');
+
+  // Chamado (User)
+  const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
+  const [ticketTitle, setTicketTitle] = useState('');
+  const [ticketDesc, setTicketDesc] = useState('');
+  const [ticketSector, setTicketSector] = useState('');
+  const [ticketPriority, setTicketPriority] = useState<{text: string, color: string} | null>(null);
+  const [ticketChecklist, setTicketChecklist] = useState<string[]>([]);
+  const [newChecklistItem, setNewChecklistItem] = useState('');
+  const [ticketFiles, setTicketFiles] = useState<File[]>([]);
+  const ticketFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleTicketFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setTicketFiles(prev => [...prev, ...Array.from(e.target.files!)]);
+    }
+    if (ticketFileInputRef.current) ticketFileInputRef.current.value = '';
+  };
+  
+  const handleRemoveTicketFile = (index: number) => {
+    setTicketFiles(prev => prev.filter((_, i) => i !== index));
+  };
 
   // ────────────────────────────────────────────
   // Dados
@@ -128,7 +201,7 @@ const KanbanPage: React.FC = () => {
       }
 
       const { data: boardData, error: boardError } = await supabase
-        .from('boards').select('id, title, background, bg_type, owner_id').eq('id', boardId).single();
+        .from('boards').select('id, title, background, bg_type, owner_id, ticket_column_id').eq('id', boardId).single();
       if (boardError) throw boardError;
       setBoard(boardData);
       setBoardBackground({ bg_type: boardData.bg_type, background: boardData.background });
@@ -139,7 +212,7 @@ const KanbanPage: React.FC = () => {
         .from('profiles').select('id, full_name, email').eq('id', boardData.owner_id).single();
 
       const formattedMembers: MemberInfo[] = [];
-      if (ownerProfile) formattedMembers.push({ user_id: ownerProfile.id, full_name: `${ownerProfile.full_name} (Dono)`, email: ownerProfile.email });
+      if (ownerProfile) formattedMembers.push({ user_id: ownerProfile.id, full_name: ownerProfile.full_name, email: ownerProfile.email });
       if (membersData) {
         membersData.forEach((m: any) => {
           if (m.user_id !== boardData.owner_id && m.profiles)
@@ -200,6 +273,19 @@ const KanbanPage: React.FC = () => {
     return () => { supabase.removeChannel(sub); document.removeEventListener('mousedown', handleClickOutside); clearBoardBackground(); };
   }, [boardId]);
 
+  // Lidar com Ctrl+V de arquivos no modal de chamado
+  useEffect(() => {
+    if (!isTicketModalOpen) return;
+    const handlePaste = (e: ClipboardEvent) => {
+      if (e.clipboardData?.files && e.clipboardData.files.length > 0) {
+        const pastedFiles = Array.from(e.clipboardData.files);
+        setTicketFiles(prev => [...prev, ...pastedFiles]);
+      }
+    };
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [isTicketModalOpen]);
+
   // Buscar todos os usuários do sistema para adicionar membros
   useEffect(() => {
     if (isMembersModalOpen) {
@@ -245,8 +331,6 @@ const KanbanPage: React.FC = () => {
     }));
   }, [columns, searchText, filterLabelColor, filterAssigneeId]);
 
-  const hasActiveFilter = !!(searchText.trim() || filterLabelColor || filterAssigneeId);
-  const totalFilteredCards = hasActiveFilter ? filteredColumns.reduce((s, c) => s + c.tasks.length, 0) : null;
 
   // ── Callbacks do Modal ──
   const handleUpdateTask = async (updates: Partial<Task>) => {
@@ -272,10 +356,11 @@ const KanbanPage: React.FC = () => {
   // ── Colunas ──
   const handleAddColumn = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!boardId || !newColumnTitle.trim()) return;
+    if (!boardId || currentUserRole !== 'admin' || !newColumnTitle.trim()) return;
     try {
       await supabase.from('columns').insert({ board_id: boardId, title: newColumnTitle.trim(), position: columns.length });
       setNewColumnTitle('');
+      setIsAddingColumn(false);
     } catch (err) { console.error(err); }
   };
   const handleSaveColumnTitle = async (colId: string) => {
@@ -288,15 +373,12 @@ const KanbanPage: React.FC = () => {
   };
 
   // ── Menu da Coluna: Ordenar ──
-  const handleSortColumn = async (colId: string, mode: 'az' | 'za' | 'due_asc' | 'due_desc') => {
+  const handleSortColumn = async (colId: string, mode: 'az' | 'za') => {
     const col = columns.find(c => c.id === colId);
     if (!col) return;
     const sorted = [...col.tasks].sort((a, b) => {
       if (mode === 'az') return a.title.localeCompare(b.title, 'pt-BR');
-      if (mode === 'za') return b.title.localeCompare(a.title, 'pt-BR');
-      const ad = a.due_date ? new Date(a.due_date).getTime() : Infinity;
-      const bd = b.due_date ? new Date(b.due_date).getTime() : Infinity;
-      return mode === 'due_asc' ? ad - bd : bd - ad;
+      return b.title.localeCompare(a.title, 'pt-BR');
     });
     setColumns(prev => prev.map(c => c.id === colId ? { ...c, tasks: sorted.map((t, i) => ({ ...t, position: i })) } : c));
     try { await Promise.all(sorted.map((t, i) => supabase.from('tasks').update({ position: i }).eq('id', t.id))); }
@@ -312,8 +394,95 @@ const KanbanPage: React.FC = () => {
     setOpenColMenuId(null); setConfirmClearColId(null);
   };
 
+  const handleCopyColumn = async (colId: string) => {
+    const colToCopy = columns.find(c => c.id === colId);
+    if (!colToCopy || !boardId) return;
+    
+    try {
+      const newPos = columns.length;
+      const { data: newColData, error: colError } = await supabase
+        .from('columns')
+        .insert({
+          board_id: boardId,
+          title: `${colToCopy.title} (Cópia)`,
+          position: newPos
+        })
+        .select('*')
+        .single();
+        
+      if (colError) throw colError;
+      
+      if (colToCopy.tasks && colToCopy.tasks.length > 0) {
+        const tasksToInsert = colToCopy.tasks.map(task => ({
+          column_id: newColData.id,
+          title: task.title,
+          description: task.description || '',
+          checklist: task.checklist || [],
+          labels: task.labels || [],
+          assignees: task.assignees || [],
+          due_date: task.due_date || null,
+          cover_color: task.cover_color || null,
+          is_done: !!task.is_done,
+          position: task.position,
+          checklist_title: task.checklist_title || null,
+          cover_image: task.cover_image || null
+        }));
+        
+        const { error: tasksError } = await supabase
+          .from('tasks')
+          .insert(tasksToInsert);
+          
+        if (tasksError) throw tasksError;
+      }
+      
+      setOpenColMenuId(null);
+    } catch (err) {
+      console.error('Erro ao duplicar lista:', err);
+    }
+  };
+
+  const handleMoveAllTasks = async (sourceColId: string, targetColId: string) => {
+    const sourceCol = columns.find(c => c.id === sourceColId);
+    if (!sourceCol || !sourceCol.tasks.length) return;
+    
+    try {
+      const targetCol = columns.find(c => c.id === targetColId);
+      if (!targetCol) return;
+      
+      const startPos = targetCol.tasks.length;
+      
+      const updatePromises = sourceCol.tasks.map((task, index) => 
+        supabase
+          .from('tasks')
+          .update({
+            column_id: targetColId,
+            position: startPos + index
+          })
+          .eq('id', task.id)
+      );
+      
+      await Promise.all(updatePromises);
+      setOpenColMenuId(null);
+    } catch (err) {
+      console.error('Erro ao mover todos os cartões:', err);
+    }
+  };
+
+  const handleSetTicketColumn = async (colId: string) => {
+    if (!boardId || currentUserRole !== 'admin') return;
+    try {
+      const newTicketColId = board?.ticket_column_id === colId ? null : colId;
+      await supabase.from('boards').update({ ticket_column_id: newTicketColId }).eq('id', boardId);
+      setBoard(prev => prev ? { ...prev, ticket_column_id: newTicketColId } : null);
+      setOpenColMenuId(null);
+    } catch (err) {
+      console.error('Erro ao definir coluna de chamados:', err);
+    }
+  };
+
   // ── Cards ──
   const handleAddCard = async (columnId: string) => {
+    if (currentUserRole !== 'admin') return;
     const title = newCardTitles[columnId];
     if (!title?.trim()) return;
     try {
@@ -325,6 +494,79 @@ const KanbanPage: React.FC = () => {
       });
       setNewCardTitles(prev => ({ ...prev, [columnId]: '' }));
     } catch (err) { console.error(err); }
+  };
+
+  const handleSubmitTicket = async () => {
+    if (!board?.ticket_column_id) {
+      alert('O administrador ainda não configurou uma coluna de chamados para este quadro.');
+      return;
+    }
+    if (!ticketTitle.trim()) return;
+
+    try {
+      const targetCol = columns.find(c => c.id === board.ticket_column_id);
+      const position = targetCol ? targetCol.tasks.length : 0;
+      
+      const newLabels: { id: string; text: string; color: string }[] = [];
+      if (ticketPriority) {
+        newLabels.push({ id: crypto.randomUUID(), text: ticketPriority.text, color: ticketPriority.color });
+      }
+      if (ticketSector.trim()) {
+        newLabels.push({ id: crypto.randomUUID(), text: ticketSector.trim(), color: '#64748b' });
+      }
+
+      const checklistItems = ticketChecklist.map(text => ({
+        id: crypto.randomUUID(),
+        text,
+        done: false
+      }));
+
+      const { data: newTask, error: taskError } = await supabase.from('tasks').insert({
+        column_id: board.ticket_column_id,
+        title: ticketTitle.trim(),
+        description: ticketDesc.trim(),
+        position,
+        labels: newLabels,
+        checklist: checklistItems, assignees: [], due_date: null, cover_color: null, is_done: false
+      }).select().single();
+
+      if (taskError) throw taskError;
+
+      if (ticketFiles.length > 0 && currentUserId && newTask) {
+        for (const file of ticketFiles) {
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${Math.random()}.${fileExt}`;
+          const filePath = `${newTask.id}/${fileName}`;
+          
+          await supabase.storage.from('card-attachments').upload(filePath, file);
+          const { data: { publicUrl } } = supabase.storage.from('card-attachments').getPublicUrl(filePath);
+          
+          await supabase.from('card_attachments').insert({
+            task_id: newTask.id,
+            user_id: currentUserId,
+            file_name: file.name,
+            file_url: publicUrl,
+            file_size: file.size,
+            file_type: file.type
+          });
+        }
+      }
+
+      // Limpar formulário
+      setIsTicketModalOpen(false);
+      setTicketTitle('');
+      setTicketDesc('');
+      setTicketSector('');
+      setTicketPriority(null);
+      setTicketChecklist([]);
+      setNewChecklistItem('');
+      setTicketFiles([]);
+      
+      alert('Chamado aberto com sucesso!');
+    } catch (err) {
+      console.error('Erro ao criar chamado:', err);
+      alert('Ocorreu um erro ao criar o chamado. Tente novamente.');
+    }
   };
 
   // ── Membros do quadro ──
@@ -360,6 +602,7 @@ const KanbanPage: React.FC = () => {
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [draggedSourceColId, setDraggedSourceColId] = useState<string | null>(null);
   const [draggedColId, setDraggedColId] = useState<string | null>(null);
+  const [draggableColId, setDraggableColId] = useState<string | null>(null);
 
   const handleColDragStart = (e: React.DragEvent, colId: string) => { setDraggedColId(colId); e.dataTransfer.effectAllowed = 'move'; };
   const handleColDrop = async (e: React.DragEvent, targetColId: string) => {
@@ -398,6 +641,22 @@ const KanbanPage: React.FC = () => {
     } catch (err) { console.error(err); } finally { setDraggedTaskId(null); setDraggedSourceColId(null); }
   };
 
+  const handleSaveBoardTitle = async () => {
+    if (!boardId || !editingBoardTitle.trim() || editingBoardTitle.trim() === board?.title || currentUserRole !== 'admin') {
+      setIsEditingBoardTitle(false);
+      return;
+    }
+    try {
+      const newTitle = editingBoardTitle.trim();
+      await supabase.from('boards').update({ title: newTitle }).eq('id', boardId);
+      setBoard(prev => prev ? { ...prev, title: newTitle } : null);
+    } catch (err) {
+      console.error('Erro ao salvar título do quadro:', err);
+    } finally {
+      setIsEditingBoardTitle(false);
+    }
+  };
+
   // Navegação inteligente de volta
   const handleBack = async () => {
     try {
@@ -424,8 +683,6 @@ const KanbanPage: React.FC = () => {
 
   // ────────────────────────────────────────────
   // Render
-  // ────────────────────────────────────────────
-
   if (loading) {
     return <div className="min-h-[70vh] flex items-center justify-center"><Loader2 className="w-10 h-10 text-primary animate-spin" /></div>;
   }
@@ -445,453 +702,549 @@ const KanbanPage: React.FC = () => {
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
-          <h1 className="text-lg font-bold text-white tracking-tight">{board?.title || 'Quadro'}</h1>
+          {isEditingBoardTitle ? (
+            <input
+              autoFocus
+              value={editingBoardTitle}
+              onChange={e => setEditingBoardTitle(e.target.value)}
+              onBlur={handleSaveBoardTitle}
+              onKeyDown={e => {
+                if (e.key === 'Enter') handleSaveBoardTitle();
+                if (e.key === 'Escape') setIsEditingBoardTitle(false);
+              }}
+              className="text-lg font-bold text-white bg-black/30 border border-primary/50 rounded-xl px-2 py-0.5 outline-none w-64"
+            />
+          ) : (
+            <h1 
+              onClick={() => {
+                if (currentUserRole === 'admin') {
+                  setEditingBoardTitle(board?.title || '');
+                  setIsEditingBoardTitle(true);
+                }
+              }}
+              className={`text-lg font-bold text-white tracking-tight ${currentUserRole === 'admin' ? 'cursor-pointer hover:underline' : ''}`}
+              title={currentUserRole === 'admin' ? "Clique para renomear o quadro" : undefined}
+            >
+              {board?.title || 'Projeto'}
+            </h1>
+          )}
         </div>
 
-        {/* Lado Direito: Filtros e Ações em Linha Única */}
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Meio: Botão Abrir Chamado (Apenas User) */}
+        {currentUserRole !== 'admin' && (
+          <div className="flex-1 flex justify-center">
+            <button 
+              onClick={() => setIsTicketModalOpen(true)}
+              className="px-5 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-primary/20 flex items-center gap-2 border border-white/10"
+            >
+              <Plus className="w-4 h-4" />
+              Abrir chamado
+            </button>
+          </div>
+        )}
+ 
+        {/* Lado Direito: Filtros, View Toggle e Ações */}
+        <div className="flex items-center gap-2 sm:gap-3 ml-auto">
+          
+          {/* Toggle de Visualização (Kanban / Lista) */}
+          <div className="hidden sm:flex items-center bg-black/20 p-1 rounded-xl border border-white/10">
+            <button
+              onClick={() => setViewMode('kanban')}
+              className={`p-1.5 rounded-lg flex items-center justify-center transition-all ${viewMode === 'kanban' ? 'bg-primary text-white shadow-md' : 'text-white/50 hover:text-white hover:bg-white/5'}`}
+              title="Visualização em Quadro (Kanban)"
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-1.5 rounded-lg flex items-center justify-center transition-all ${viewMode === 'list' ? 'bg-primary text-white shadow-md' : 'text-white/50 hover:text-white hover:bg-white/5'}`}
+              title="Visualização em Lista"
+            >
+              <List className="w-4 h-4" />
+            </button>
+          </div>
           
           {/* Buscar cards */}
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
             <input 
               type="text" 
-              placeholder="Buscar cards..." 
+              placeholder="Buscar..." 
               value={searchText} 
               onChange={e => setSearchText(e.target.value)}
-              className="pl-8 pr-3 h-8 bg-black/30 border border-white/10 focus:border-primary/50 rounded-xl text-xs text-white placeholder:text-muted-foreground outline-none w-44 focus:w-56 transition-all duration-200" 
+              className="pl-8 pr-3 h-8 bg-black/30 border border-white/10 focus:border-primary/50 rounded-xl text-xs text-white placeholder:text-muted-foreground outline-none w-32 focus:w-40 transition-all duration-200" 
             />
           </div>
-
+ 
           {/* Filtro de Membros & Gerenciar */}
           <div className="relative" ref={membersRef}>
             <div className="flex items-center gap-2 bg-black/30 border border-white/10 rounded-xl px-2 py-0.5 h-8">
-              <div className="flex items-center -space-x-1.5 shrink-0">
-                {members.slice(0, 3).map(m => (
-                  <button 
-                    key={m.user_id} 
-                    onClick={() => setFilterAssigneeId(filterAssigneeId === m.user_id ? null : m.user_id)} 
-                    title={m.full_name}
-                    className={`w-6 h-6 rounded-full text-[9px] font-bold text-white flex items-center justify-center transition-all border border-black/40 shrink-0 ${filterAssigneeId === m.user_id ? 'ring-2 ring-white scale-110' : 'opacity-80 hover:opacity-100'}`}
-                    style={{ backgroundColor: avatarColor(m.user_id) }}
-                  >
-                    {initials(m.full_name)}
-                  </button>
-                ))}
-                {members.length > 3 && (
-                  <div className="w-6 h-6 rounded-full bg-white/10 border border-black/40 text-[9px] font-bold text-white flex items-center justify-center shrink-0">
-                    +{members.length - 3}
-                  </div>
-                )}
-              </div>
-              
-              <button 
-                onClick={() => setIsMembersModalOpen(!isMembersModalOpen)} 
-                className="p-0.5 hover:bg-white/10 text-muted-foreground hover:text-white rounded-lg transition-colors shrink-0" 
-                title="Adicionar / Ver Membros"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-            </div>
-
-            <AnimatePresence>
-              {isMembersModalOpen && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }} 
-                  animate={{ opacity: 1, y: 0, scale: 1 }} 
-                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  className="absolute right-0 mt-2 w-80 rounded-2xl bg-[#0c0c0c] border border-white/10 shadow-2xl p-4 z-40 backdrop-blur-xl space-y-4"
-                >
-                  <div className="flex items-center justify-between border-b border-white/5 pb-2">
-                    <span className="font-bold text-xs text-white">Membros do Quadro</span>
-                    <button onClick={() => { setIsMembersModalOpen(false); setSearchMemberQuery(''); }}>
-                      <X className="w-4 h-4 text-muted-foreground hover:text-white" />
-                    </button>
-                  </div>
-                  
-                  {/* Membros Ativos */}
-                  <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Ativos ({members.length})</span>
-                    {members.map(m => (
-                      <div key={m.user_id} className="flex items-center justify-between gap-2.5">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ backgroundColor: avatarColor(m.user_id) }}>
-                             {initials(m.full_name)}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-xs font-bold text-white truncate">{m.full_name}</p>
-                            <p className="text-[10px] text-muted-foreground truncate">{m.email}</p>
-                          </div>
-                        </div>
-                        {currentUserRole === 'admin' && m.user_id !== board?.owner_id && (
-                          <button 
-                            onClick={() => handleRemoveMember(m.user_id)}
-                            className="p-1 hover:bg-red-500/10 text-muted-foreground hover:text-red-400 rounded-lg transition-colors shrink-0"
-                            title="Remover membro"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Adicionar Membros (Apenas se for Admin) */}
-                  {currentUserRole === 'admin' && (
-                    <div className="border-t border-white/5 pt-3 space-y-3">
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Adicionar Usuários</span>
-                      
-                      {/* Campo de Busca de Usuário */}
-                      <input 
-                        type="text" 
-                        placeholder="Buscar usuário do sistema..." 
-                        value={searchMemberQuery}
-                        onChange={e => setSearchMemberQuery(e.target.value)}
-                        className="w-full bg-[#1e2126] border border-white/5 focus:border-primary/50 rounded-xl px-2.5 py-1.5 text-xs text-white placeholder:text-muted-foreground outline-none" 
-                      />
-
-                      {/* Lista de usuários cadastrados que NÃO estão no quadro */}
-                      <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
-                        {allSystemUsers
-                          .filter(u => !members.some(m => m.user_id === u.id))
-                          .filter(u => u.full_name.toLowerCase().includes(searchMemberQuery.toLowerCase()) || u.email.toLowerCase().includes(searchMemberQuery.toLowerCase()))
-                          .map(user => (
-                            <div key={user.id} className="flex items-center justify-between gap-2.5 py-0.5">
-                              <div className="flex items-center gap-2.5 min-w-0">
-                                <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ backgroundColor: avatarColor(user.id) }}>
-                                  {initials(user.full_name)}
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                  <p className="text-xs font-bold text-white truncate">{user.full_name}</p>
-                                  <p className="text-[10px] text-muted-foreground truncate">{user.email}</p>
-                                </div>
-                              </div>
-                              <button 
-                                onClick={() => handleAddMember(user.id)}
-                                className="px-2 py-1 bg-primary/20 hover:bg-primary/30 border border-primary/30 text-primary hover:text-white rounded-lg text-[10px] font-bold transition-all"
-                              >
-                                Adicionar
-                              </button>
-                            </div>
-                          ))}
-                        {allSystemUsers.filter(u => !members.some(m => m.user_id === u.id)).length === 0 && (
-                          <p className="text-[10px] text-muted-foreground italic text-center py-2">Todos os usuários já fazem parte deste quadro.</p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* Editar Background */}
-          <div className="relative" ref={bgPanelRef}>
-            <button
-              onClick={() => setIsBackgroundPanelOpen(!isBackgroundPanelOpen)}
-              className="flex items-center gap-1.5 px-3 py-1 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-semibold border border-white/10 transition-all h-8"
-            >
-              <Paintbrush className="w-4 h-4 text-muted-foreground" />
-              <span>Fundo</span>
-            </button>
-
-            <AnimatePresence>
-              {isBackgroundPanelOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  className="absolute right-0 mt-2 w-72 rounded-2xl bg-[#0c0c0c] border border-white/10 shadow-2xl p-4 z-40 backdrop-blur-xl space-y-3"
-                >
-                  <div className="flex items-center justify-between border-b border-white/5 pb-2">
-                    <span className="font-bold text-xs text-white">Escolher Fundo do Quadro</span>
-                    <button onClick={() => setIsBackgroundPanelOpen(false)}>
-                      <X className="w-4 h-4 text-muted-foreground hover:text-white" />
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    {BOARD_GRADIENTS.map(g => (
-                      <button
-                        key={g.value}
-                        onClick={() => handleChangeBoardBackground(g.value)}
-                        title={g.name}
-                        className={`relative h-14 rounded-xl overflow-hidden transition-all hover:scale-105 ${board?.background === g.value ? 'ring-2 ring-white scale-105' : 'ring-1 ring-white/10'}`}
-                        style={{ background: g.value }}
-                      >
-                        {board?.background === g.value && (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <Check className="w-4 h-4 text-white drop-shadow-lg" />
-                          </div>
-                        )}
-                        <span className="absolute bottom-0 inset-x-0 text-[8px] font-bold text-white/90 text-center pb-1 bg-black/30 truncate px-1">{g.name}</span>
-                      </button>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* Limpar filtros */}
-          {hasActiveFilter && (
-            <button 
-              onClick={() => { setSearchText(''); setFilterLabelColor(null); setFilterAssigneeId(null); }}
-              className="flex items-center justify-center w-8 h-8 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 rounded-xl transition-all"
-              title="Limpar todos os filtros"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
-
-          {totalFilteredCards !== null && (
-            <span className="text-[10px] text-muted-foreground font-semibold bg-white/5 px-2.5 py-1 rounded-xl border border-white/5 h-8 flex items-center">
-              {totalFilteredCards} card{totalFilteredCards !== 1 ? 's' : ''}
-            </span>
-          )}
+               <button 
+                 onClick={() => setIsMembersModalOpen(!isMembersModalOpen)} 
+                 className="p-0.5 hover:bg-white/10 text-muted-foreground hover:text-white rounded-lg transition-colors shrink-0" 
+                 title="Adicionar / Ver Membros"
+               >
+                 <Plus className="w-4 h-4" />
+               </button>
+             </div>
+ 
+             <AnimatePresence>
+               {isMembersModalOpen && (
+                 <motion.div 
+                   initial={{ opacity: 0, y: 10, scale: 0.95 }} 
+                   animate={{ opacity: 1, y: 0, scale: 1 }} 
+                   exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                   className="absolute right-0 mt-2 w-80 rounded-2xl bg-[#0c0c0c] border border-white/10 shadow-2xl p-4 z-40 backdrop-blur-xl space-y-4"
+                 >
+                   <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                     <span className="font-bold text-xs text-white">Membros do Projeto</span>
+                     <button onClick={() => { setIsMembersModalOpen(false); setSearchMemberQuery(''); }}>
+                       <X className="w-4 h-4 text-muted-foreground hover:text-white" />
+                     </button>
+                   </div>
+                   
+                   {/* Membros Ativos */}
+                   <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                     <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Ativos ({members.length})</span>
+                     {members.map(m => (
+                       <div key={m.user_id} className="flex items-center justify-between gap-2.5">
+                         <div className="flex items-center gap-2.5 min-w-0">
+                           <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ backgroundColor: avatarColor(m.user_id) }}>
+                              {initials(m.full_name)}
+                           </div>
+                           <div className="min-w-0 flex-1">
+                             <p className="text-xs font-bold text-white truncate">{m.full_name}</p>
+                             <p className="text-[10px] text-muted-foreground truncate">{m.email}</p>
+                           </div>
+                         </div>
+                         {currentUserRole === 'admin' && m.user_id !== board?.owner_id && (
+                           <button 
+                             onClick={() => handleRemoveMember(m.user_id)}
+                             className="p-1 hover:bg-red-500/10 text-muted-foreground hover:text-red-400 rounded-lg transition-colors shrink-0"
+                             title="Remover membro"
+                           >
+                             <X className="w-3.5 h-3.5" />
+                           </button>
+                         )}
+                       </div>
+                     ))}
+                   </div>
+ 
+                   {/* Adicionar Membros (Apenas se for Admin) */}
+                   {currentUserRole === 'admin' && (
+                     <div className="border-t border-white/5 pt-3 space-y-3">
+                       <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Adicionar Usuários</span>
+                       
+                       {/* Campo de Busca de Usuário */}
+                       <input 
+                         type="text" 
+                         placeholder="Buscar usuário do sistema..." 
+                         value={searchMemberQuery}
+                         onChange={e => setSearchMemberQuery(e.target.value)}
+                         className="w-full bg-[#1e2126] border border-white/5 focus:border-primary/50 rounded-xl px-2.5 py-1.5 text-xs text-white placeholder:text-muted-foreground outline-none" 
+                       />
+ 
+                       {/* Lista de usuários cadastrados que NÃO estão no projeto */}
+                       <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                         {allSystemUsers
+                           .filter(u => !members.some(m => m.user_id === u.id))
+                           .filter(u => u.full_name.toLowerCase().includes(searchMemberQuery.toLowerCase()) || u.email.toLowerCase().includes(searchMemberQuery.toLowerCase()))
+                           .map(user => (
+                             <div key={user.id} className="flex items-center justify-between gap-2.5 py-0.5">
+                               <div className="flex items-center gap-2.5 min-w-0">
+                                 <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ backgroundColor: avatarColor(user.id) }}>
+                                   {initials(user.full_name)}
+                                 </div>
+                                 <div className="min-w-0 flex-1">
+                                   <p className="text-xs font-bold text-white truncate">{user.full_name}</p>
+                                   <p className="text-[10px] text-muted-foreground truncate">{user.email}</p>
+                                 </div>
+                               </div>
+                               <button 
+                                 onClick={() => handleAddMember(user.id)}
+                                 className="px-2 py-1 bg-primary/20 hover:bg-primary/30 border border-primary/30 text-primary hover:text-white rounded-lg text-[10px] font-bold transition-all"
+                               >
+                                 Adicionar
+                               </button>
+                             </div>
+                           ))}
+                         {allSystemUsers.filter(u => !members.some(m => m.user_id === u.id)).length === 0 && (
+                           <p className="text-[10px] text-muted-foreground italic text-center py-2">Todos os usuários já fazem parte deste projeto.</p>
+                         )}
+                       </div>
+                     </div>
+                   )}
+                 </motion.div>
+               )}
+             </AnimatePresence>
+           </div>
+ 
+           {/* Editar Background */}
+           {currentUserRole === 'admin' && (
+             <div className="relative" ref={bgPanelRef}>
+               <button
+                 onClick={() => setIsBackgroundPanelOpen(!isBackgroundPanelOpen)}
+                 className="flex items-center gap-1.5 px-3 py-1 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-semibold border border-white/10 transition-all h-8"
+               >
+                 <Paintbrush className="w-4 h-4 text-muted-foreground" />
+               </button>
+ 
+               <AnimatePresence>
+                 {isBackgroundPanelOpen && (
+                   <motion.div
+                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                     animate={{ opacity: 1, y: 0, scale: 1 }}
+                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                     className="absolute right-0 mt-2 w-72 rounded-2xl bg-[#0c0c0c] border border-white/10 shadow-2xl p-4 z-40 backdrop-blur-xl space-y-3"
+                   >
+                     <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                       <span className="font-bold text-xs text-white">Escolher Fundo do Projeto</span>
+                       <button onClick={() => setIsBackgroundPanelOpen(false)}>
+                         <X className="w-4 h-4 text-muted-foreground hover:text-white" />
+                       </button>
+                     </div>
+                     <div className="grid grid-cols-3 gap-2">
+                       {BOARD_GRADIENTS.map(g => (
+                         <button
+                           key={g.value}
+                           onClick={() => handleChangeBoardBackground(g.value)}
+                           title={g.name}
+                           className={`relative h-14 rounded-xl overflow-hidden transition-all hover:scale-105 ${board?.background === g.value ? 'ring-2 ring-white scale-105' : 'ring-1 ring-white/10'}`}
+                           style={{ background: g.value }}
+                         >
+                           {board?.background === g.value && (
+                             <div className="absolute inset-0 flex items-center justify-center">
+                               <Check className="w-4 h-4 text-white drop-shadow-lg" />
+                             </div>
+                           )}
+                           <span className="absolute bottom-0 inset-x-0 text-[8px] font-bold text-white/90 text-center pb-1 bg-black/30 truncate px-1">{g.name}</span>
+                         </button>
+                       ))}
+                     </div>
+                   </motion.div>
+                 )}
+               </AnimatePresence>
+             </div>
+           )}
         </div>
       </div>
 
-      {/* ── Colunas ── */}
-      <div className="flex-1 flex gap-4 overflow-x-auto pb-4 items-start select-none overflow-y-hidden custom-scrollbar">
-        {filteredColumns.map(column => (
-          <div key={column.id} draggable
-            onDragStart={e => handleColDragStart(e, column.id)}
-            onDragOver={e => e.preventDefault()}
-            onDrop={e => { if (draggedColId) handleColDrop(e, column.id); else if (draggedTaskId) handleCardDrop(e, column.id); }}
-            className="w-72 shrink-0 bg-[#101214] border border-white/5 rounded-2xl flex flex-col max-h-full shadow-xl">
+      {/* ── Visualização: Kanban ou Lista ── */}
+      {viewMode === 'kanban' ? (
+        <div className="flex-1 flex gap-4 overflow-x-auto pb-4 items-start select-none overflow-y-hidden custom-scrollbar">
+          {filteredColumns.map(column => (
+            <div key={column.id} 
+              draggable={currentUserRole === 'admin' && draggableColId === column.id}
+              onDragStart={e => handleColDragStart(e, column.id)}
+              onDragEnd={() => setDraggableColId(null)}
+              onDragOver={e => e.preventDefault()}
+              onDrop={e => { if (draggedColId) handleColDrop(e, column.id); else if (draggedTaskId) handleCardDrop(e, column.id); }}
+              className="w-72 shrink-0 bg-[#101214] border border-white/5 rounded-2xl flex flex-col max-h-full shadow-xl">
 
-            {/* Header da coluna */}
-            <div className="p-3 flex items-center justify-between border-b border-white/10 cursor-grab active:cursor-grabbing">
-              <div className="flex items-center gap-2 flex-1 min-w-0">
-                {editingColumnId === column.id ? (
-                  <input autoFocus value={editingColumnTitle} onChange={e => setEditingColumnTitle(e.target.value)}
-                    onBlur={() => handleSaveColumnTitle(column.id)}
-                    onKeyDown={e => { if (e.key === 'Enter') handleSaveColumnTitle(column.id); if (e.key === 'Escape') setEditingColumnId(null); }}
-                    className="flex-1 bg-black/30 border border-white/10 rounded-xl px-2 py-0.5 text-xs text-white outline-none focus:border-primary/50 font-bold" />
-                ) : (
-                  <span onClick={() => { setEditingColumnId(column.id); setEditingColumnTitle(column.title); }}
-                    className="font-bold text-white text-sm cursor-pointer hover:underline truncate" title="Clique para renomear">
-                    {column.title}
-                  </span>
-                )}
-                <span className="shrink-0 text-[10px] font-bold bg-white/10 text-white/70 px-1.5 py-0.5 rounded-full">{column.tasks.length}</span>
-              </div>
-
-              {/* Menu "..." da coluna */}
-              <div className="relative" ref={openColMenuId === column.id ? colMenuRef : undefined}>
-                <button onClick={e => { e.stopPropagation(); setOpenColMenuId(openColMenuId === column.id ? null : column.id); setConfirmClearColId(null); }}
-                  className="ml-1 p-1 hover:bg-white/10 text-muted-foreground hover:text-white rounded-lg transition-colors">
-                  <MoreHorizontal className="w-4 h-4" />
-                </button>
-                <AnimatePresence>
-                  {openColMenuId === column.id && (
-                    <motion.div initial={{ opacity: 0, y: 6, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 6, scale: 0.95 }}
-                      className="absolute right-0 mt-1 w-52 rounded-2xl bg-[#0c0c0c] border border-white/10 shadow-2xl z-30 overflow-hidden">
-                      <div className="p-2 space-y-0.5">
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-2 pb-1">Ordenar lista</p>
-                        <button onClick={() => handleSortColumn(column.id, 'az')} className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-white/80 hover:text-white hover:bg-white/5 rounded-xl text-left">
-                          <SortAsc className="w-3.5 h-3.5 text-muted-foreground" /> A → Z (título)
-                        </button>
-                        <button onClick={() => handleSortColumn(column.id, 'za')} className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-white/80 hover:text-white hover:bg-white/5 rounded-xl text-left">
-                          <SortDesc className="w-3.5 h-3.5 text-muted-foreground" /> Z → A (título)
-                        </button>
-                        <button onClick={() => handleSortColumn(column.id, 'due_asc')} className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-white/80 hover:text-white hover:bg-white/5 rounded-xl text-left">
-                          <Calendar className="w-3.5 h-3.5 text-muted-foreground" /> Vence mais cedo
-                        </button>
-                        <button onClick={() => handleSortColumn(column.id, 'due_desc')} className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-white/80 hover:text-white hover:bg-white/5 rounded-xl text-left">
-                          <Calendar className="w-3.5 h-3.5 text-muted-foreground" /> Vence mais tarde
-                        </button>
-                        <div className="h-px bg-white/5 my-1" />
-                        <button onClick={() => { handleDeleteColumn(column.id); setOpenColMenuId(null); }}
-                          className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-red-400/80 hover:text-red-400 hover:bg-red-500/10 rounded-xl text-left">
-                          <Trash2 className="w-3.5 h-3.5" /> Excluir lista
-                        </button>
-                        <div className="h-px bg-white/5 my-0.5" />
-                        {confirmClearColId === column.id ? (
-                          <div className="px-2 py-1.5 space-y-2">
-                            <p className="text-[10px] text-red-400 font-semibold">Remover todos os {column.tasks.length} card(s). Confirma?</p>
-                            <div className="flex gap-2">
-                              <button onClick={() => handleClearColumn(column.id)} className="flex-1 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-xl text-[10px] font-bold">Sim, limpar</button>
-                              <button onClick={() => setConfirmClearColId(null)} className="flex-1 py-1 bg-white/5 hover:bg-white/10 text-white rounded-xl text-[10px] font-bold">Cancelar</button>
-                            </div>
-                          </div>
-                        ) : (
-                          <button onClick={() => setConfirmClearColId(column.id)} className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-red-400/80 hover:text-red-400 hover:bg-red-500/10 rounded-xl text-left">
-                            <Trash2 className="w-3.5 h-3.5" /> Limpar todos os cards
-                          </button>
-                        )}
-                      </div>
-                    </motion.div>
+              {/* Header da coluna */}
+              <div 
+                onMouseDown={() => { if (currentUserRole === 'admin') setDraggableColId(column.id); }}
+                onMouseUp={() => { if (currentUserRole === 'admin') setDraggableColId(null); }}
+                className={`p-3 flex items-center justify-between ${currentUserRole === 'admin' ? 'cursor-grab active:cursor-grabbing' : ''}`}
+              >
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  {editingColumnId === column.id ? (
+                    <input autoFocus value={editingColumnTitle} onChange={e => setEditingColumnTitle(e.target.value)}
+                      onBlur={() => handleSaveColumnTitle(column.id)}
+                      onKeyDown={e => { if (e.key === 'Enter') handleSaveColumnTitle(column.id); if (e.key === 'Escape') setEditingColumnId(null); }}
+                      className="flex-1 bg-black/30 border border-white/10 rounded-xl px-2 py-0.5 text-xs text-white outline-none focus:border-primary/50 font-bold" />
+                  ) : (
+                    <span onClick={() => { if (currentUserRole === 'admin') { setEditingColumnId(column.id); setEditingColumnTitle(column.title); } }}
+                      className={`font-bold text-white text-sm truncate ${currentUserRole === 'admin' ? 'cursor-pointer hover:underline' : ''}`} title={currentUserRole === 'admin' ? "Clique para renomear" : undefined}>
+                      {column.title}
+                    </span>
                   )}
-                </AnimatePresence>
-              </div>
-            </div>
+                  {board?.ticket_column_id === column.id && (
+                    <span className="shrink-0 text-[9px] font-bold bg-primary/20 text-primary border border-primary/30 px-2 py-0.5 rounded-lg flex items-center gap-1" title="Coluna destino de novos chamados">
+                      Chamados
+                    </span>
+                  )}
+                  <span className="shrink-0 text-[10px] font-bold bg-white/10 text-white/70 px-1.5 py-0.5 rounded-full">{column.tasks.length}</span>
+                </div>
 
-            {/* Cards */}
-            <div className="flex-1 p-2.5 space-y-2 overflow-y-auto min-h-[120px]">
-              {column.tasks.map((task, index) => {
-                const dueDateInfo = formatDueDate(task.due_date);
-                return (
-                  <div key={task.id} draggable
-                    onDragStart={e => handleCardDragStart(e, task.id, column.id)}
-                    onDragOver={e => e.preventDefault()}
-                    onDrop={e => handleCardDrop(e, column.id, index)}
-                    onClick={() => { setActiveTask(task); setActiveTaskColId(column.id); }}
-                    className="bg-[#22252a] hover:bg-[#2b2e35] border border-white/5 hover:border-white/10 rounded-2xl cursor-grab active:cursor-grabbing shadow transition-all duration-200 group overflow-hidden flex flex-col">
-                    {task.cover_color && <div className="h-8 w-full shrink-0" style={{ backgroundColor: task.cover_color }} />}
-                    <div className="p-3 flex flex-col gap-2">
-                      {task.labels?.length > 0 && (
-                        <div className="flex flex-wrap gap-1">
-                          {task.labels.map(label => (
-                            <span key={label.id} className="text-[9px] font-bold px-2 py-0.5 rounded-full text-black" style={{ backgroundColor: label.color + 'cc' }}>{label.text}</span>
-                          ))}
-                        </div>
-                      )}
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-start gap-2 flex-1 min-w-0">
-                          <button
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              const nextDone = !task.is_done;
-                              try {
-                                await supabase.from('tasks').update({ is_done: nextDone }).eq('id', task.id);
-                                setColumns(prev => prev.map(c => {
-                                  if (c.id === column.id) {
-                                    return {
-                                      ...c,
-                                      tasks: c.tasks.map(t => t.id === task.id ? { ...t, is_done: nextDone } : t)
-                                    };
-                                  }
-                                  return c;
-                                }));
-                              } catch (err) {
-                                console.error('Erro ao atualizar status do card:', err);
-                              }
-                            }}
-                            className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 mt-0.5 transition-all ${
-                              task.is_done
-                                ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm'
-                                : 'bg-transparent border-white/20 hover:border-emerald-500/50'
-                            }`}
-                            title={task.is_done ? "Marcar como não concluído" : "Marcar como concluído"}
-                          >
-                            {task.is_done && <Check className="w-2.5 h-2.5 stroke-[3]" />}
-                          </button>
-                          <span className={`text-sm font-semibold leading-snug transition-all ${
-                            task.is_done ? 'line-through text-muted-foreground/60' : 'text-white/90'
-                          }`}>
-                            {task.title}
-                          </span>
-                        </div>
-                        <button onClick={e => { e.stopPropagation(); handleDeleteTask(task.id); }}
-                          className="p-1 opacity-0 group-hover:opacity-100 hover:bg-destructive/10 text-muted-foreground hover:text-destructive rounded-lg shrink-0">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {task.description && <div title="Possui descrição"><AlignLeft className="w-3.5 h-3.5 text-muted-foreground/70" /></div>}
-                          {task.checklist?.length > 0 && (
-                            <div className={`flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-lg ${task.checklist.every(i => i.done) ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/5 text-muted-foreground'}`}>
-                              <CheckSquare className="w-3 h-3" /><span>{task.checklist.filter(i => i.done).length}/{task.checklist.length}</span>
-                            </div>
-                          )}
-                          {dueDateInfo && (
-                            <div className={`flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-lg ${dueDateInfo.status === 'overdue' ? 'bg-red-500/20 text-red-400' : dueDateInfo.status === 'soon' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-white/5 text-muted-foreground'}`}>
-                              <Calendar className="w-3 h-3" /><span>{dueDateInfo.text}</span>
-                            </div>
-                          )}
-                        </div>
-                        {task.assignees?.length > 0 && (
-                          <div className="flex -space-x-1.5">
-                            {task.assignees.slice(0, 3).map(a => (
-                              <div key={a.user_id} title={a.full_name}
-                                className="w-5 h-5 rounded-full border border-black text-[8px] font-bold text-white flex items-center justify-center"
-                                style={{ backgroundColor: avatarColor(a.user_id) }}>
-                                {initials(a.full_name)}
+                {/* Menu "..." da coluna */}
+                {currentUserRole === 'admin' && (
+                  <div className="relative" ref={openColMenuId === column.id ? colMenuRef : undefined}>
+                    <button onClick={e => { e.stopPropagation(); setOpenColMenuId(openColMenuId === column.id ? null : column.id); setConfirmClearColId(null); }}
+                      className="ml-1 p-1.5 hover:bg-white/10 text-muted-foreground hover:text-white rounded-xl transition-colors">
+                      <MoreHorizontal className="w-4 h-4" />
+                    </button>
+                    <AnimatePresence>
+                      {openColMenuId === column.id && (
+                        <motion.div initial={{ opacity: 0, y: 6, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 6, scale: 0.95 }}
+                          className="absolute right-0 mt-1 w-52 rounded-2xl bg-[#0c0c0c] border border-white/10 shadow-2xl z-30 overflow-hidden">
+                          <div className="p-2 space-y-0.5 max-h-96 overflow-y-auto custom-scrollbar">
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-2 pb-1">Ações da lista</p>
+                            <button onClick={() => { setActiveAddCardColId(column.id); setOpenColMenuId(null); }} className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-white/80 hover:text-white hover:bg-white/5 rounded-xl text-left">
+                              <Plus className="w-3.5 h-3.5 text-muted-foreground" /> Adicionar cartão
+                            </button>
+                            <button onClick={() => handleCopyColumn(column.id)} className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-white/80 hover:text-white hover:bg-white/5 rounded-xl text-left">
+                              <Copy className="w-3.5 h-3.5 text-muted-foreground" /> Duplicar lista
+                            </button>
+                            <button onClick={() => handleSetTicketColumn(column.id)} className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-white/80 hover:text-white hover:bg-white/5 rounded-xl text-left">
+                              <Plus className="w-3.5 h-3.5 text-muted-foreground" /> {board?.ticket_column_id === column.id ? 'Remover dos Chamados' : 'Definir para Chamados'}
+                            </button>
+
+                            {columns.length > 1 && column.tasks.length > 0 && (
+                              <div className="py-1 border-t border-white/5 mt-1">
+                                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider px-2 pb-0.5">Mover todos os cards para</p>
+                                {columns
+                                  .filter(c => c.id !== column.id)
+                                  .map(c => (
+                                    <button
+                                      key={`move-all-to-${c.id}`}
+                                      onClick={() => handleMoveAllTasks(column.id, c.id)}
+                                      className="w-full flex items-center gap-2 px-3 py-1 text-[11px] text-white/70 hover:text-white hover:bg-white/5 rounded-lg text-left truncate"
+                                    >
+                                      → {c.title}
+                                    </button>
+                                  ))}
                               </div>
-                            ))}
-                            {task.assignees.length > 3 && (
-                              <div className="w-5 h-5 rounded-full border border-black bg-white/10 text-[8px] font-bold text-white flex items-center justify-center">+{task.assignees.length - 3}</div>
+                            )}
+
+                            <div className="h-px bg-white/5 my-1" />
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-2 pb-1">Ordenar lista</p>
+                            <button onClick={() => handleSortColumn(column.id, 'az')} className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-white/80 hover:text-white hover:bg-white/5 rounded-xl text-left">
+                              <SortAsc className="w-3.5 h-3.5 text-muted-foreground" /> A → Z (título)
+                            </button>
+                            <button onClick={() => handleSortColumn(column.id, 'za')} className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-white/80 hover:text-white hover:bg-white/5 rounded-xl text-left">
+                              <SortDesc className="w-3.5 h-3.5 text-muted-foreground" /> Z → A (título)
+                            </button>
+                            
+                            <div className="h-px bg-white/5 my-1" />
+                            <button onClick={() => { handleDeleteColumn(column.id); setOpenColMenuId(null); }}
+                              className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-red-400/80 hover:text-red-400 hover:bg-red-500/10 rounded-xl text-left">
+                              <Trash2 className="w-3.5 h-3.5" /> Excluir lista
+                            </button>
+                            <div className="h-px bg-white/5 my-0.5" />
+                            {confirmClearColId === column.id ? (
+                              <div className="px-2 py-1.5 space-y-2">
+                                <p className="text-[10px] text-red-400 font-semibold">Remover todos os {column.tasks.length} card(s). Confirma?</p>
+                                <div className="flex gap-2">
+                                  <button onClick={() => handleClearColumn(column.id)} className="flex-1 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-xl text-[10px] font-bold">Sim, limpar</button>
+                                  <button onClick={() => setConfirmClearColId(null)} className="flex-1 py-1 bg-white/5 hover:bg-white/10 text-white rounded-xl text-[10px] font-bold">Cancelar</button>
+                                </div>
+                              </div>
+                            ) : (
+                              <button onClick={() => setConfirmClearColId(column.id)} className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-red-400/80 hover:text-red-400 hover:bg-red-500/10 rounded-xl text-left">
+                                <Trash2 className="w-3.5 h-3.5" /> Limpar todos os cards
+                              </button>
                             )}
                           </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
+              </div>
+
+              {/* Cards */}
+              <div className="flex-1 p-2.5 space-y-2 overflow-y-auto min-h-0">
+                {column.tasks.map((task, index) => {
+                  return (
+                    <div key={task.id} draggable={currentUserRole === 'admin'}
+                      onDragStart={e => handleCardDragStart(e, task.id, column.id)}
+                      onDragOver={e => e.preventDefault()}
+                      onDrop={e => handleCardDrop(e, column.id, index)}
+                      onClick={() => { setActiveTask(task); setActiveTaskColId(column.id); }}
+                      className={`bg-[#22252a] hover:bg-[#2b2e35] border border-white/5 hover:border-white/10 rounded-2xl shadow transition-all duration-200 group overflow-hidden flex flex-col ${currentUserRole === 'admin' ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'}`}>
+                      {task.cover_image ? (
+                        <TaskCardCover imageUrl={task.cover_image} />
+                      ) : task.cover_color ? (
+                        <div className="h-8 w-full shrink-0" style={{ backgroundColor: task.cover_color }} />
+                      ) : null}
+                      <div className="p-3 flex flex-col gap-2">
+                        {task.labels?.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {task.labels.map(label => (
+                              <span key={label.id} className="text-[9px] font-bold px-2 py-0.5 rounded-full text-black" style={{ backgroundColor: label.color + 'cc' }}>{label.text}</span>
+                            ))}
+                          </div>
                         )}
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-start gap-2 flex-1 min-w-0">
+                            <button
+                              onClick={async (e) => {
+                                if (currentUserRole !== 'admin') return;
+                                e.stopPropagation();
+                                const nextDone = !task.is_done;
+                                try {
+                                  await supabase.from('tasks').update({ is_done: nextDone }).eq('id', task.id);
+                                  setColumns(prev => prev.map(c => {
+                                    if (c.id === column.id) {
+                                      return {
+                                        ...c,
+                                        tasks: c.tasks.map(t => t.id === task.id ? { ...t, is_done: nextDone } : t)
+                                      };
+                                    }
+                                    return c;
+                                  }));
+                                } catch (err) {
+                                  console.error('Erro ao atualizar status do card:', err);
+                                }
+                              }}
+                              className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 mt-0.5 transition-all ${
+                                task.is_done
+                                  ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm'
+                                  : 'bg-transparent border-white/20 hover:border-emerald-500/50'
+                              }`}
+                              title={task.is_done ? "Marcar como não concluído" : "Marcar como concluído"}
+                            >
+                              {task.is_done && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                            </button>
+                            <span className={`text-sm font-semibold leading-snug transition-all ${
+                              task.is_done ? 'line-through text-muted-foreground/60' : 'text-white/90'
+                            }`}>
+                              {task.title}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {task.description && <div title="Possui descrição"><AlignLeftIcon className="w-3.5 h-3.5 text-muted-foreground/70" /></div>}
+                            {task.checklist?.length > 0 && (
+                              <div className={`flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${task.checklist.every(i => i.done) ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/5 text-muted-foreground'}`}>
+                                <CheckSquare className="w-3 h-3" /><span>{task.checklist.filter(i => i.done).length}/{task.checklist.length}</span>
+                              </div>
+                            )}
+                          </div>
+                          {task.assignees?.length > 0 && (
+                            <div className="flex -space-x-1.5">
+                              {task.assignees.slice(0, 3).map(a => (
+                                <div key={a.user_id} title={a.full_name}
+                                  className="w-5 h-5 rounded-full border border-black text-[8px] font-bold text-white flex items-center justify-center"
+                                  style={{ backgroundColor: avatarColor(a.user_id) }}>
+                                  {initials(a.full_name)}
+                                </div>
+                              ))}
+                              {task.assignees.length > 3 && (
+                                <div className="w-5 h-5 rounded-full border border-black bg-white/10 text-[8px] font-bold text-white flex items-center justify-center">+{task.assignees.length - 3}</div>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-              {column.tasks.length === 0 && (
-                <div className="h-full flex items-center justify-center py-8 text-xs text-muted-foreground/40">
-                  {hasActiveFilter ? 'Nenhum card corresponde ao filtro' : 'Sem tarefas nesta lista'}
-                </div>
-              )}
-            </div>
-
-            {/* Adicionar card */}
-            <div className="p-2 border-t border-white/5 bg-black/20 rounded-b-2xl">
-              {activeAddCardColId === column.id ? (
-                <div className="space-y-2">
-                  <textarea
-                    autoFocus
-                    placeholder="Insira um título ou cole um link"
-                    value={newCardTitles[column.id] || ''}
-                    onChange={e => setNewCardTitles({ ...newCardTitles, [column.id]: e.target.value })}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleAddCard(column.id);
-                      }
-                      if (e.key === 'Escape') {
-                        setActiveAddCardColId(null);
-                      }
-                    }}
-                    rows={2}
-                    className="w-full bg-[#22252a] border border-white/5 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 rounded-xl px-3 py-2 text-xs text-white placeholder:text-muted-foreground outline-none resize-none shadow-inner"
-                  />
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleAddCard(column.id)}
-                      className="px-4 py-1.5 bg-primary hover:bg-primary/95 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-primary/10"
-                    >
-                      Adicionar Cartão
-                    </button>
-                    <button
-                      onClick={() => {
-                        setActiveAddCardColId(null);
-                        setNewCardTitles({ ...newCardTitles, [column.id]: '' });
+                  );
+                })}
+                
+                {/* Prévia do input do novo card (Trello style) */}
+                {activeAddCardColId === column.id && (
+                  <div className="bg-[#22252a] border border-white/5 rounded-2xl p-3 shadow-md">
+                    <textarea
+                      autoFocus
+                      placeholder="Insira um título ou cole um link"
+                      value={newCardTitles[column.id] || ''}
+                      onChange={e => setNewCardTitles({ ...newCardTitles, [column.id]: e.target.value })}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleAddCard(column.id);
+                        }
+                        if (e.key === 'Escape') {
+                          setActiveAddCardColId(null);
+                        }
                       }}
-                      className="p-1.5 hover:bg-white/10 text-muted-foreground hover:text-white rounded-xl transition-all"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
+                      rows={2}
+                      className="w-full bg-transparent text-xs text-white placeholder:text-muted-foreground outline-none focus:outline-none focus:ring-0 resize-none"
+                    />
                   </div>
+                )}
+              </div>
+
+              {/* Adicionar card */}
+              {currentUserRole === 'admin' && (
+                <div className="p-2 rounded-b-2xl">
+                  {activeAddCardColId === column.id ? (
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleAddCard(column.id)}
+                        className="px-4 py-2 bg-[#579dff] hover:bg-[#85b8ff] text-[#1d2125] rounded-xl text-xs font-bold transition-all flex-1 sm:flex-initial"
+                      >
+                        Adicionar Cartão
+                      </button>
+                      <button
+                        onClick={() => {
+                          setActiveAddCardColId(null);
+                          setNewCardTitles({ ...newCardTitles, [column.id]: '' });
+                        }}
+                        className="p-2 hover:bg-white/5 text-white/70 hover:text-white rounded-xl transition-all"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setActiveAddCardColId(column.id)}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-muted-foreground hover:text-white hover:bg-white/5 rounded-xl transition-all group"
+                    >
+                      <Plus className="w-4 h-4 text-muted-foreground group-hover:text-white" />
+                      <span>Adicionar um cartão</span>
+                    </button>
+                  )}
                 </div>
-              ) : (
-                <button
-                  onClick={() => setActiveAddCardColId(column.id)}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-muted-foreground hover:text-white hover:bg-white/5 rounded-xl transition-all group"
-                >
-                  <Plus className="w-4 h-4 text-muted-foreground group-hover:text-white" />
-                  <span>Adicionar um cartão</span>
-                </button>
               )}
             </div>
-          </div>
-        ))}
+          ))}
 
-        {/* Nova coluna */}
-        <div className="w-72 shrink-0 bg-[#101214]/80 border border-dashed border-white/10 hover:border-white/20 rounded-2xl p-4 transition-all">
-          <form onSubmit={handleAddColumn} className="space-y-3">
-            <span className="text-xs font-bold text-white/70 block">Criar Nova Lista</span>
-            <input type="text" placeholder="Título da lista..." value={newColumnTitle} onChange={e => setNewColumnTitle(e.target.value)}
-              className="w-full bg-[#1e2126] border border-white/5 focus:border-primary/50 rounded-xl px-3 py-2 text-xs text-white placeholder:text-muted-foreground outline-none" />
-            <button type="submit" className="w-full py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2">
-              <Plus className="w-4 h-4" /><span>Adicionar Lista</span>
+          {/* Nova coluna */}
+          {currentUserRole === 'admin' && (
+            !isAddingColumn ? (
+            <button
+              onClick={() => setIsAddingColumn(true)}
+              className="w-72 shrink-0 bg-white/10 hover:bg-white/20 text-white/80 hover:text-white rounded-2xl p-4 transition-all flex items-center gap-2 font-bold text-xs"
+            >
+              <Plus className="w-4 h-4 text-white/70" />
+              <span>Adicionar outra lista</span>
             </button>
-          </form>
+          ) : (
+            <div className="w-72 shrink-0 bg-[#101214] border border-white/5 rounded-2xl p-4 transition-all shadow-xl">
+              <form onSubmit={handleAddColumn} className="space-y-3">
+                <input 
+                  type="text" 
+                  autoFocus
+                  placeholder="Digite o nome da lista..." 
+                  value={newColumnTitle} 
+                  onChange={e => setNewColumnTitle(e.target.value)}
+                  className="w-full bg-[#22252a] border border-white/5 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 rounded-xl px-3 py-2 text-xs text-white placeholder:text-muted-foreground outline-none focus:outline-none" 
+                />
+                <div className="flex items-center gap-2">
+                  <button 
+                    type="submit" 
+                    className="px-4 py-2 bg-[#579dff] hover:bg-[#85b8ff] text-[#1d2125] rounded-xl text-xs font-bold transition-all"
+                  >
+                    Adicionar Lista
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setIsAddingColumn(false);
+                      setNewColumnTitle('');
+                    }}
+                    className="p-2 hover:bg-white/5 text-white/70 hover:text-white rounded-xl transition-all"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </form>
+            </div>
+          )
+          )}
         </div>
-      </div>
+      ) : (
+        <BoardListView
+          columns={columns}
+          onTaskClick={(task, colId) => {
+            setActiveTask(task);
+            setActiveTaskColId(colId);
+          }}
+        />
+      )}
 
       {/* ── Modal do Card ── */}
       <AnimatePresence>
@@ -902,11 +1255,227 @@ const KanbanPage: React.FC = () => {
             columns={columns}
             members={members}
             currentUserId={currentUserId}
+            currentUserRole={currentUserRole}
             onClose={() => setActiveTask(null)}
             onUpdateTask={handleUpdateTask}
             onDeleteTask={handleDeleteTask}
             onMoveTask={handleMoveTask}
           />
+        )}
+      </AnimatePresence>
+
+      {/* ── Modal de Abrir Chamado (Apenas User) ── */}
+      <AnimatePresence>
+        {isTicketModalOpen && (
+          <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => setIsTicketModalOpen(false)}
+            />
+            
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-lg max-h-[90vh] bg-[#22272b] border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-white/5 shrink-0">
+                <div>
+                  <h2 className="text-xl font-bold text-white tracking-tight">Abrir Chamado</h2>
+                  <p className="text-xs text-muted-foreground mt-1">Preencha os dados abaixo para solicitar uma nova tarefa.</p>
+                </div>
+                <button
+                  onClick={() => setIsTicketModalOpen(false)}
+                  className="p-2 hover:bg-white/10 text-muted-foreground hover:text-white rounded-xl transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Form */}
+              <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-white">Título do Chamado <span className="text-red-400">*</span></label>
+                  <input
+                    type="text"
+                    value={ticketTitle}
+                    onChange={(e) => setTicketTitle(e.target.value)}
+                    placeholder="Ex: Corrigir erro na página inicial..."
+                    className="w-full bg-[#1d2125] border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-sm text-white placeholder:text-gray-400 outline-none transition-all"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-white">Setor / Identificação</label>
+                    <input
+                      type="text"
+                      value={ticketSector}
+                      onChange={(e) => setTicketSector(e.target.value)}
+                      placeholder="Ex: TI, Manutenção, RH, etc."
+                      className="w-full bg-[#1d2125] border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-sm text-white placeholder:text-gray-400 outline-none transition-all"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-white">Prioridade</label>
+                    <div className="flex items-center gap-2 h-[46px]">
+                      {PRESET_LABELS.map(label => (
+                        <button
+                          key={label.text}
+                          onClick={() => setTicketPriority(label)}
+                          className={`flex-1 h-full rounded-xl text-xs font-bold transition-all border ${ticketPriority?.text === label.text ? 'border-white/50 shadow-lg scale-105' : 'border-transparent opacity-60 hover:opacity-100 hover:scale-[1.02]'}`}
+                          style={{ backgroundColor: label.color, color: '#fff' }}
+                        >
+                          {label.text}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-white">Descrição Detalhada</label>
+                  <textarea
+                    value={ticketDesc}
+                    onChange={(e) => setTicketDesc(e.target.value)}
+                    placeholder="Descreva o que precisa ser feito com o máximo de detalhes..."
+                    rows={6}
+                    className="w-full bg-[#1d2125] border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-sm text-white placeholder:text-gray-400 outline-none transition-all resize-y min-h-[120px]"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-white flex items-center gap-2">
+                    <CheckSquare className="w-4 h-4 text-muted-foreground" />
+                    Checklist de Tarefas (Opcional)
+                  </label>
+                  <div className="space-y-2">
+                    {ticketChecklist.map((item, index) => (
+                      <div key={index} className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2">
+                        <span className="flex-1 text-sm text-white">{item}</span>
+                        <button
+                          type="button"
+                          onClick={() => setTicketChecklist(prev => prev.filter((_, i) => i !== index))}
+                          className="p-1 hover:bg-white/10 rounded-lg text-muted-foreground hover:text-red-400 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={newChecklistItem}
+                        onChange={e => setNewChecklistItem(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' && newChecklistItem.trim()) {
+                            e.preventDefault();
+                            setTicketChecklist(prev => [...prev, newChecklistItem.trim()]);
+                            setNewChecklistItem('');
+                          }
+                        }}
+                        placeholder="Adicionar item (pressione Enter)"
+                        className="flex-1 bg-[#1d2125] border border-white/10 focus:border-primary/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-gray-400 outline-none transition-all"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (newChecklistItem.trim()) {
+                            setTicketChecklist(prev => [...prev, newChecklistItem.trim()]);
+                            setNewChecklistItem('');
+                          }
+                        }}
+                        disabled={!newChecklistItem.trim()}
+                        className="px-4 py-2.5 bg-white/5 hover:bg-white/10 disabled:opacity-50 text-white rounded-xl text-sm font-bold transition-all border border-white/10"
+                      >
+                        Adicionar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-bold text-white flex items-center gap-2">
+                      <Paperclip className="w-4 h-4 text-muted-foreground" />
+                      Anexos (Opcional)
+                    </label>
+                    <button
+                      onClick={() => ticketFileInputRef.current?.click()}
+                      className="px-3 py-1.5 bg-[#2c333a] hover:bg-[#38414a] text-white rounded-xl text-xs font-semibold border border-white/5 transition-all"
+                    >
+                      Adicionar
+                    </button>
+                    <input
+                      type="file"
+                      multiple
+                      className="hidden"
+                      ref={ticketFileInputRef}
+                      onChange={handleTicketFileChange}
+                    />
+                  </div>
+                  
+                  {ticketFiles.length > 0 && (
+                    <div className="space-y-2 max-h-32 overflow-y-auto pr-2 custom-scrollbar">
+                      {ticketFiles.map((file, i) => {
+                        const isImage = file.type.startsWith('image/');
+                        return (
+                          <div key={i} className="flex items-center gap-3 p-2 bg-black/10 hover:bg-black/20 border border-white/5 rounded-xl group transition-all">
+                            <div className="w-10 h-10 shrink-0 rounded-lg overflow-hidden bg-white/5 flex items-center justify-center border border-white/5 relative">
+                              {isImage ? (
+                                <ImageIcon className="w-5 h-5 text-emerald-400" />
+                              ) : (
+                                <FileIcon className="w-5 h-5 text-red-400" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-semibold text-white truncate" title={file.name}>{file.name}</p>
+                              <p className="text-[10px] text-muted-foreground mt-0.5">{formatSize(file.size)}</p>
+                            </div>
+                            <button
+                              onClick={() => handleRemoveTicketFile(i)}
+                              className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-red-500/10 text-muted-foreground hover:text-red-400 rounded-lg transition-all shrink-0"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="flex items-center justify-end gap-3 p-6 border-t border-white/5 bg-black/20">
+                <button
+                  onClick={() => {
+                    setIsTicketModalOpen(false);
+                    setTicketFiles([]);
+                    setTicketSector('');
+                    setTicketPriority(null);
+                    setTicketChecklist([]);
+                    setNewChecklistItem('');
+                  }}
+                  className="px-4 py-2 hover:bg-white/5 text-white/70 hover:text-white rounded-xl text-sm font-bold transition-all border border-transparent hover:border-white/10"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSubmitTicket}
+                  disabled={!ticketTitle.trim()}
+                  className="px-6 py-2 bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:hover:bg-primary text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-primary/20"
+                >
+                  Enviar Chamado
+                </button>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </div>

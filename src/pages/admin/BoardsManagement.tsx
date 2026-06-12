@@ -147,13 +147,13 @@ const BoardsManagement: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 pb-10 border-b border-white/5">
         <div className="space-y-4">
           <Badge variant="tech" className="px-4 py-1.5 bg-primary/20 border-primary/40 text-primary font-black uppercase tracking-widest text-[10px]">
-            Kanban da Administração
+            Projetos da Administração
           </Badge>
           <h1 className="text-5xl font-black tracking-tight text-white italic">
-            Gerenciar <span className="text-primary not-italic tracking-tighter">Quadros</span>
+            Gerenciar <span className="text-primary not-italic tracking-tighter">Projetos</span>
           </h1>
           <p className="text-muted-foreground text-xl max-w-xl">
-            Crie, acesse e gerencie seus quadros de tarefas e projetos do Kanban.
+            Crie, acesse e gerencie seus projetos de tarefas.
           </p>
         </div>
       </div>
@@ -165,8 +165,7 @@ const BoardsManagement: React.FC = () => {
             <LayoutGrid className="w-4 h-4 text-white" />
           </div>
           <div>
-            <h2 className="text-white font-extrabold text-sm tracking-wider uppercase">Seus Quadros</h2>
-            <p className="text-xs text-muted-foreground font-semibold">Suaiden Workspace</p>
+            <h2 className="text-white font-extrabold text-sm tracking-wider uppercase">Seus Projetos</h2>
           </div>
         </div>
 
@@ -213,7 +212,7 @@ const BoardsManagement: React.FC = () => {
               <input
                 type="text"
                 autoFocus
-                placeholder="Título do quadro..."
+                placeholder="Título do projeto..."
                 value={newBoardTitle}
                 onChange={(e) => setNewBoardTitle(e.target.value)}
                 className="bg-black/30 border border-white/10 rounded-lg px-2 py-1 text-xs text-white placeholder:text-muted-foreground outline-none focus:border-primary/50"
@@ -242,7 +241,7 @@ const BoardsManagement: React.FC = () => {
             >
               <span className="text-sm font-semibold text-white/70 group-hover:text-white transition-colors flex items-center gap-2">
                 <Plus className="w-4 h-4 text-muted-foreground group-hover:text-white" />
-                Criar novo quadro
+                Criar novo projeto
               </span>
             </motion.div>
           )}

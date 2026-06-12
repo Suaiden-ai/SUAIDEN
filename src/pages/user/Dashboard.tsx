@@ -5,7 +5,8 @@ import {
   Plus, 
   Loader2,
   Check,
-  X
+  X,
+  LayoutGrid
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -152,23 +153,22 @@ const UserDashboard: React.FC = () => {
             Olá, {profile?.full_name || 'Usuário'}
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Selecione um quadro para gerenciar suas tarefas e projetos no Kanban.
+            Selecione um projeto para gerenciar suas tarefas.
           </p>
         </div>
       </div>
 
 
 
-      {/* Seção: SUAS ÁREAS DE TRABALHO */}
+      {/* Seção: SEUS QUADROS */}
       <section className="space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/5 pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded bg-emerald-600 flex items-center justify-center text-white font-bold shadow-[0_0_15px_rgba(16,185,129,0.3)]">
-              S
+            <div className="w-8 h-8 rounded bg-primary flex items-center justify-center text-white font-bold shadow-[0_0_15px_rgba(131,52,255,0.3)]">
+              <LayoutGrid className="w-4 h-4 text-white" />
             </div>
             <div>
-              <h2 className="text-white font-extrabold text-sm tracking-wider uppercase">SUAS ÁREAS DE TRABALHO</h2>
-              <p className="text-xs text-muted-foreground font-semibold">SUAIDEN</p>
+              <h2 className="text-white font-extrabold text-sm tracking-wider uppercase">Seus Projetos</h2>
             </div>
           </div>
         </div>
@@ -217,7 +217,7 @@ const UserDashboard: React.FC = () => {
                 <input
                   type="text"
                   autoFocus
-                  placeholder="Título do quadro..."
+                  placeholder="Título do projeto..."
                   value={newBoardTitle}
                   onChange={(e) => setNewBoardTitle(e.target.value)}
                   className="bg-black/30 border border-white/10 rounded-lg px-2 py-1 text-xs text-white placeholder:text-muted-foreground outline-none focus:border-primary/50"
@@ -246,7 +246,7 @@ const UserDashboard: React.FC = () => {
               >
                 <span className="text-sm font-semibold text-white/70 group-hover:text-white transition-colors flex items-center gap-2">
                   <Plus className="w-4 h-4 text-muted-foreground group-hover:text-white" />
-                  Criar novo quadro
+                  Criar novo projeto
                 </span>
               </motion.div>
             )

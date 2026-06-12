@@ -2,10 +2,10 @@ import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { supabase } from '../../services/supabase';
 import {
-  X, Check, CheckSquare, Square, AlignLeft, Calendar, Tag,
+  X, Check, CheckSquare, Square, AlignLeft, Tag,
   ArrowRightLeft, UserCheck, Trash2, Plus, Palette, Send,
   Paperclip, Download, FileText, Image as ImageIcon, Loader2,
-  Clock, Edit2
+  Edit2, ChevronDown, ChevronUp, MoreHorizontal
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -22,6 +22,8 @@ export interface Task {
   description: string; checklist: ChecklistItem[]; labels: Label[];
   due_date: string | null; assignees: Assignee[]; cover_color: string | null;
   is_done?: boolean;
+  checklist_title?: string | null;
+  cover_image?: string | null;
 }
 
 export interface Column { id: string; title: string; position: number; tasks: Task[]; }
@@ -43,6 +45,7 @@ interface CardModalProps {
   columns: Column[];
   members: MemberInfo[];
   currentUserId: string | null;
+  currentUserRole?: string | null;
   onClose: () => void;
   onUpdateTask: (updates: Partial<Task>) => Promise<void>;
   onDeleteTask: (taskId: string) => void;
@@ -61,9 +64,9 @@ const LABEL_COLORS = [
 ];
 
 const PRESET_LABELS = [
-  { text: 'Baixa', color: '#22c55e' },
-  { text: 'Média', color: '#eab308' },
-  { text: 'Alta', color: '#ef4444' },
+  { text: 'BAIXA', color: '#22c55e' },
+  { text: 'MÉDIA', color: '#eab308' },
+  { text: 'ALTA', color: '#ef4444' },
 ];
 
 const COVER_COLORS = [
@@ -72,20 +75,7 @@ const COVER_COLORS = [
   '#64748b','#1e3a5f','#166534','#7c2d12',
 ];
 
-// ────────────────────────────────────────────
-// Helpers
-// ────────────────────────────────────────────
 
-function formatDueDate(dateStr: string | null): { text: string; status: 'overdue' | 'soon' | 'ok' } | null {
-  if (!dateStr) return null;
-  const date = new Date(dateStr);
-  const diff = date.getTime() - Date.now();
-  const days = Math.ceil(diff / 86400000);
-  const text = date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
-  if (diff < 0) return { text, status: 'overdue' };
-  if (days <= 2) return { text, status: 'soon' };
-  return { text, status: 'ok' };
-}
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -120,7 +110,7 @@ export function avatarColor(userId: string) {
 // ────────────────────────────────────────────
 
 const CardModal: React.FC<CardModalProps> = ({
-  task, colId, columns, members, currentUserId,
+  task, colId, columns, members, currentUserId, currentUserRole,
   onClose, onUpdateTask, onDeleteTask, onMoveTask
 }) => {
   const [taskData, setTaskData] = useState<Task>(task);
@@ -130,24 +120,46 @@ const CardModal: React.FC<CardModalProps> = ({
   const [cardDesc, setCardDesc] = useState(task.description || '');
   const [isEditingDesc, setIsEditingDesc] = useState(false);
   const [newChecklistItem, setNewChecklistItem] = useState('');
-  const [showChecklist, setShowChecklist] = useState(task.checklist && task.checklist.length > 0);
+  const [showChecklist, setShowChecklist] = useState((task.checklist && task.checklist.length > 0) || !!task.checklist_title);
+  const [checklistTitle, setChecklistTitle] = useState(task.checklist_title || 'Checklist');
+  const [isEditingChecklistTitle, setIsEditingChecklistTitle] = useState(false);
+  const [isAddingChecklistItem, setIsAddingChecklistItem] = useState(false);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [showMobileActions, setShowMobileActions] = useState(false);
+  const [hideCheckedItems, setHideCheckedItems] = useState(false);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editingItemText, setEditingItemText] = useState('');
+
+  // Sincronizar dados quando o prop task mudar (por exemplo, atualizações realtime do Supabase)
+  useEffect(() => {
+    setTaskData(task);
+    setCardTitle(task.title);
+    if (!isEditingDesc) {
+      setCardDesc(task.description || '');
+    }
+    if (!isEditingChecklistTitle) {
+      setChecklistTitle(task.checklist_title || 'Checklist');
+    }
+    setShowChecklist((task.checklist && task.checklist.length > 0) || !!task.checklist_title);
+  }, [task, isEditingDesc, isEditingChecklistTitle]);
   
   // Popovers (Trello-like)
-  const [activePopover, setActivePopover] = useState<'members' | 'labels' | 'due_date' | 'cover' | 'move' | null>(null);
+  const [activePopover, setActivePopover] = useState<'members' | 'labels' | 'due_date' | 'cover' | 'move' | 'checklist' | null>(null);
   
   const membersPopoverRef = useRef<HTMLDivElement>(null);
   const labelsPopoverRef = useRef<HTMLDivElement>(null);
   const datePopoverRef = useRef<HTMLDivElement>(null);
   const coverPopoverRef = useRef<HTMLDivElement>(null);
   const movePopoverRef = useRef<HTMLDivElement>(null);
+  const checklistPopoverRef = useRef<HTMLDivElement>(null);
   const checklistSectionRef = useRef<HTMLDivElement>(null);
+  const descTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const checklistInputRef = useRef<HTMLInputElement>(null);
 
   const [newLabelText, setNewLabelText] = useState('');
   const [newLabelColor, setNewLabelColor] = useState(LABEL_COLORS[0].value);
-  const [dueDateInput, setDueDateInput] = useState(task.due_date ? task.due_date.slice(0, 10) : '');
   const [searchLabelQuery, setSearchLabelQuery] = useState('');
   const [showCreateLabel, setShowCreateLabel] = useState(false);
-  const [colorBlindMode, setColorBlindMode] = useState(false);
 
   // Comentários
   const [comments, setComments] = useState<Comment[]>([]);
@@ -159,6 +171,11 @@ const CardModal: React.FC<CardModalProps> = ({
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Estados para expandir/recolher a descrição
+  const descViewRef = useRef<HTMLDivElement>(null);
+  const [isDescExpanded, setIsDescExpanded] = useState(false);
+  const [showExpandButton, setShowExpandButton] = useState(false);
+
   // ── Carregar comentários e anexos ──
   const fetchExtras = async () => {
     const [{ data: commentsData }, { data: attachmentsData }] = await Promise.all([
@@ -168,6 +185,23 @@ const CardModal: React.FC<CardModalProps> = ({
     if (commentsData) setComments(commentsData);
     if (attachmentsData) setAttachments(attachmentsData);
   };
+
+  // Determinar se o botão de mostrar mais deve ser exibido baseado na altura real da descrição
+  useEffect(() => {
+    if (!isEditingDesc && descViewRef.current) {
+      const element = descViewRef.current;
+      // Precisamos dar um pequeno delay para garantir que o layout renderizou e calculou o scrollHeight
+      const checkHeight = () => {
+        if (element) {
+          setShowExpandButton(element.scrollHeight > 400);
+        }
+      };
+      checkHeight();
+      // Executa novamente ao redimensionar a janela caso o layout mude de largura
+      window.addEventListener('resize', checkHeight);
+      return () => window.removeEventListener('resize', checkHeight);
+    }
+  }, [taskData.description, isEditingDesc]);
 
   useEffect(() => {
     fetchExtras();
@@ -189,6 +223,7 @@ const CardModal: React.FC<CardModalProps> = ({
         due_date: datePopoverRef,
         cover: coverPopoverRef,
         move: movePopoverRef,
+        checklist: checklistPopoverRef,
       };
       
       const activeRef = refs[activePopover];
@@ -199,6 +234,15 @@ const CardModal: React.FC<CardModalProps> = ({
     document.addEventListener('mousedown', handleClickOutsidePopovers);
     return () => document.removeEventListener('mousedown', handleClickOutsidePopovers);
   }, [activePopover]);
+
+  // Ajuste automático de altura da descrição
+  useEffect(() => {
+    if (isEditingDesc && descTextareaRef.current) {
+      descTextareaRef.current.style.height = 'auto';
+      descTextareaRef.current.style.height = `${descTextareaRef.current.scrollHeight}px`;
+      descTextareaRef.current.scrollIntoView({ block: 'nearest' });
+    }
+  }, [isEditingDesc, cardDesc]);
 
   // ── Update helper ──
   const update = async (updates: Partial<Task>) => {
@@ -212,29 +256,54 @@ const CardModal: React.FC<CardModalProps> = ({
     const item: ChecklistItem = { id: `item-${Date.now()}`, text: newChecklistItem.trim(), done: false };
     await update({ checklist: [...taskData.checklist, item] });
     setNewChecklistItem('');
+    // Mantém o input aberto e foca nele novamente
+    setTimeout(() => {
+      checklistInputRef.current?.focus();
+    }, 50);
   };
   const handleToggleChecklist = async (id: string) =>
     update({ checklist: taskData.checklist.map(i => i.id === id ? { ...i, done: !i.done } : i) });
+  
+  const handleSaveChecklistItemText = async (id: string) => {
+    if (!editingItemText.trim()) {
+      setEditingItemId(null);
+      return;
+    }
+    await update({
+      checklist: taskData.checklist.map(i => i.id === id ? { ...i, text: editingItemText.trim() } : i)
+    });
+    setEditingItemId(null);
+  };
+
   const handleDeleteChecklist = async (id: string) =>
     update({ checklist: taskData.checklist.filter(i => i.id !== id) });
 
+  const handleSaveChecklistTitle = async () => {
+    setIsEditingChecklistTitle(false);
+    const trimmed = checklistTitle.trim() || 'Checklist';
+    setChecklistTitle(trimmed);
+    await update({ checklist_title: trimmed });
+  };
+
+  const handleCreateChecklist = async () => {
+    const titleToSave = checklistTitle.trim() || 'Checklist';
+    setChecklistTitle(titleToSave);
+    setShowChecklist(true);
+    setActivePopover(null);
+    await update({ checklist_title: titleToSave });
+    setTimeout(() => checklistSectionRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+  };
+
+  const handleDeleteEntireChecklist = async () => {
+    setShowChecklist(false);
+    setChecklistTitle('Checklist');
+    setHideCheckedItems(false);
+    await update({ checklist: [], checklist_title: null });
+  };
+
   // ── Labels ──
   const getLabelStyle = (label: Label) => {
-    if (!colorBlindMode) return { backgroundColor: label.color };
-    const textLower = label.text.toLowerCase();
-    if (textLower === 'baixa') {
-      return { backgroundImage: 'repeating-linear-gradient(45deg, #22c55e, #22c55e 6px, #15803d 6px, #15803d 12px)' };
-    }
-    if (textLower === 'média' || textLower === 'media') {
-      return { backgroundImage: 'repeating-linear-gradient(-45deg, #eab308, #eab308 6px, #a16207 6px, #a16207 12px)' };
-    }
-    if (textLower === 'alta' || textLower === 'prioridade') {
-      return { backgroundImage: 'repeating-linear-gradient(90deg, #ef4444, #ef4444 6px, #b91c1c 6px, #b91c1c 12px)' };
-    }
-    return { 
-      backgroundImage: `repeating-linear-gradient(45deg, ${label.color}, ${label.color} 8px, rgba(0,0,0,0.15) 8px, rgba(0,0,0,0.15) 16px)`,
-      backgroundColor: label.color
-    };
+    return { backgroundColor: label.color };
   };
 
   const handleTogglePresetLabel = async (preset: { text: string; color: string }) => {
@@ -269,9 +338,7 @@ const CardModal: React.FC<CardModalProps> = ({
   const handleRemoveLabel = async (id: string) =>
     update({ labels: taskData.labels.filter(l => l.id !== id) });
 
-  // ── Due Date ──
-  const handleSaveDueDate = async () =>
-    update({ due_date: dueDateInput ? new Date(dueDateInput).toISOString() : null });
+
 
   // ── Assignees ──
   const handleToggleAssignee = async (member: MemberInfo) => {
@@ -288,7 +355,17 @@ const CardModal: React.FC<CardModalProps> = ({
     if (!commentText.trim() || !currentUserId) return;
     setIsSendingComment(true);
     try {
-      await supabase.from('card_comments').insert({ task_id: task.id, user_id: currentUserId, content: commentText.trim() });
+      const { data: newComment, error } = await supabase.from('card_comments').insert({ 
+        task_id: task.id, 
+        user_id: currentUserId, 
+        content: commentText.trim() 
+      }).select('*, profiles:user_id (full_name)').single();
+      
+      if (!error && newComment) {
+        setComments(prev => [...prev, newComment]);
+      } else {
+        fetchExtras();
+      }
       setCommentText('');
     } finally {
       setIsSendingComment(false);
@@ -297,36 +374,79 @@ const CardModal: React.FC<CardModalProps> = ({
 
   const handleDeleteComment = async (commentId: string) => {
     await supabase.from('card_comments').delete().eq('id', commentId);
+    setComments(prev => prev.filter(c => c.id !== commentId));
   };
 
   // ── Anexos ──
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !currentUserId) return;
+  const uploadFile = async (file: File) => {
+    if (!currentUserId) return;
     setIsUploading(true);
     try {
       const filePath = `${task.id}/${Date.now()}-${file.name}`;
       const { error: uploadError } = await supabase.storage.from('card-attachments').upload(filePath, file);
       if (uploadError) throw uploadError;
       const { data: { publicUrl } } = supabase.storage.from('card-attachments').getPublicUrl(filePath);
-      await supabase.from('card_attachments').insert({
+      
+      const { data: newAtt, error: insertError } = await supabase.from('card_attachments').insert({
         task_id: task.id, user_id: currentUserId,
         file_name: file.name, file_url: publicUrl,
         file_size: file.size, file_type: file.type,
-      });
+      }).select('*').single();
+
+      if (!insertError && newAtt) {
+        setAttachments(prev => [newAtt, ...prev]);
+      } else {
+        fetchExtras();
+      }
     } catch (err) {
       console.error('Erro ao fazer upload:', err);
     } finally {
       setIsUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await uploadFile(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  // Suporte a colar imagens diretamente da área de transferência (Ctrl + V)
+  useEffect(() => {
+    const handlePaste = async (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items || !currentUserId) return;
+
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          const file = items[i].getAsFile();
+          if (file) {
+            const fileName = file.name || `clipboard-image-${Date.now()}.png`;
+            const fileWithName = new File([file], fileName, { type: file.type });
+            await uploadFile(fileWithName);
+          }
+        }
+      }
+    };
+
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [task.id, currentUserId]);
+
   const handleDeleteAttachment = async (attachment: Attachment) => {
     try {
+      // Se o anexo deletado for a capa atual, removemos ela da task
+      if (taskData.cover_image === attachment.file_url) {
+        await update({ cover_image: null });
+      }
+
       const filePath = attachment.file_url.split('/card-attachments/')[1];
       await supabase.storage.from('card-attachments').remove([filePath]);
       await supabase.from('card_attachments').delete().eq('id', attachment.id);
+      
+      // Atualizar o estado local imediatamente
+      setAttachments(prev => prev.filter(a => a.id !== attachment.id));
     } catch (err) {
       console.error('Erro ao remover anexo:', err);
     }
@@ -337,28 +457,57 @@ const CardModal: React.FC<CardModalProps> = ({
   const doneChecklist = taskData.checklist.filter(i => i.done).length;
   const checklistPct = totalChecklist > 0 ? Math.round((doneChecklist / totalChecklist) * 100) : 0;
 
-  return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-start justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto pt-16 pb-12" onClick={onClose}>
+  const modalPortal = createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm pt-4 pb-4" onClick={onClose}>
       <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
         onClick={e => e.stopPropagation()}
-        className="w-full max-w-5xl bg-[#22272b] border border-white/10 rounded-2xl shadow-2xl my-4">
+        className="w-full max-w-[1080px] bg-[#22272b] border border-white/10 rounded-2xl shadow-2xl flex flex-col max-h-[92vh] min-h-[92vh] overflow-hidden">
 
         {/* Capa */}
-        {taskData.cover_color && (
-          <div className="h-28 w-full rounded-t-2xl relative transition-all" style={{ backgroundColor: taskData.cover_color }}>
-            <button onClick={() => update({ cover_color: null })} className="absolute top-2 right-2 p-1.5 bg-black/40 hover:bg-black/60 text-white rounded-lg transition-colors">
-              <X className="w-3.5 h-3.5" />
-            </button>
+        {(taskData.cover_image || taskData.cover_color) && (
+          <div 
+            className={`w-full rounded-t-2xl relative transition-all group overflow-hidden shrink-0 ${
+              taskData.cover_image ? 'h-[160px] bg-black/40' : 'h-[116px]'
+            }`} 
+            style={{ 
+              backgroundColor: taskData.cover_color || undefined,
+            }}
+          >
+            {taskData.cover_image && (
+              <>
+                {/* Background desfocado da imagem para preencher as bordas com cores compatíveis */}
+                <div 
+                  className="absolute inset-0 bg-cover bg-center filter blur-xl opacity-40 scale-110 select-none pointer-events-none"
+                  style={{ backgroundImage: `url(${taskData.cover_image})` }}
+                />
+                {/* Imagem principal centralizada sem cortes */}
+                <img 
+                  src={taskData.cover_image} 
+                  alt="" 
+                  onClick={() => setLightboxUrl(taskData.cover_image || null)}
+                  className="w-full h-full object-contain relative z-10 cursor-pointer hover:opacity-90 transition-opacity" 
+                />
+              </>
+            )}
+            {currentUserRole === 'admin' && (
+              <button 
+                onClick={() => update({ cover_color: null, cover_image: null })} 
+                className="absolute bottom-2 right-2 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1.5 bg-black/60 hover:bg-black/80 text-white rounded-xl transition-all opacity-0 group-hover:opacity-100 z-20"
+              >
+                Remover capa
+              </button>
+            )}
           </div>
         )}
 
-        <div className="p-6 md:p-8 space-y-6">
+        <div className="p-6 md:p-8 space-y-6 flex-1 flex flex-col min-h-0 overflow-hidden">
           {/* Header */}
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 flex items-center gap-3">
               {/* Botão de Check Circular no Modal */}
               <button
                 onClick={async () => {
+                  if (currentUserRole !== 'admin') return;
                   const nextDone = !taskData.is_done;
                   await update({ is_done: nextDone });
                 }}
@@ -376,28 +525,38 @@ const CardModal: React.FC<CardModalProps> = ({
                 <input type="text" value={cardTitle} onChange={e => setCardTitle(e.target.value)}
                   onBlur={() => update({ title: cardTitle })}
                   onKeyDown={e => { if (e.key === 'Enter') update({ title: cardTitle }); }}
-                  className={`w-full bg-transparent border-b border-transparent focus:border-primary text-2xl font-bold outline-none pb-1 transition-colors ${
+                  readOnly={currentUserRole !== 'admin'}
+                  className={`w-full bg-transparent border-b border-transparent ${currentUserRole === 'admin' ? 'focus:border-primary' : ''} text-2xl font-bold outline-none pb-1 transition-colors ${
                     taskData.is_done ? 'line-through text-muted-foreground/60' : 'text-white'
                   }`} 
                 />
-                <p className="text-xs text-muted-foreground mt-1.5">
-                  na lista <span className="text-white underline font-semibold">{columns.find(c => c.id === colId)?.title}</span>
-                </p>
               </div>
             </div>
-            <button onClick={onClose} className="p-1.5 bg-[#2c333a] hover:bg-[#38414a] text-muted-foreground hover:text-white rounded-xl transition-colors">
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-2">
+              {/* Botão de 3 pontinhos - apenas mobile */}
+              {currentUserRole === 'admin' && (
+                <button
+                  onClick={() => setShowMobileActions(true)}
+                  className="md:hidden p-1.5 bg-[#2c333a] hover:bg-[#38414a] text-muted-foreground hover:text-white rounded-xl transition-colors"
+                  title="Ações"
+                >
+                  <MoreHorizontal className="w-5 h-5" />
+                </button>
+              )}
+              <button onClick={onClose} className="p-1.5 bg-[#2c333a] hover:bg-[#38414a] text-muted-foreground hover:text-white rounded-xl transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           {/* Grid de Conteúdo Principal & Sidebar */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 flex-1 min-h-0 overflow-hidden items-start">
             
             {/* Coluna Esquerda: Conteúdo Principal */}
-            <div className="md:col-span-3 space-y-6">
+            <div className={`${currentUserRole === 'admin' ? 'md:col-span-3' : 'md:col-span-4'} h-full overflow-y-auto pr-4 custom-scrollbar space-y-6`}>
 
-              {/* Fileira de Badges (Membros, Etiquetas, Vencimento) */}
-              {(taskData.assignees.length > 0 || taskData.labels.length > 0 || taskData.due_date) && (
+              {/* Fileira de Badges (Membros, Etiquetas) */}
+              {(taskData.assignees.length > 0 || taskData.labels.length > 0) && (
                 <div className="flex flex-wrap gap-6 pb-2">
                   
                   {/* Membros / Responsáveis */}
@@ -408,20 +567,22 @@ const CardModal: React.FC<CardModalProps> = ({
                         {taskData.assignees.map(a => (
                           <div 
                             key={a.user_id} 
-                            className="w-7 h-7 rounded-full text-[10px] font-bold text-white flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity" 
+                            className={`w-7 h-7 rounded-full text-[10px] font-bold text-white flex items-center justify-center ${currentUserRole === 'admin' ? 'cursor-pointer hover:opacity-80' : ''} transition-opacity`}
                             style={{ backgroundColor: avatarColor(a.user_id) }}
                             title={a.full_name}
-                            onClick={() => setActivePopover('members')}
+                            onClick={() => { if (currentUserRole === 'admin') setActivePopover('members'); }}
                           >
                             {initials(a.full_name)}
                           </div>
                         ))}
-                        <button 
-                          onClick={() => setActivePopover('members')}
-                          className="w-7 h-7 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-muted-foreground hover:text-white border border-dashed border-white/20 transition-colors"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                        </button>
+                        {currentUserRole === 'admin' && (
+                          <button 
+                            onClick={() => setActivePopover('members')}
+                            className="w-7 h-7 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-muted-foreground hover:text-white border border-dashed border-white/20 transition-colors"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   )}
@@ -434,43 +595,33 @@ const CardModal: React.FC<CardModalProps> = ({
                         {taskData.labels.map(l => (
                           <div 
                             key={l.id} 
-                            className="px-2.5 py-1 rounded-lg text-[11px] font-bold text-black cursor-pointer hover:brightness-110 transition-all shadow-sm" 
+                            className={`group px-2.5 py-1 rounded-xl text-[11px] font-bold text-black ${currentUserRole === 'admin' ? 'cursor-pointer hover:brightness-110' : ''} transition-all shadow-sm flex items-center gap-1.5`}
                             style={getLabelStyle(l)}
-                            onClick={() => setActivePopover('labels')}
+                            onClick={() => { if (currentUserRole === 'admin') setActivePopover('labels'); }}
                           >
-                            {l.text}
+                            <span>{l.text}</span>
+                            {currentUserRole === 'admin' && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRemoveLabel(l.id);
+                                }}
+                                className="p-0.5 hover:bg-black/20 rounded-md transition-colors text-black/70 hover:text-black flex items-center justify-center"
+                                title="Remover etiqueta"
+                              >
+                                <X className="w-2.5 h-2.5" />
+                              </button>
+                            )}
                           </div>
                         ))}
-                        <button 
-                          onClick={() => setActivePopover('labels')}
-                          className="px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-muted-foreground hover:text-white border border-dashed border-white/20 transition-colors"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Data de Vencimento */}
-                  {taskData.due_date && (
-                    <div className="space-y-1.5">
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Data de Vencimento</span>
-                      <div className="flex items-center gap-2">
-                        <button 
-                          onClick={() => setActivePopover('due_date')}
-                          className={`flex items-center gap-2 px-3 py-1 rounded-xl text-xs font-semibold border transition-all ${
-                            formatDueDate(taskData.due_date)?.status === 'overdue' 
-                              ? 'bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20' 
-                              : formatDueDate(taskData.due_date)?.status === 'soon' 
-                                ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/20' 
-                                : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
-                          }`}
-                        >
-                          <Clock className="w-3.5 h-3.5" />
-                          <span>{formatDueDate(taskData.due_date)?.text}</span>
-                          {formatDueDate(taskData.due_date)?.status === 'overdue' && <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 bg-red-500 text-white rounded-md">Atrasado</span>}
-                          {formatDueDate(taskData.due_date)?.status === 'soon' && <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 bg-yellow-500 text-black rounded-md">Próximo</span>}
-                        </button>
+                        {currentUserRole === 'admin' && (
+                          <button 
+                            onClick={() => setActivePopover('labels')}
+                            className="px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-muted-foreground hover:text-white border border-dashed border-white/20 transition-colors"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   )}
@@ -485,7 +636,7 @@ const CardModal: React.FC<CardModalProps> = ({
                     <AlignLeft className="w-4 h-4 text-muted-foreground" />
                     <span>Descrição</span>
                   </div>
-                  {!isEditingDesc && taskData.description && (
+                  {!isEditingDesc && taskData.description && currentUserRole === 'admin' && (
                     <button 
                       onClick={() => setIsEditingDesc(true)} 
                       className="px-3 py-1 bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-white rounded-xl text-xs font-semibold transition-all"
@@ -496,8 +647,12 @@ const CardModal: React.FC<CardModalProps> = ({
                 </div>
                 {isEditingDesc ? (
                   <div className="space-y-2">
-                    <textarea rows={4} value={cardDesc} onChange={e => setCardDesc(e.target.value)}
-                      className="w-full bg-[#1d2125] border border-white/10 focus:border-primary/50 rounded-xl p-3 text-sm text-white placeholder:text-muted-foreground outline-none resize-none transition-all" />
+                    <textarea 
+                      ref={descTextareaRef}
+                      value={cardDesc} 
+                      onChange={e => setCardDesc(e.target.value)}
+                      className="w-full bg-[#1d2125] border border-white/10 focus:border-primary/50 rounded-xl p-3 text-sm text-white placeholder:text-muted-foreground outline-none resize-none" 
+                    />
                     <div className="flex gap-2 justify-end">
                       <button onClick={() => setIsEditingDesc(false)} className="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs transition-colors">Cancelar</button>
                       <button onClick={async () => { await update({ description: cardDesc }); setIsEditingDesc(false); }}
@@ -505,9 +660,40 @@ const CardModal: React.FC<CardModalProps> = ({
                     </div>
                   </div>
                 ) : (
-                  <div onClick={() => setIsEditingDesc(true)}
-                    className="p-4 bg-[#1d2125] hover:bg-[#1d2125]/80 rounded-xl border border-white/5 cursor-pointer text-sm text-white/90 leading-relaxed min-h-[80px] transition-all">
-                    {taskData.description || <span className="text-muted-foreground italic text-xs">Clique para adicionar uma descrição detalhada da tarefa...</span>}
+                  <div className="space-y-3">
+                    <div 
+                      ref={descViewRef}
+                      onClick={() => { if (currentUserRole === 'admin') setIsEditingDesc(true); }}
+                      className={`relative p-4 bg-[#1d2125] hover:bg-[#1d2125]/80 rounded-xl border border-white/5 ${currentUserRole === 'admin' ? 'cursor-pointer' : ''} text-sm text-white/90 leading-relaxed transition-all whitespace-pre-wrap overflow-hidden ${
+                        !isDescExpanded && showExpandButton ? 'max-h-[400px]' : ''
+                      }`}
+                    >
+                      {taskData.description || (currentUserRole === 'admin' ? <span className="text-muted-foreground italic text-xs">Clique para adicionar uma descrição detalhada da tarefa...</span> : <span className="text-muted-foreground italic text-xs">Sem descrição.</span>)}
+                      
+                      {/* Gradiente de fade quando recolhido */}
+                      {!isDescExpanded && showExpandButton && (
+                        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#1d2125] via-[#1d2125]/80 to-transparent pointer-events-none" />
+                      )}
+                    </div>
+
+                    {showExpandButton && (
+                      <button
+                        onClick={() => setIsDescExpanded(!isDescExpanded)}
+                        className="w-full flex items-center justify-center gap-1.5 py-2 px-4 bg-[#2c333a] hover:bg-[#38414a] text-xs font-semibold text-white rounded-xl transition-all border border-white/5 shadow-sm"
+                      >
+                        {isDescExpanded ? (
+                          <>
+                            <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                            <span>Mostrar menos</span>
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                            <span>Mostrar mais</span>
+                          </>
+                        )}
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -515,38 +701,165 @@ const CardModal: React.FC<CardModalProps> = ({
               {/* Checklist */}
               {showChecklist && (
                 <div className="space-y-4 pt-2 border-t border-white/5" ref={checklistSectionRef}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-white font-bold text-sm"><CheckSquare className="w-4 h-4 text-muted-foreground" /><span>Checklist</span></div>
-                    {totalChecklist > 0 && <span className="text-xs text-muted-foreground">{doneChecklist} de {totalChecklist}</span>}
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-2 text-white font-bold text-sm min-w-0">
+                      <CheckSquare className="w-4 h-4 text-muted-foreground shrink-0" />
+                      {isEditingChecklistTitle ? (
+                        <input
+                          autoFocus
+                          type="text"
+                          value={checklistTitle}
+                          onChange={e => setChecklistTitle(e.target.value)}
+                          onBlur={handleSaveChecklistTitle}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleSaveChecklistTitle();
+                            }
+                            if (e.key === 'Escape') {
+                              e.preventDefault();
+                              setChecklistTitle(taskData.checklist_title || 'Checklist');
+                              setIsEditingChecklistTitle(false);
+                            }
+                          }}
+                          className="bg-transparent border-b border-primary text-white font-bold text-sm outline-none pb-0.5 min-w-0 w-auto"
+                          style={{ width: `${Math.max(checklistTitle.length, 4)}ch` }}
+                        />
+                      ) : (
+                        <span
+                          onClick={() => { if (currentUserRole === 'admin') setIsEditingChecklistTitle(true); }}
+                          className={`${currentUserRole === 'admin' ? 'cursor-pointer hover:text-white/70' : ''} transition-colors truncate`}
+                          title={currentUserRole === 'admin' ? "Clique para renomear" : undefined}
+                        >
+                          {checklistTitle}
+                        </span>
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center gap-2 shrink-0">
+                      {totalChecklist > 0 && (
+                        <button
+                          onClick={() => setHideCheckedItems(!hideCheckedItems)}
+                          className="px-3 py-1.5 bg-[#2c333a] hover:bg-[#38414a] text-[#c7d1db] hover:text-white rounded-lg text-xs font-semibold border border-white/5 transition-all"
+                        >
+                          {hideCheckedItems ? 'Mostrar itens marcados' : 'Ocultar itens marcados'}
+                        </button>
+                      )}
+                      {currentUserRole === 'admin' && (
+                        <button
+                          onClick={handleDeleteEntireChecklist}
+                          className="px-3 py-1.5 bg-[#2c333a] hover:bg-[#38414a] text-[#c7d1db] hover:text-white rounded-lg text-xs font-semibold border border-white/5 transition-all"
+                        >
+                          Excluir
+                        </button>
+                      )}
+                    </div>
                   </div>
                   {totalChecklist > 0 && (
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-[10px] text-muted-foreground font-bold"><span>Progresso</span><span>{checklistPct}%</span></div>
-                      <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
-                        <div className="h-full bg-primary transition-all duration-500" style={{ width: `${checklistPct}%` }} />
+                    <div className="flex items-center gap-3">
+                      <span className="text-[11px] text-muted-foreground font-semibold shrink-0 w-8 text-right">{checklistPct}%</span>
+                      <div className="flex-1 h-2 bg-white/15 rounded-full">
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{ width: `${checklistPct}%`, backgroundColor: checklistPct === 100 ? '#22c55e' : '#0079bf' }}
+                        />
                       </div>
                     </div>
                   )}
                   <div className="space-y-2">
-                    {taskData.checklist.map(item => (
+                    {taskData.checklist
+                      .filter(item => !hideCheckedItems || !item.done)
+                      .map(item => (
                       <div key={item.id} className="flex items-center justify-between gap-3 p-3 bg-black/10 hover:bg-black/20 border border-white/5 rounded-xl group transition-all">
-                        <div onClick={() => handleToggleChecklist(item.id)} className="flex items-center gap-3 cursor-pointer select-none flex-1">
-                          {item.done ? <CheckSquare className="w-5 h-5 text-primary shrink-0" /> : <Square className="w-5 h-5 text-muted-foreground shrink-0" />}
-                          <span className={`text-sm ${item.done ? 'line-through text-muted-foreground' : 'text-white'}`}>{item.text}</span>
+                        <div className="flex items-center gap-3 select-none flex-1 min-w-0">
+                          {/* Checkbox independente */}
+                          <div 
+                            onClick={() => { if (currentUserRole === 'admin') handleToggleChecklist(item.id); }} 
+                            className={`${currentUserRole === 'admin' ? 'cursor-pointer hover:opacity-80' : ''} transition-opacity shrink-0`}
+                          >
+                            {item.done ? <CheckSquare className="w-5 h-5 text-primary" /> : <Square className="w-5 h-5 text-muted-foreground" />}
+                          </div>
+
+                          {/* Campo de texto / Input de edição */}
+                          {editingItemId === item.id ? (
+                            <input
+                              autoFocus
+                              type="text"
+                              value={editingItemText}
+                              onChange={e => setEditingItemText(e.target.value)}
+                              onBlur={() => handleSaveChecklistItemText(item.id)}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') handleSaveChecklistItemText(item.id);
+                                if (e.key === 'Escape') setEditingItemId(null);
+                              }}
+                              className="flex-1 bg-[#1d2125] border border-primary/60 focus:border-primary rounded-lg px-2 py-1 text-sm text-white outline-none min-w-0"
+                            />
+                          ) : (
+                            <span 
+                              onClick={() => {
+                                if (currentUserRole === 'admin') {
+                                  setEditingItemId(item.id);
+                                  setEditingItemText(item.text);
+                                }
+                              }}
+                              className={`text-sm flex-1 ${currentUserRole === 'admin' ? 'cursor-text hover:text-white/80' : ''} truncate ${item.done ? 'line-through text-muted-foreground' : 'text-white'}`}
+                            >
+                              {item.text}
+                            </span>
+                          )}
                         </div>
-                        <button onClick={() => handleDeleteChecklist(item.id)} className="p-1 opacity-0 group-hover:opacity-100 hover:bg-destructive/10 text-muted-foreground hover:text-destructive rounded-lg transition-all">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {currentUserRole === 'admin' && (
+                          <button onClick={() => handleDeleteChecklist(item.id)} className="p-1 opacity-0 group-hover:opacity-100 hover:bg-destructive/10 text-muted-foreground hover:text-destructive rounded-lg transition-all shrink-0">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     ))}
                     {totalChecklist === 0 && <p className="text-xs text-muted-foreground italic text-center py-2">Sem subtarefas adicionadas.</p>}
                   </div>
-                  <div className="flex gap-2">
-                    <input type="text" placeholder="Adicionar item ao checklist..." value={newChecklistItem} onChange={e => setNewChecklistItem(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') handleAddChecklist(); }}
-                      className="flex-1 bg-[#1d2125] border border-white/5 focus:border-primary/50 rounded-xl px-3 py-2 text-xs text-white placeholder:text-muted-foreground outline-none transition-all" />
-                    <button onClick={handleAddChecklist} className="px-4 py-2 bg-primary hover:bg-primary/95 text-white rounded-xl text-xs font-bold transition-colors">Adicionar</button>
-                  </div>
+                  {/* Input de adicionar item - estilo Trello */}
+                  {currentUserRole === 'admin' && (
+                    <div className="space-y-2">
+                      {isAddingChecklistItem ? (
+                        <div className="space-y-2">
+                          <input
+                            ref={checklistInputRef}
+                            autoFocus
+                            type="text"
+                            placeholder="Adicionar um item"
+                            value={newChecklistItem}
+                            onChange={e => setNewChecklistItem(e.target.value)}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') { handleAddChecklist(); }
+                              if (e.key === 'Escape') { setIsAddingChecklistItem(false); setNewChecklistItem(''); }
+                            }}
+                            className="w-full bg-[#1d2125] border border-primary/60 focus:border-primary rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-muted-foreground outline-none transition-all"
+                          />
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => { handleAddChecklist(); }}
+                              className="px-3 py-1.5 bg-[#0079bf] hover:bg-[#026aa7] text-white rounded-xl text-xs font-bold transition-colors"
+                            >
+                              Adicionar
+                            </button>
+                            <button
+                              onClick={() => { setIsAddingChecklistItem(false); setNewChecklistItem(''); }}
+                              className="px-3 py-1.5 text-muted-foreground hover:text-white text-xs font-medium transition-colors rounded-xl hover:bg-white/5"
+                            >
+                              Cancelar
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setIsAddingChecklistItem(true)}
+                          className="px-3 py-2 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white rounded-xl text-sm font-medium transition-all border border-white/5 hover:border-white/10"
+                        >
+                          Adicionar um item
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -558,6 +871,15 @@ const CardModal: React.FC<CardModalProps> = ({
                       <Paperclip className="w-4 h-4 text-muted-foreground" /><span>Anexos</span>
                       {attachments.length > 0 && <span className="text-[10px] font-bold bg-white/10 text-white/70 px-1.5 py-0.5 rounded-full">{attachments.length}</span>}
                     </div>
+                    {currentUserRole === 'admin' && (
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading}
+                        className="px-3 py-1.5 bg-[#2c333a] hover:bg-[#38414a] disabled:opacity-50 text-white rounded-xl text-xs font-semibold border border-white/5 transition-all"
+                      >
+                        Adicionar
+                      </button>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -578,9 +900,19 @@ const CardModal: React.FC<CardModalProps> = ({
                       const isImage = att.file_type.startsWith('image/');
                       return (
                         <div key={att.id} className="flex items-center gap-3 p-3 bg-black/10 hover:bg-black/20 border border-white/5 rounded-xl group transition-all">
-                          <div className="w-12 h-12 shrink-0 rounded-xl overflow-hidden bg-white/5 flex items-center justify-center border border-white/5">
+                          <div
+                            className={`w-12 h-12 shrink-0 rounded-xl overflow-hidden bg-white/5 flex items-center justify-center border border-white/5 relative group/thumb ${isImage ? 'cursor-pointer' : ''}`}
+                            onClick={() => isImage && setLightboxUrl(att.file_url)}
+                          >
                             {isImage ? (
-                              <img src={att.file_url} alt={att.file_name} className="w-full h-full object-cover" />
+                              <>
+                                <img src={att.file_url} alt={att.file_name} className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center">
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l5 5M10 17a7 7 0 1 1 0-14 7 7 0 0 1 0 14z" />
+                                  </svg>
+                                </div>
+                              </>
                             ) : att.file_type === 'application/pdf' ? (
                               <FileText className="w-6 h-6 text-red-400" />
                             ) : (
@@ -590,15 +922,41 @@ const CardModal: React.FC<CardModalProps> = ({
 
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-semibold text-white truncate" title={att.file_name}>{att.file_name}</p>
-                            <p className="text-[10px] text-muted-foreground mt-0.5">{formatSize(att.file_size)} · {timeAgo(att.created_at)}</p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5 flex flex-wrap items-center gap-2">
+                              <span>{formatSize(att.file_size)} · {timeAgo(att.created_at)}</span>
+                              {taskData.cover_image === att.file_url && (
+                                <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-lg border border-emerald-500/20">
+                                  <ImageIcon className="w-2.5 h-2.5" /> Capa
+                                </span>
+                              )}
+                            </p>
                           </div>
 
                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                            {isImage && currentUserRole === 'admin' && (
+                              <button
+                                onClick={async () => {
+                                  const isCurrentCover = taskData.cover_image === att.file_url;
+                                  await update({
+                                    cover_image: isCurrentCover ? null : att.file_url,
+                                    cover_color: isCurrentCover ? null : null
+                                  });
+                                }}
+                                className={`p-1.5 rounded-xl border transition-all ${
+                                  taskData.cover_image === att.file_url
+                                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20'
+                                    : 'hover:bg-white/10 border-transparent text-muted-foreground hover:text-white'
+                                }`}
+                                title={taskData.cover_image === att.file_url ? "Remover capa" : "Tornar capa"}
+                              >
+                                <Palette className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                             <a href={att.file_url} target="_blank" rel="noopener noreferrer"
                               className="p-1.5 hover:bg-white/10 text-muted-foreground hover:text-white rounded-xl transition-colors" title="Baixar">
                               <Download className="w-3.5 h-3.5" />
                             </a>
-                            {att.user_id === currentUserId && (
+                            {att.user_id === currentUserId && currentUserRole === 'admin' && (
                               <button onClick={() => handleDeleteAttachment(att)}
                                 className="p-1.5 hover:bg-destructive/10 text-muted-foreground hover:text-destructive rounded-xl transition-colors" title="Remover">
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -645,7 +1003,7 @@ const CardModal: React.FC<CardModalProps> = ({
 
                 {/* Lista de comentários */}
                 {comments.length > 0 && (
-                  <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+                  <div className="space-y-3 pr-1">
                     {comments.map(comment => (
                       <div key={comment.id} className="flex gap-3 group">
                         <div className="w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-[10px] font-bold text-white mt-0.5"
@@ -678,8 +1036,9 @@ const CardModal: React.FC<CardModalProps> = ({
 
             </div>
 
-            {/* Coluna Direita: Sidebar de Ações (Estilo Trello) */}
-            <div className="md:col-span-1 space-y-4">
+            {/* Coluna Direita: Sidebar de Ações (Estilo Trello) - apenas desktop */}
+            {currentUserRole === 'admin' && (
+              <div className="hidden md:block md:col-span-1 space-y-4">
               
               <div className="space-y-2">
                 <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Adicionar ao cartão</span>
@@ -702,7 +1061,7 @@ const CardModal: React.FC<CardModalProps> = ({
                         className="absolute right-0 top-full mt-2 z-50 w-72 bg-[#2c333a] border border-white/10 rounded-2xl p-4 shadow-2xl space-y-3"
                       >
                         <div className="flex items-center justify-between pb-2 border-b border-white/5">
-                           <span className="text-xs font-bold text-white">Membros do Quadro</span>
+                           <span className="text-xs font-bold text-white">Membros do Projeto</span>
                           <button onClick={() => setActivePopover(null)} className="p-0.5 hover:bg-white/10 rounded-lg transition-colors">
                             <X className="w-3.5 h-3.5 text-muted-foreground" />
                           </button>
@@ -838,7 +1197,7 @@ const CardModal: React.FC<CardModalProps> = ({
 
                                     <button
                                       onClick={() => handleRemoveLabel(label.id)}
-                                      className="p-1.5 hover:bg-destructive/10 text-muted-foreground hover:text-red-400 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                                      className="p-1.5 hover:bg-destructive/10 text-muted-foreground hover:text-red-400 rounded-xl transition-all shrink-0"
                                       title="Remover"
                                     >
                                       <X className="w-3.5 h-3.5" />
@@ -887,91 +1246,63 @@ const CardModal: React.FC<CardModalProps> = ({
                             </div>
                           )}
 
-                          <button
-                            onClick={() => setColorBlindMode(!colorBlindMode)}
-                            className="w-full py-2 bg-[#2c333a] hover:bg-[#38414a] text-white border border-white/5 rounded-xl transition-all"
-                          >
-                            {colorBlindMode ? 'Desabilitar modo daltonismo' : 'Habilitar modo para daltônicos'}
-                          </button>
                         </div>
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
 
-                {/* Botão Checklist */}
-                <button 
-                  onClick={() => {
-                    const nextShow = !showChecklist;
-                    setShowChecklist(nextShow);
-                    if (nextShow) {
-                      setTimeout(() => {
-                        checklistSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
-                      }, 100);
-                    }
-                  }}
-                  className={`w-full flex items-center justify-between px-3 py-2 text-white rounded-xl text-xs font-semibold border transition-all text-left ${
-                    showChecklist 
-                      ? 'bg-primary/20 border-primary/30 hover:bg-primary/30' 
-                      : 'bg-[#2c333a] border-white/5 hover:bg-[#38414a]'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
+                {/* Botão Checklist - Popover estilo Trello */}
+                <div className="relative" ref={checklistPopoverRef}>
+                  <button
+                    onClick={() => setActivePopover(activePopover === 'checklist' ? null : 'checklist')}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 bg-[#2c333a] hover:bg-[#38414a] text-white rounded-xl text-xs font-semibold border border-white/5 transition-all text-left"
+                  >
                     <CheckSquare className="w-4 h-4 text-muted-foreground" />
                     <span>Checklist</span>
-                  </div>
-                  {showChecklist && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
-                </button>
-
-                {/* Botão Datas */}
-                <div className="relative" ref={datePopoverRef}>
-                  <button 
-                    onClick={() => setActivePopover(activePopover === 'due_date' ? null : 'due_date')}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 bg-[#2c333a] hover:bg-[#38414a] text-white rounded-xl text-xs font-semibold border border-white/5 transition-all text-left relative"
-                  >
-                    <Calendar className="w-4 h-4 text-muted-foreground" />
-                    <span>Datas</span>
                   </button>
                   <AnimatePresence>
-                    {activePopover === 'due_date' && (
-                      <motion.div 
-                        initial={{ opacity: 0, scale: 0.95, y: -10 }} 
-                        animate={{ opacity: 1, scale: 1, y: 0 }} 
+                    {activePopover === 'checklist' && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                        className="absolute right-0 top-full mt-2 z-50 w-72 bg-[#2c333a] border border-white/10 rounded-2xl p-4 shadow-2xl space-y-3"
+                        className="absolute right-0 top-full mt-2 z-50 w-72 bg-[#2c333a] border border-white/10 rounded-2xl p-4 shadow-2xl space-y-4"
                       >
                         <div className="flex items-center justify-between pb-2 border-b border-white/5">
-                          <span className="text-xs font-bold text-white">Data de Vencimento</span>
+                          <span className="text-xs font-bold text-white">Adicionar Checklist</span>
                           <button onClick={() => setActivePopover(null)} className="p-0.5 hover:bg-white/10 rounded-lg transition-colors">
                             <X className="w-3.5 h-3.5 text-muted-foreground" />
                           </button>
                         </div>
-                        <input 
-                          type="date" 
-                          value={dueDateInput} 
-                          onChange={e => setDueDateInput(e.target.value)}
-                          className="w-full bg-[#1d2125] border border-white/10 focus:border-primary/50 rounded-xl px-3 py-2 text-xs text-white outline-none [color-scheme:dark] transition-all" 
-                        />
-                        <div className="flex gap-2">
-                          <button 
-                            onClick={() => { handleSaveDueDate(); setActivePopover(null); }} 
-                            className="flex-1 py-1.5 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold transition-colors"
-                          >
-                            Salvar
-                          </button>
-                          {taskData.due_date && (
-                            <button 
-                              onClick={() => { setDueDateInput(''); update({ due_date: null }); setActivePopover(null); }} 
-                              className="px-3 py-1.5 bg-white/5 hover:bg-destructive/10 border border-white/10 text-muted-foreground hover:text-red-400 rounded-xl text-xs font-bold transition-colors"
-                            >
-                              Remover
-                            </button>
-                          )}
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Título</label>
+                          <input
+                            type="text"
+                            value={checklistTitle}
+                            onChange={e => setChecklistTitle(e.target.value)}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                handleCreateChecklist();
+                              }
+                            }}
+                            autoFocus
+                            className="w-full bg-[#1d2125] border border-white/10 focus:border-primary/50 rounded-xl px-3 py-2 text-sm text-white placeholder:text-muted-foreground outline-none transition-all"
+                          />
                         </div>
+                        <button
+                          onClick={handleCreateChecklist}
+                          className="w-full py-2 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold transition-colors"
+                        >
+                          Adicionar
+                        </button>
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
+
+
 
                 {/* Botão Anexos */}
                 <button 
@@ -1010,15 +1341,15 @@ const CardModal: React.FC<CardModalProps> = ({
                           {COVER_COLORS.map(color => (
                             <button 
                               key={color} 
-                              onClick={() => update({ cover_color: color })}
+                              onClick={() => update({ cover_color: color, cover_image: null })}
                               className={`w-full h-8 rounded-xl transition-all hover:scale-105 ${taskData.cover_color === color ? 'ring-2 ring-white scale-105' : ''}`}
                               style={{ backgroundColor: color }} 
                             />
                           ))}
                         </div>
-                        {taskData.cover_color && (
+                        {(taskData.cover_color || taskData.cover_image) && (
                           <button 
-                            onClick={() => update({ cover_color: null })}
+                            onClick={() => update({ cover_color: null, cover_image: null })}
                             className="w-full py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-muted-foreground hover:text-white rounded-xl text-xs font-bold transition-all"
                           >
                             Remover Capa
@@ -1076,36 +1407,376 @@ const CardModal: React.FC<CardModalProps> = ({
                   </AnimatePresence>
                 </div>
 
-                {/* Botão Excluir */}
-                <button 
-                  onClick={() => onDeleteTask(task.id)}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-xl text-xs font-semibold border border-red-500/20 hover:border-red-500/30 transition-all text-left"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  <span>Excluir Card</span>
-                </button>
-
-              </div>
-
-              {/* Botão Fechar Modal */}
-              <div className="pt-2 border-t border-white/5">
-                <button 
-                  onClick={onClose} 
-                  className="w-full py-2 bg-[#2c333a] hover:bg-[#38414a] text-white rounded-xl text-xs font-bold transition-all text-center"
-                >
-                  Fechar Janela
-                </button>
-              </div>
+              {/* Botão Excluir */}
+              <button 
+                onClick={() => onDeleteTask(task.id)}
+                className="w-full flex items-center gap-2.5 px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-xl text-xs font-semibold border border-red-500/20 hover:border-red-500/30 transition-all text-left"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Excluir Card</span>
+              </button>
 
             </div>
+
+          </div>
+          )}
 
           </div>
 
         </div>
         <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} />
+
+        {/* Bottom Sheet Mobile - Ações */}
+        <AnimatePresence>
+          {showMobileActions && (
+            <>
+              {/* Overlay */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[150] bg-black/60 md:hidden"
+                onClick={() => setShowMobileActions(false)}
+              />
+              {/* Sheet */}
+              <motion.div
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                className="fixed bottom-0 left-0 right-0 z-[160] md:hidden bg-[#22272b] border-t border-white/10 rounded-t-2xl shadow-2xl max-h-[80vh] overflow-y-auto"
+              >
+                {/* Handle */}
+                <div className="flex justify-center pt-3 pb-2">
+                  <div className="w-10 h-1 bg-white/20 rounded-full" />
+                </div>
+
+                <div className="px-5 pb-8 space-y-5">
+                  {/* Título */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-bold text-white">Ações do cartão</span>
+                    <button
+                      onClick={() => setShowMobileActions(false)}
+                      className="p-1.5 bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-white rounded-xl transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* Adicionar ao cartão */}
+                  <div className="space-y-2">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Adicionar ao cartão</span>
+
+                    {/* Responsáveis */}
+                    <div className="relative" ref={membersPopoverRef}>
+                      <button
+                        onClick={() => setActivePopover(activePopover === 'members' ? null : 'members')}
+                        className="w-full flex items-center gap-2.5 px-3 py-3 bg-[#2c333a] hover:bg-[#38414a] text-white rounded-xl text-sm font-semibold border border-white/5 transition-all text-left"
+                      >
+                        <UserCheck className="w-4 h-4 text-muted-foreground" />
+                        <span>Responsáveis</span>
+                      </button>
+                      <AnimatePresence>
+                        {activePopover === 'members' && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -8 }}
+                            className="mt-2 bg-[#2c333a] border border-white/10 rounded-2xl p-4 shadow-2xl space-y-3"
+                          >
+                            <div className="flex items-center justify-between pb-2 border-b border-white/5">
+                              <span className="text-xs font-bold text-white">Membros do Projeto</span>
+                              <button onClick={() => setActivePopover(null)} className="p-0.5 hover:bg-white/10 rounded-lg transition-colors">
+                                <X className="w-3.5 h-3.5 text-muted-foreground" />
+                              </button>
+                            </div>
+                            <div className="space-y-1.5">
+                              {members.map(m => {
+                                const isAssigned = taskData.assignees.some(a => a.user_id === m.user_id);
+                                return (
+                                  <button
+                                    key={m.user_id}
+                                    onClick={() => handleToggleAssignee(m)}
+                                    className="w-full flex items-center justify-between p-2 rounded-xl text-left hover:bg-white/5 transition-all"
+                                  >
+                                    <div className="flex items-center gap-2.5">
+                                      <div className="w-6 h-6 rounded-full text-[10px] font-bold text-white flex items-center justify-center" style={{ backgroundColor: avatarColor(m.user_id) }}>
+                                        {initials(m.full_name)}
+                                      </div>
+                                      <span className="text-xs text-white font-medium">{m.full_name.replace(' (Dono)', '')}</span>
+                                    </div>
+                                    {isAssigned && <Check className="w-4 h-4 text-primary shrink-0" />}
+                                  </button>
+                                );
+                              })}
+                              {members.length === 0 && <p className="text-xs text-muted-foreground italic text-center py-2">Nenhum membro.</p>}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    {/* Etiquetas */}
+                    <div className="relative" ref={labelsPopoverRef}>
+                      <button
+                        onClick={() => setActivePopover(activePopover === 'labels' ? null : 'labels')}
+                        className="w-full flex items-center gap-2.5 px-3 py-3 bg-[#2c333a] hover:bg-[#38414a] text-white rounded-xl text-sm font-semibold border border-white/5 transition-all text-left"
+                      >
+                        <Tag className="w-4 h-4 text-muted-foreground" />
+                        <span>Etiquetas</span>
+                      </button>
+                      <AnimatePresence>
+                        {activePopover === 'labels' && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -8 }}
+                            className="mt-2 bg-[#2c333a] border border-white/10 rounded-2xl p-4 shadow-2xl space-y-4"
+                          >
+                            <div className="flex items-center justify-between pb-2 border-b border-white/5">
+                              <span className="text-xs font-bold text-white">Etiquetas</span>
+                              <button onClick={() => { setActivePopover(null); setSearchLabelQuery(''); setShowCreateLabel(false); }} className="p-0.5 hover:bg-white/10 rounded-lg transition-colors">
+                                <X className="w-3.5 h-3.5 text-muted-foreground" />
+                              </button>
+                            </div>
+                            <input
+                              type="text"
+                              placeholder="Buscar etiquetas..."
+                              value={searchLabelQuery}
+                              onChange={e => setSearchLabelQuery(e.target.value)}
+                              className="w-full bg-[#1d2125] border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder:text-muted-foreground focus:border-primary/50 outline-none transition-all"
+                            />
+                            <div className="space-y-2">
+                              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Etiquetas de Prioridade</span>
+                              {PRESET_LABELS.filter(p => p.text.toLowerCase().includes(searchLabelQuery.toLowerCase())).map(preset => {
+                                const isSelected = taskData.labels.some(l => l.text.toLowerCase() === preset.text.toLowerCase());
+                                return (
+                                  <div key={preset.text} className="flex items-center gap-2">
+                                    <button onClick={() => handleTogglePresetLabel(preset)} className="w-4 h-4 rounded-md border border-white/20 bg-black/40 flex items-center justify-center shrink-0">
+                                      {isSelected && <Check className="w-3 h-3 text-primary" />}
+                                    </button>
+                                    <button onClick={() => handleTogglePresetLabel(preset)} style={{ backgroundColor: preset.color }} className="flex-1 h-8 px-3 rounded-xl text-xs font-bold text-black text-left flex items-center">
+                                      {preset.text}
+                                    </button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <button onClick={() => setShowCreateLabel(!showCreateLabel)} className="w-full py-2 bg-[#2c333a] hover:bg-[#38414a] text-white border border-white/5 rounded-xl text-xs transition-all">
+                              {showCreateLabel ? 'Ocultar criação' : 'Criar uma nova etiqueta'}
+                            </button>
+                            {showCreateLabel && (
+                              <div className="space-y-2.5 pt-2 border-t border-white/5">
+                                <input type="text" placeholder="Nome da etiqueta..." value={newLabelText} onChange={e => setNewLabelText(e.target.value)}
+                                  className="w-full bg-[#1d2125] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder:text-muted-foreground outline-none transition-all" />
+                                <div className="grid grid-cols-4 gap-1.5">
+                                  {LABEL_COLORS.map(c => (
+                                    <button key={c.value} onClick={() => setNewLabelColor(c.value)}
+                                      className={`w-full h-6 rounded-lg transition-all ${newLabelColor === c.value ? 'ring-2 ring-white scale-110' : ''}`}
+                                      style={{ backgroundColor: c.value }} />
+                                  ))}
+                                </div>
+                                <button onClick={handleAddLabel} className="w-full py-1.5 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold transition-colors">Criar e Adicionar</button>
+                              </div>
+                            )}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    {/* Checklist - popover inline no mobile */}
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => setActivePopover(activePopover === 'checklist' ? null : 'checklist')}
+                        className="w-full flex items-center gap-2.5 px-3 py-3 bg-[#2c333a] hover:bg-[#38414a] text-white rounded-xl text-sm font-semibold border border-white/5 transition-all text-left"
+                      >
+                        <CheckSquare className="w-4 h-4 text-muted-foreground" />
+                        <span>Checklist</span>
+                      </button>
+                      <AnimatePresence>
+                        {activePopover === 'checklist' && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -8 }}
+                            className="bg-[#2c333a] border border-white/10 rounded-2xl p-4 space-y-4"
+                          >
+                            <div className="flex items-center justify-between pb-2 border-b border-white/5">
+                              <span className="text-xs font-bold text-white">Adicionar Checklist</span>
+                              <button onClick={() => setActivePopover(null)} className="p-0.5 hover:bg-white/10 rounded-lg"><X className="w-3.5 h-3.5 text-muted-foreground" /></button>
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Título</label>
+                              <input
+                                type="text"
+                                value={checklistTitle}
+                                onChange={e => setChecklistTitle(e.target.value)}
+                                autoFocus
+                                className="w-full bg-[#1d2125] border border-white/10 focus:border-primary/50 rounded-xl px-3 py-2 text-sm text-white outline-none transition-all"
+                              />
+                            </div>
+                            <button
+                              onClick={() => {
+                                setShowChecklist(true);
+                                setActivePopover(null);
+                                setShowMobileActions(false);
+                                setTimeout(() => checklistSectionRef.current?.scrollIntoView({ behavior: 'smooth' }), 150);
+                              }}
+                              className="w-full py-2.5 bg-primary hover:bg-primary/90 text-white rounded-xl text-sm font-bold transition-colors"
+                            >
+                              Adicionar
+                            </button>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    {/* Anexos */}
+                    <button
+                      onClick={() => { fileInputRef.current?.click(); setShowMobileActions(false); }}
+                      disabled={isUploading}
+                      className="w-full flex items-center gap-2.5 px-3 py-3 bg-[#2c333a] hover:bg-[#38414a] disabled:opacity-50 text-white rounded-xl text-sm font-semibold border border-white/5 transition-all text-left"
+                    >
+                      {isUploading ? <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /> : <Paperclip className="w-4 h-4 text-muted-foreground" />}
+                      <span>{isUploading ? 'Enviando...' : 'Anexos'}</span>
+                    </button>
+
+                    {/* Capa */}
+                    <div className="relative" ref={coverPopoverRef}>
+                      <button
+                        onClick={() => setActivePopover(activePopover === 'cover' ? null : 'cover')}
+                        className="w-full flex items-center gap-2.5 px-3 py-3 bg-[#2c333a] hover:bg-[#38414a] text-white rounded-xl text-sm font-semibold border border-white/5 transition-all text-left"
+                      >
+                        <Palette className="w-4 h-4 text-muted-foreground" />
+                        <span>Capa</span>
+                      </button>
+                      <AnimatePresence>
+                        {activePopover === 'cover' && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -8 }}
+                            className="mt-2 bg-[#2c333a] border border-white/10 rounded-2xl p-4 shadow-2xl space-y-3"
+                          >
+                            <div className="flex items-center justify-between pb-2 border-b border-white/5">
+                              <span className="text-xs font-bold text-white">Cor da Capa</span>
+                              <button onClick={() => setActivePopover(null)} className="p-0.5 hover:bg-white/10 rounded-lg"><X className="w-3.5 h-3.5 text-muted-foreground" /></button>
+                            </div>
+                            <div className="grid grid-cols-4 gap-1.5">
+                              {COVER_COLORS.map(color => (
+                                <button key={color} onClick={() => update({ cover_color: color })}
+                                  className={`w-full h-10 rounded-xl transition-all hover:scale-105 ${taskData.cover_color === color ? 'ring-2 ring-white scale-105' : ''}`}
+                                  style={{ backgroundColor: color }} />
+                              ))}
+                            </div>
+                            {taskData.cover_color && (
+                              <button onClick={() => update({ cover_color: null })} className="w-full py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-muted-foreground hover:text-white rounded-xl text-xs font-bold transition-all">Remover Capa</button>
+                            )}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </div>
+
+                  {/* Ações */}
+                  <div className="space-y-2">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Ações</span>
+
+                    {/* Mover */}
+                    <div className="relative" ref={movePopoverRef}>
+                      <button
+                        onClick={() => setActivePopover(activePopover === 'move' ? null : 'move')}
+                        className="w-full flex items-center gap-2.5 px-3 py-3 bg-[#2c333a] hover:bg-[#38414a] text-white rounded-xl text-sm font-semibold border border-white/5 transition-all text-left"
+                      >
+                        <ArrowRightLeft className="w-4 h-4 text-muted-foreground" />
+                        <span>Mover</span>
+                      </button>
+                      <AnimatePresence>
+                        {activePopover === 'move' && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -8 }}
+                            className="mt-2 bg-[#2c333a] border border-white/10 rounded-2xl p-4 shadow-2xl space-y-3"
+                          >
+                            <div className="flex items-center justify-between pb-2 border-b border-white/5">
+                              <span className="text-xs font-bold text-white">Mover para Lista</span>
+                              <button onClick={() => setActivePopover(null)} className="p-0.5 hover:bg-white/10 rounded-lg"><X className="w-3.5 h-3.5 text-muted-foreground" /></button>
+                            </div>
+                            <div className="space-y-1.5">
+                              {columns.filter(c => c.id !== colId).map(col => (
+                                <button key={col.id} onClick={() => { onMoveTask(col.id); setActivePopover(null); setShowMobileActions(false); }}
+                                  className="w-full text-left p-2.5 bg-[#2c333a] hover:bg-primary/20 hover:text-white border border-white/5 hover:border-primary/30 text-xs text-muted-foreground rounded-xl font-medium transition-all">
+                                  {col.title}
+                                </button>
+                              ))}
+                              {columns.filter(c => c.id !== colId).length === 0 && (
+                                <p className="text-xs text-muted-foreground italic text-center py-2">Nenhuma outra lista.</p>
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    {/* Excluir */}
+                    <button
+                      onClick={() => { onDeleteTask(task.id); setShowMobileActions(false); }}
+                      className="w-full flex items-center gap-2.5 px-3 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-xl text-sm font-semibold border border-red-500/20 hover:border-red-500/30 transition-all text-left"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span>Excluir Card</span>
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </motion.div>
     </div>,
     document.body
+  );
+
+  // Lightbox renderizado em portal separado
+  const lightboxPortal = lightboxUrl ? createPortal(
+    <AnimatePresence>
+      <motion.div
+        key="lightbox"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[300] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
+        onClick={() => setLightboxUrl(null)}
+        onKeyDown={(e) => { if (e.key === 'Escape') setLightboxUrl(null); }}
+        tabIndex={-1}
+      >
+        <motion.img
+          initial={{ scale: 0.85, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.85, opacity: 0 }}
+          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+          src={lightboxUrl}
+          alt="Visualização do anexo"
+          className="max-w-full max-h-full rounded-2xl shadow-2xl object-contain"
+          onClick={e => e.stopPropagation()}
+        />
+        <button
+          onClick={() => setLightboxUrl(null)}
+          className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-colors backdrop-blur-sm"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </motion.div>
+    </AnimatePresence>,
+    document.body
+  ) : null;
+
+  return (
+    <>
+      {modalPortal}
+      {lightboxPortal}
+    </>
   );
 };
 

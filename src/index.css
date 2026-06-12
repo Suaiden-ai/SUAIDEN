@@ -5,6 +5,10 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --radius: 0.5rem;
+  }
+  
   html {
     scroll-behavior: smooth;
   }
@@ -40,6 +44,9 @@
     padding: 1px;
     background: linear-gradient(to right, theme('colors.primary.400'), theme('colors.accent.400'));
     -webkit-mask: 
+      linear-gradient(#fff 0 0) content-box, 
+      linear-gradient(#fff 0 0);
+    mask: 
       linear-gradient(#fff 0 0) content-box, 
       linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
