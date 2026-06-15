@@ -149,12 +149,11 @@ const UserDashboard: React.FC = () => {
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/5 pb-6">
         <div>
-          <span className="text-xs font-bold text-primary tracking-wider uppercase">Portal do Aluno</span>
           <h1 className="text-3xl font-extrabold text-white mt-1 tracking-tight">
             Olá, {profile?.full_name || 'Usuário'}
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Selecione um projeto para gerenciar suas tarefas.
+            Selecione um projeto para gerenciar.
           </p>
         </div>
       </div>
