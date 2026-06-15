@@ -3,13 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Plus, X, LayoutGrid, List, Search,
   MoreHorizontal, SortAsc, SortDesc, Paintbrush, Copy,
-  Paperclip, FileIcon, ImageIcon, Trash2, CheckSquare, AlignLeft as AlignLeftIcon, Check, Loader2, Upload, MessageSquare
+  Paperclip, FileIcon, Trash2, CheckSquare, AlignLeft as AlignLeftIcon, Check, Loader2, Upload, MessageSquare
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../services/supabase';
 import CardModal, { Task, Column, MemberInfo, initials, avatarColor } from '../../components/user/CardModal';
 import BoardListView from '../../components/user/BoardListView';
 import { useBoardBackground } from '../../context/BoardBackgroundContext';
+import { createPortal } from 'react-dom';
 
 // ────────────────────────────────────────────
 // Tipos
@@ -95,6 +96,71 @@ const TaskCardCover: React.FC<{ imageUrl: string }> = ({ imageUrl }) => {
   }
 };
 
+const TicketFilePreview: React.FC<{ file: File; onZoom: () => void }> = ({ file, onZoom }) => {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [file]);
+
+  const isImage = file.type.startsWith('image/');
+  const isVideo = file.type.startsWith('video/');
+
+  if (!previewUrl) return null;
+
+  if (isImage) {
+    return (
+      <div className="relative w-full h-full group/thumb cursor-pointer" onClick={(e) => { e.stopPropagation(); onZoom(); }}>
+        <img src={previewUrl} alt={file.name} className="w-full h-full object-cover rounded-lg" />
+        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l5 5M10 17a7 7 0 1 1 0-14 7 7 0 0 1 0 14z" />
+          </svg>
+        </div>
+      </div>
+    );
+  }
+
+  if (isVideo) {
+    return (
+      <div 
+        className="relative w-full h-full rounded-lg overflow-hidden bg-black flex items-center justify-center group/thumb cursor-pointer"
+        onClick={(e) => { e.stopPropagation(); onZoom(); }}
+        onMouseEnter={(e) => {
+          const video = e.currentTarget.querySelector('video');
+          if (video) video.play().catch(() => {});
+        }}
+        onMouseLeave={(e) => {
+          const video = e.currentTarget.querySelector('video');
+          if (video) {
+            video.pause();
+            video.currentTime = 0;
+          }
+        }}
+      >
+        <video src={previewUrl} className="w-full h-full object-cover" muted loop playsInline />
+        <div className="absolute inset-0 bg-black/40 flex items-center justify-center group-hover/thumb:opacity-100 transition-opacity duration-200">
+          <span className="p-1 bg-white/20 backdrop-blur-md rounded-full border border-white/20 text-white shadow-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l5 5M10 17a7 7 0 1 1 0-14 7 7 0 0 1 0 14z" />
+            </svg>
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full h-full bg-white/5 flex items-center justify-center rounded-lg border border-white/5">
+      <FileIcon className="w-5 h-5 text-red-400" />
+    </div>
+  );
+};
+
 // ────────────────────────────────────────────
 // Componente
 // ────────────────────────────────────────────
@@ -164,6 +230,21 @@ const KanbanPage: React.FC = () => {
   const [newChecklistItem, setNewChecklistItem] = useState('');
   const [ticketFiles, setTicketFiles] = useState<File[]>([]);
   const ticketFileInputRef = useRef<HTMLInputElement>(null);
+
+  const [ticketLightboxFile, setTicketLightboxFile] = useState<File | null>(null);
+  const [ticketLightboxUrl, setTicketLightboxUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!ticketLightboxFile) {
+      setTicketLightboxUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(ticketLightboxFile);
+    setTicketLightboxUrl(url);
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [ticketLightboxFile]);
 
   const handleTicketFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -741,13 +822,14 @@ const KanbanPage: React.FC = () => {
   }
 
   return (
+    <>
     <div className="space-y-4 h-full flex flex-col relative overflow-hidden">
 
       {/* ── Top Bar (Cabeçalho Secundário Compacto) ── */}
       <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-white/10 shrink-0">
         
         {/* Lado Esquerdo: Título e Voltar */}
-        <div className="flex items-center gap-3">
+        <div className="flex-1 flex items-center gap-3 min-w-0">
           <button 
             onClick={handleBack} 
             className="p-1.5 hover:bg-white/10 border border-white/10 rounded-xl transition-all text-muted-foreground hover:text-white"
@@ -785,7 +867,7 @@ const KanbanPage: React.FC = () => {
 
         {/* Meio: Botão Abrir Chamado (Apenas User) */}
         {currentUserRole !== 'admin' && (
-          <div className="flex-1 flex justify-center">
+          <div className="flex justify-center shrink-0">
             <button 
               onClick={() => setIsTicketModalOpen(true)}
               className="px-5 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-primary/20 flex items-center gap-2 border border-white/10"
@@ -797,7 +879,7 @@ const KanbanPage: React.FC = () => {
         )}
  
         {/* Lado Direito: Filtros, View Toggle e Ações */}
-        <div className="flex items-center gap-2 sm:gap-3 ml-auto">
+        <div className="flex-1 flex items-center justify-end gap-2 sm:gap-3">
           
           {/* Toggle de Visualização (Kanban / Lista) */}
           <div className="hidden sm:flex items-center bg-black/20 p-1 rounded-xl border border-white/10">
@@ -1451,7 +1533,9 @@ const KanbanPage: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* ── Modal de Abrir Chamado (Apenas User) ── */}
+    </div>
+
+      {/* ── Modal de Abrir Chamado (fora do overflow-hidden) ── */}
       <AnimatePresence>
         {isTicketModalOpen && (
           <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
@@ -1470,7 +1554,7 @@ const KanbanPage: React.FC = () => {
               className="relative w-full max-w-lg max-h-[90vh] bg-[#22272b] border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
             >
               {/* Header */}
-              <div className="flex items-center justify-between p-6 border-b border-white/5 shrink-0">
+              <div className="absolute top-0 inset-x-0 z-10 flex items-center justify-between p-6 border-b border-white/5 bg-[#22272b]/80 backdrop-blur-md shrink-0">
                 <div>
                   <h2 className="text-xl font-bold text-white tracking-tight">Abrir Chamado</h2>
                   <p className="text-xs text-muted-foreground mt-1">Preencha os dados abaixo para solicitar uma nova tarefa.</p>
@@ -1484,7 +1568,7 @@ const KanbanPage: React.FC = () => {
               </div>
 
               {/* Form */}
-              <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
+              <div className="pt-24 p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-white">Título do Chamado <span className="text-red-400">*</span></label>
                   <input
@@ -1509,31 +1593,38 @@ const KanbanPage: React.FC = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-white">Prioridade</label>
-                    <div className="flex items-center gap-2 h-[46px]">
-                      {PRESET_LABELS.map(label => (
-                        <button
-                          key={label.text}
-                          onClick={() => setTicketPriority(label)}
-                          className={`flex-1 h-full rounded-xl text-xs font-bold transition-all border ${ticketPriority?.text === label.text ? 'border-white/50 shadow-lg scale-105' : 'border-transparent opacity-60 hover:opacity-100 hover:scale-[1.02]'}`}
-                          style={{ backgroundColor: label.color, color: '#fff' }}
-                        >
-                          {label.text}
-                        </button>
-                      ))}
-                    </div>
+                    <label className="text-sm font-bold text-white">Prazo de Resolução (SLA)</label>
+                    <input
+                      type="date"
+                      value={ticketDueDate}
+                      onChange={(e) => setTicketDueDate(e.target.value)}
+                      onClick={(e) => {
+                        try {
+                          e.currentTarget.showPicker();
+                        } catch (err) {
+                          // fallback para navegadores antigos
+                        }
+                      }}
+                      className="w-full bg-[#1d2125] border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-sm text-white placeholder:text-gray-400 outline-none transition-all cursor-pointer"
+                      style={{ colorScheme: 'dark' }}
+                    />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-white">Prazo de Resolução (SLA / Opcional)</label>
-                  <input
-                    type="date"
-                    value={ticketDueDate}
-                    onChange={(e) => setTicketDueDate(e.target.value)}
-                    className="w-full bg-[#1d2125] border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-sm text-white placeholder:text-gray-400 outline-none transition-all"
-                    style={{ colorScheme: 'dark' }}
-                  />
+                  <label className="text-sm font-bold text-white">Prioridade</label>
+                  <div className="flex items-center gap-2 h-[46px]">
+                    {PRESET_LABELS.map(label => (
+                      <button
+                        key={label.text}
+                        onClick={() => setTicketPriority(label)}
+                        className={`flex-1 h-full rounded-xl text-xs font-bold transition-all border ${ticketPriority?.text === label.text ? 'border-white/50 shadow-lg scale-105' : 'border-transparent opacity-60 hover:opacity-100 hover:scale-[1.02]'}`}
+                        style={{ backgroundColor: label.color, color: '#fff' }}
+                      >
+                        {label.text}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -1550,7 +1641,7 @@ const KanbanPage: React.FC = () => {
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-white flex items-center gap-2">
                     <CheckSquare className="w-4 h-4 text-muted-foreground" />
-                    Checklist de Tarefas (Opcional)
+                    Checklist de Tarefas
                   </label>
                   <div className="space-y-2">
                     {ticketChecklist.map((item, index) => (
@@ -1601,7 +1692,7 @@ const KanbanPage: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <label className="text-sm font-bold text-white flex items-center gap-2">
                       <Paperclip className="w-4 h-4 text-muted-foreground" />
-                      Anexos (Opcional)
+                      Anexos
                     </label>
                     <button
                       onClick={() => ticketFileInputRef.current?.click()}
@@ -1621,15 +1712,10 @@ const KanbanPage: React.FC = () => {
                   {ticketFiles.length > 0 && (
                     <div className="space-y-2 max-h-32 overflow-y-auto pr-2 custom-scrollbar">
                       {ticketFiles.map((file, i) => {
-                        const isImage = file.type.startsWith('image/');
                         return (
                           <div key={i} className="flex items-center gap-3 p-2 bg-black/10 hover:bg-black/20 border border-white/5 rounded-xl group transition-all">
                             <div className="w-10 h-10 shrink-0 rounded-lg overflow-hidden bg-white/5 flex items-center justify-center border border-white/5 relative">
-                              {isImage ? (
-                                <ImageIcon className="w-5 h-5 text-emerald-400" />
-                              ) : (
-                                <FileIcon className="w-5 h-5 text-red-400" />
-                              )}
+                              <TicketFilePreview file={file} onZoom={() => setTicketLightboxFile(file)} />
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-xs font-semibold text-white truncate" title={file.name}>{file.name}</p>
@@ -1676,7 +1762,55 @@ const KanbanPage: React.FC = () => {
           </div>
         )}
       </AnimatePresence>
-    </div>
+      {/* Lightbox para os anexos do chamado (Imagens/Vídeos locais) */}
+      {ticketLightboxFile && ticketLightboxUrl && createPortal(
+        <AnimatePresence>
+          <motion.div
+            key="ticket-lightbox"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[250] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
+            onClick={() => setTicketLightboxFile(null)}
+            onKeyDown={(e) => { if (e.key === 'Escape') setTicketLightboxFile(null); }}
+            tabIndex={-1}
+          >
+            {ticketLightboxFile.type.startsWith('video/') ? (
+              <motion.video
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                src={ticketLightboxUrl}
+                controls
+                autoPlay
+                className="max-w-full max-h-full rounded-2xl shadow-2xl"
+                onClick={e => e.stopPropagation()}
+                style={{ colorScheme: 'dark' }}
+              />
+            ) : (
+              <motion.img
+                initial={{ scale: 0.85, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.85, opacity: 0 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                src={ticketLightboxUrl}
+                alt={ticketLightboxFile.name}
+                className="max-w-full max-h-full rounded-2xl shadow-2xl object-contain"
+                onClick={e => e.stopPropagation()}
+              />
+            )}
+            <button
+              onClick={() => setTicketLightboxFile(null)}
+              className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-colors backdrop-blur-sm"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </motion.div>
+        </AnimatePresence>,
+        document.body
+      )}
+    </>
   );
 };
 

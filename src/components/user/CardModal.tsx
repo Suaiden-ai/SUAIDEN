@@ -126,6 +126,7 @@ const CardModal: React.FC<CardModalProps> = ({
   const [isEditingChecklistTitle, setIsEditingChecklistTitle] = useState(false);
   const [isAddingChecklistItem, setIsAddingChecklistItem] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [videoLightboxUrl, setVideoLightboxUrl] = useState<string | null>(null);
   const [showMobileActions, setShowMobileActions] = useState(false);
   const [hideCheckedItems, setHideCheckedItems] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
@@ -413,17 +414,22 @@ const CardModal: React.FC<CardModalProps> = ({
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  // Suporte a colar imagens diretamente da área de transferência (Ctrl + V)
+  // Suporte a colar imagens e vídeos diretamente da área de transferência (Ctrl + V)
   useEffect(() => {
     const handlePaste = async (e: ClipboardEvent) => {
       const items = e.clipboardData?.items;
       if (!items || !currentUserId) return;
 
       for (let i = 0; i < items.length; i++) {
-        if (items[i].type.indexOf('image') !== -1) {
+        const isImage = items[i].type.indexOf('image') !== -1;
+        const isVideo = items[i].type.indexOf('video') !== -1;
+
+        if (isImage || isVideo) {
           const file = items[i].getAsFile();
           if (file) {
-            const fileName = file.name || `clipboard-image-${Date.now()}.png`;
+            const ext = isVideo ? (file.type.split('/')[1] || 'mp4') : 'png';
+            const defaultName = isVideo ? `clipboard-video-${Date.now()}.${ext}` : `clipboard-image-${Date.now()}.${ext}`;
+            const fileName = file.name || defaultName;
             const fileWithName = new File([file], fileName, { type: file.type });
             await uploadFile(fileWithName);
           }
@@ -931,71 +937,100 @@ const CardModal: React.FC<CardModalProps> = ({
 
                     {attachments.map(att => {
                       const isImage = att.file_type.startsWith('image/');
+                      const isVideo = att.file_type.startsWith('video/');
                       return (
-                        <div key={att.id} className="flex items-center gap-3 p-3 bg-black/10 hover:bg-black/20 border border-white/5 rounded-xl group transition-all">
-                          <div
-                            className={`w-12 h-12 shrink-0 rounded-xl overflow-hidden bg-white/5 flex items-center justify-center border border-white/5 relative group/thumb ${isImage ? 'cursor-pointer' : ''}`}
-                            onClick={() => isImage && setLightboxUrl(att.file_url)}
-                          >
-                            {isImage ? (
-                              <>
-                                <img src={att.file_url} alt={att.file_name} className="w-full h-full object-cover" />
-                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center">
-                                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l5 5M10 17a7 7 0 1 1 0-14 7 7 0 0 1 0 14z" />
-                                  </svg>
-                                </div>
-                              </>
-                            ) : att.file_type === 'application/pdf' ? (
-                              <FileText className="w-6 h-6 text-red-400" />
-                            ) : (
-                              <ImageIcon className="w-6 h-6 text-muted-foreground" />
-                            )}
-                          </div>
-
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-semibold text-white truncate" title={att.file_name}>{att.file_name}</p>
-                            <p className="text-[10px] text-muted-foreground mt-0.5 flex flex-wrap items-center gap-2">
-                              <span>{formatSize(att.file_size)} · {timeAgo(att.created_at)}</span>
-                              {taskData.cover_image === att.file_url && (
-                                <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-lg border border-emerald-500/20">
-                                  <ImageIcon className="w-2.5 h-2.5" /> Capa
-                                </span>
+                        <div key={att.id} className="space-y-0">
+                          <div className="flex items-center gap-3 p-3 bg-black/10 hover:bg-black/20 border border-white/5 rounded-xl group transition-all">
+                            <div
+                              className={`w-12 h-12 shrink-0 rounded-xl overflow-hidden bg-white/5 flex items-center justify-center border border-white/5 relative group/thumb ${isImage || isVideo ? 'cursor-pointer' : ''}`}
+                              onClick={() => isImage && setLightboxUrl(att.file_url)}
+                            >
+                              {isImage ? (
+                                <>
+                                  <img src={att.file_url} alt={att.file_name} className="w-full h-full object-cover" />
+                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l5 5M10 17a7 7 0 1 1 0-14 7 7 0 0 1 0 14z" />
+                                    </svg>
+                                  </div>
+                                </>
+                              ) : isVideo ? (
+                                <>
+                                  <video src={att.file_url} className="w-full h-full object-cover" muted />
+                                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white drop-shadow" fill="white" viewBox="0 0 24 24">
+                                      <path d="M8 5v14l11-7z" />
+                                    </svg>
+                                  </div>
+                                </>
+                              ) : att.file_type === 'application/pdf' ? (
+                                <FileText className="w-6 h-6 text-red-400" />
+                              ) : (
+                                <ImageIcon className="w-6 h-6 text-muted-foreground" />
                               )}
-                            </p>
+                            </div>
+
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-semibold text-white truncate" title={att.file_name}>{att.file_name}</p>
+                              <p className="text-[10px] text-muted-foreground mt-0.5 flex flex-wrap items-center gap-2">
+                                <span>{formatSize(att.file_size)} · {timeAgo(att.created_at)}</span>
+                                {taskData.cover_image === att.file_url && (
+                                  <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-lg border border-emerald-500/20">
+                                    <ImageIcon className="w-2.5 h-2.5" /> Capa
+                                  </span>
+                                )}
+                                {isVideo && (
+                                  <span className="inline-flex items-center gap-1 text-[9px] font-bold text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded-lg border border-blue-500/20">
+                                    Vídeo
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                              {isImage && currentUserRole === 'admin' && (
+                                <button
+                                  onClick={async () => {
+                                    const isCurrentCover = taskData.cover_image === att.file_url;
+                                    await update({
+                                      cover_image: isCurrentCover ? null : att.file_url,
+                                      cover_color: isCurrentCover ? null : null
+                                    });
+                                  }}
+                                  className={`p-1.5 rounded-xl border transition-all ${
+                                    taskData.cover_image === att.file_url
+                                      ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20'
+                                      : 'hover:bg-white/10 border-transparent text-muted-foreground hover:text-white'
+                                  }`}
+                                  title={taskData.cover_image === att.file_url ? "Remover capa" : "Tornar capa"}
+                                >
+                                  <Palette className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                              <a href={att.file_url} target="_blank" rel="noopener noreferrer"
+                                className="p-1.5 hover:bg-white/10 text-muted-foreground hover:text-white rounded-xl transition-colors" title="Baixar">
+                                <Download className="w-3.5 h-3.5" />
+                              </a>
+                              {currentUserRole === 'admin' && (
+                                <button onClick={() => handleDeleteAttachment(att)}
+                                  className="p-1.5 hover:bg-destructive/10 text-muted-foreground hover:text-destructive rounded-xl transition-colors" title="Remover">
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
                           </div>
 
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                            {isImage && currentUserRole === 'admin' && (
-                              <button
-                                onClick={async () => {
-                                  const isCurrentCover = taskData.cover_image === att.file_url;
-                                  await update({
-                                    cover_image: isCurrentCover ? null : att.file_url,
-                                    cover_color: isCurrentCover ? null : null
-                                  });
-                                }}
-                                className={`p-1.5 rounded-xl border transition-all ${
-                                  taskData.cover_image === att.file_url
-                                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20'
-                                    : 'hover:bg-white/10 border-transparent text-muted-foreground hover:text-white'
-                                }`}
-                                title={taskData.cover_image === att.file_url ? "Remover capa" : "Tornar capa"}
-                              >
-                                <Palette className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                            <a href={att.file_url} target="_blank" rel="noopener noreferrer"
-                              className="p-1.5 hover:bg-white/10 text-muted-foreground hover:text-white rounded-xl transition-colors" title="Baixar">
-                              <Download className="w-3.5 h-3.5" />
-                            </a>
-                            {currentUserRole === 'admin' && (
-                              <button onClick={() => handleDeleteAttachment(att)}
-                                className="p-1.5 hover:bg-destructive/10 text-muted-foreground hover:text-destructive rounded-xl transition-colors" title="Remover">
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                          </div>
+                          {/* Player de vídeo inline */}
+                          {isVideo && (
+                            <div className="px-3 pb-3 -mt-2">
+                              <video
+                                src={att.file_url}
+                                controls
+                                className="w-full rounded-xl bg-black border border-white/5 max-h-56 object-contain"
+                                style={{ colorScheme: 'dark' }}
+                              />
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -1805,10 +1840,47 @@ const CardModal: React.FC<CardModalProps> = ({
     document.body
   ) : null;
 
+  // Lightbox de vídeo renderizado em portal separado
+  const videoLightboxPortal = videoLightboxUrl ? createPortal(
+    <AnimatePresence>
+      <motion.div
+        key="video-lightbox"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[300] flex items-center justify-center bg-black/95 backdrop-blur-sm p-4"
+        onClick={() => setVideoLightboxUrl(null)}
+        onKeyDown={(e) => { if (e.key === 'Escape') setVideoLightboxUrl(null); }}
+        tabIndex={-1}
+      >
+        <motion.video
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.9, opacity: 0 }}
+          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+          src={videoLightboxUrl}
+          controls
+          autoPlay
+          className="max-w-full max-h-full rounded-2xl shadow-2xl"
+          onClick={e => e.stopPropagation()}
+          style={{ colorScheme: 'dark' }}
+        />
+        <button
+          onClick={() => setVideoLightboxUrl(null)}
+          className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-colors backdrop-blur-sm"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </motion.div>
+    </AnimatePresence>,
+    document.body
+  ) : null;
+
   return (
     <>
       {modalPortal}
       {lightboxPortal}
+      {videoLightboxPortal}
     </>
   );
 };
