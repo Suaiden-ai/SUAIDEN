@@ -64,7 +64,14 @@ const BoardListView: React.FC<BoardListViewProps> = ({ columns, onTaskClick }) =
           {flatTasks.map(({ task, column }) => {
             const hasChecklist = task.checklist && task.checklist.length > 0;
             const completedItems = hasChecklist ? task.checklist.filter(i => i.done).length : 0;
-            const isDueDateOverdue = task.due_date && new Date(task.due_date) < new Date() && !task.is_done;
+            
+            let taskDate: Date | null = null;
+            if (task.due_date) {
+              const cleanDateStr = task.due_date.split('T')[0];
+              const [year, month, day] = cleanDateStr.split('-').map(Number);
+              taskDate = new Date(year, month - 1, day);
+            }
+            const isDueDateOverdue = taskDate && taskDate < new Date() && !task.is_done;
 
             return (
               <div 
@@ -134,10 +141,10 @@ const BoardListView: React.FC<BoardListViewProps> = ({ columns, onTaskClick }) =
 
                 {/* Infos (Data, Checklist) */}
                 <div className="col-span-2 flex items-center justify-end gap-3 text-xs text-white/50">
-                  {task.due_date && (
+                  {taskDate && (
                     <div className={`flex items-center gap-1 ${task.is_done ? 'bg-green-500/20 text-green-400' : isDueDateOverdue ? 'bg-red-500/20 text-red-400' : 'bg-white/5 text-white/70'} px-2 py-1 rounded`}>
                       <Calendar className="w-3.5 h-3.5" />
-                      <span>{format(new Date(task.due_date), "d MMM", { locale: ptBR })}</span>
+                      <span>{format(taskDate, "d MMM", { locale: ptBR })}</span>
                     </div>
                   )}
                   {hasChecklist && (
