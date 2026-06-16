@@ -221,7 +221,12 @@ const KanbanPage: React.FC = () => {
 
   // Chamado (User)
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
+  const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
+  const [showSuccessNotification, setShowSuccessNotification] = useState(false);
   const [ticketTitle, setTicketTitle] = useState('');
+
+  // Checklist expandido no card (Kanban)
+  const [expandedChecklists, setExpandedChecklists] = useState<Record<string, boolean>>({});
   const [ticketDesc, setTicketDesc] = useState('');
   const [ticketSector, setTicketSector] = useState('');
   const [ticketPriority, setTicketPriority] = useState<{text: string, color: string} | null>(null);
@@ -275,7 +280,12 @@ const KanbanPage: React.FC = () => {
   const getDueDateInfo = (dueDate: string | null, isDone: boolean) => {
     if (!dueDate) return null;
     const now = new Date();
-    const date = new Date(dueDate);
+    
+    // Tratamento para evitar que fusos horários mudem o dia (ex: GMT-3 puxa 1 dia atrás)
+    const cleanDateStr = dueDate.split('T')[0];
+    const [year, month, day] = cleanDateStr.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    
     const diff = date.getTime() - now.getTime();
     const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
     const formattedDate = date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' }).replace('.', '');
@@ -609,6 +619,38 @@ const KanbanPage: React.FC = () => {
     }
   };
 
+  const handleToggleCardChecklistItem = async (taskId: string, colId: string, itemId: string) => {
+    if (currentUserRole !== 'admin') return;
+    const col = columns.find(c => c.id === colId);
+    const task = col?.tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    const updatedChecklist = task.checklist.map(item =>
+      item.id === itemId ? { ...item, done: !item.done } : item
+    );
+
+    setColumns(prev => prev.map(c => {
+      if (c.id === colId) {
+        return {
+          ...c,
+          tasks: c.tasks.map(t => t.id === taskId ? { ...t, checklist: updatedChecklist } : t)
+        };
+      }
+      return c;
+    }));
+
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .update({ checklist: updatedChecklist })
+        .eq('id', taskId);
+      if (error) throw error;
+    } catch (err) {
+      console.error('Erro ao atualizar checklist do cartão:', err);
+      fetchBoardData();
+    }
+  };
+
   // ── Cards ──
   const handleAddCard = async (columnId: string) => {
     if (currentUserRole !== 'admin') return;
@@ -626,6 +668,7 @@ const KanbanPage: React.FC = () => {
   };
 
   const handleSubmitTicket = async () => {
+    if (isSubmittingTicket) return;
     if (!board?.ticket_column_id) {
       alert('O administrador ainda não configurou uma coluna de chamados para este quadro.');
       return;
@@ -633,6 +676,7 @@ const KanbanPage: React.FC = () => {
     if (!ticketTitle.trim()) return;
 
     try {
+      setIsSubmittingTicket(true);
       const targetCol = columns.find(c => c.id === board.ticket_column_id);
       const position = targetCol ? targetCol.tasks.length : 0;
       
@@ -696,10 +740,13 @@ const KanbanPage: React.FC = () => {
       setNewChecklistItem('');
       setTicketFiles([]);
       
-      alert('Chamado aberto com sucesso!');
+      setShowSuccessNotification(true);
+      setTimeout(() => setShowSuccessNotification(false), 3000);
     } catch (err) {
       console.error('Erro ao criar chamado:', err);
       alert('Ocorreu um erro ao criar o chamado. Tente novamente.');
+    } finally {
+      setIsSubmittingTicket(false);
     }
   };
 
@@ -1348,9 +1395,26 @@ const KanbanPage: React.FC = () => {
                           <div className="flex items-center gap-2 flex-wrap">
                             {task.description && <div title="Possui descrição"><AlignLeftIcon className="w-3.5 h-3.5 text-muted-foreground/70" /></div>}
                             {task.checklist?.length > 0 && (
-                              <div className={`flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${task.checklist.every(i => i.done) ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/5 text-muted-foreground'}`}>
-                                <CheckSquare className="w-3 h-3" /><span>{task.checklist.filter(i => i.done).length}/{task.checklist.length}</span>
-                              </div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setExpandedChecklists(prev => ({
+                                    ...prev,
+                                    [task.id]: !prev[task.id]
+                                  }));
+                                }}
+                                title="Expandir checklist"
+                                className={`flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-md transition-all ${
+                                  expandedChecklists[task.id]
+                                    ? 'bg-blue-500/20 text-blue-400 border-blue-500/30 shadow-sm shadow-blue-500/10'
+                                    : task.checklist.every(i => i.done)
+                                      ? 'bg-emerald-500/20 text-emerald-400'
+                                      : 'bg-transparent hover:bg-white/5 text-muted-foreground'
+                                }`}
+                              >
+                                <CheckSquare className="w-3 h-3" />
+                                <span>{task.checklist.filter(i => i.done).length}/{task.checklist.length}</span>
+                              </button>
                             )}
 
                             {/* SLA/Prazo */}
@@ -1392,6 +1456,44 @@ const KanbanPage: React.FC = () => {
                             </div>
                           )}
                         </div>
+
+                        {/* Renderização do Checklist Inline do Card */}
+                        {expandedChecklists[task.id] && task.checklist?.length > 0 && (
+                          <div className="mt-3 pt-3 border-t border-white/5 flex flex-col gap-1.5">
+                            {task.checklist.map(item => (
+                              <div
+                                key={item.id}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (currentUserRole === 'admin') {
+                                    handleToggleCardChecklistItem(task.id, column.id, item.id);
+                                  }
+                                }}
+                                className={`flex items-center gap-2 p-1 rounded-xl transition-colors ${
+                                  currentUserRole === 'admin'
+                                    ? 'hover:bg-white/5 cursor-pointer group/item'
+                                    : 'cursor-default'
+                                }`}
+                              >
+                                <button
+                                  disabled={currentUserRole !== 'admin'}
+                                  className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 transition-all ${
+                                    item.done
+                                      ? 'bg-blue-500 border-blue-500 text-white shadow-md shadow-blue-500/20'
+                                      : 'bg-transparent border-white/20'
+                                  } ${currentUserRole === 'admin' ? 'group-hover/item:border-blue-500/50' : ''}`}
+                                >
+                                  {item.done && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                                </button>
+                                <span className={`text-xs truncate transition-all ${
+                                  item.done ? 'line-through text-muted-foreground/60' : 'text-white/80'
+                                }`}>
+                                  {item.text}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
@@ -1597,6 +1699,7 @@ const KanbanPage: React.FC = () => {
                     <input
                       type="date"
                       value={ticketDueDate}
+                      min={new Date().toLocaleDateString('en-CA')}
                       onChange={(e) => setTicketDueDate(e.target.value)}
                       onClick={(e) => {
                         try {
@@ -1752,10 +1855,17 @@ const KanbanPage: React.FC = () => {
                 </button>
                 <button
                   onClick={handleSubmitTicket}
-                  disabled={!ticketTitle.trim()}
-                  className="px-6 py-2 bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:hover:bg-primary text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-primary/20"
+                  disabled={!ticketTitle.trim() || isSubmittingTicket}
+                  className="px-6 py-2 bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:hover:bg-primary text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
                 >
-                  Enviar Chamado
+                  {isSubmittingTicket ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Enviando...</span>
+                    </>
+                  ) : (
+                    'Enviar Chamado'
+                  )}
                 </button>
               </div>
             </motion.div>
@@ -1810,6 +1920,23 @@ const KanbanPage: React.FC = () => {
         </AnimatePresence>,
         document.body
       )}
+
+      {/* Notificação de Sucesso */}
+      <AnimatePresence>
+        {showSuccessNotification && (
+          <motion.div
+            initial={{ opacity: 0, y: -50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.9 }}
+            className="fixed top-6 left-1/2 -translate-x-1/2 z-[300] bg-emerald-600 text-white px-6 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 border border-emerald-500/20"
+          >
+            <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+              <Check className="w-4 h-4 stroke-[3]" />
+            </div>
+            <span className="font-bold text-sm tracking-wide">Chamado criado com sucesso!</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 };

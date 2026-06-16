@@ -127,6 +127,7 @@ const CardModal: React.FC<CardModalProps> = ({
   const [isAddingChecklistItem, setIsAddingChecklistItem] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [videoLightboxUrl, setVideoLightboxUrl] = useState<string | null>(null);
+  const [pdfLightboxUrl, setPdfLightboxUrl] = useState<string | null>(null);
   const [showMobileActions, setShowMobileActions] = useState(false);
   const [hideCheckedItems, setHideCheckedItems] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
@@ -643,6 +644,7 @@ const CardModal: React.FC<CardModalProps> = ({
                           <input 
                             type="date"
                             value={taskData.due_date ? taskData.due_date.substring(0, 10) : ''}
+                            min={new Date().toLocaleDateString('en-CA')}
                             onChange={async (e) => {
                               const newVal = e.target.value;
                               await update({ due_date: newVal ? newVal : null });
@@ -652,7 +654,9 @@ const CardModal: React.FC<CardModalProps> = ({
                           />
                         ) : taskData.due_date ? (
                           (() => {
-                            const date = new Date(taskData.due_date);
+                            const cleanDateStr = taskData.due_date.split('T')[0];
+                            const [year, month, day] = cleanDateStr.split('-').map(Number);
+                            const date = new Date(year, month - 1, day);
                             const formattedDate = date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' }).replace('.', '');
                             return (
                               <div className="h-7 px-2.5 bg-white/5 border border-white/5 text-xs text-white rounded-xl flex items-center font-medium">
@@ -942,8 +946,11 @@ const CardModal: React.FC<CardModalProps> = ({
                         <div key={att.id} className="space-y-0">
                           <div className="flex items-center gap-3 p-3 bg-black/10 hover:bg-black/20 border border-white/5 rounded-xl group transition-all">
                             <div
-                              className={`w-12 h-12 shrink-0 rounded-xl overflow-hidden bg-white/5 flex items-center justify-center border border-white/5 relative group/thumb ${isImage || isVideo ? 'cursor-pointer' : ''}`}
-                              onClick={() => isImage && setLightboxUrl(att.file_url)}
+                              className={`w-12 h-12 shrink-0 rounded-xl overflow-hidden bg-white/5 flex items-center justify-center border border-white/5 relative group/thumb ${isImage || isVideo || att.file_type === 'application/pdf' ? 'cursor-pointer' : ''}`}
+                              onClick={() => {
+                                if (isImage) setLightboxUrl(att.file_url);
+                                else if (att.file_type === 'application/pdf') setPdfLightboxUrl(att.file_url);
+                              }}
                             >
                               {isImage ? (
                                 <>
@@ -964,7 +971,14 @@ const CardModal: React.FC<CardModalProps> = ({
                                   </div>
                                 </>
                               ) : att.file_type === 'application/pdf' ? (
-                                <FileText className="w-6 h-6 text-red-400" />
+                                <>
+                                  <FileText className="w-6 h-6 text-red-400" />
+                                  <div className="absolute inset-0 bg-red-500/20 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center rounded-xl">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l5 5M10 17a7 7 0 1 1 0-14 7 7 0 0 1 0 14z" />
+                                    </svg>
+                                  </div>
+                                </>
                               ) : (
                                 <ImageIcon className="w-6 h-6 text-muted-foreground" />
                               )}
@@ -1840,6 +1854,66 @@ const CardModal: React.FC<CardModalProps> = ({
     document.body
   ) : null;
 
+  // Lightbox de PDF renderizado em portal separado
+  const pdfLightboxPortal = pdfLightboxUrl ? createPortal(
+    <AnimatePresence>
+      <motion.div
+        key="pdf-lightbox"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[300] flex flex-col bg-black/95 backdrop-blur-sm"
+        onClick={() => setPdfLightboxUrl(null)}
+        onKeyDown={(e) => { if (e.key === 'Escape') setPdfLightboxUrl(null); }}
+        tabIndex={-1}
+      >
+        {/* Barra superior */}
+        <div
+          className="flex items-center justify-between px-4 py-3 bg-black/60 border-b border-white/10 shrink-0"
+          onClick={e => e.stopPropagation()}
+        >
+          <div className="flex items-center gap-2">
+            <FileText className="w-4 h-4 text-red-400" />
+            <span className="text-sm font-semibold text-white truncate max-w-xs">
+              {pdfLightboxUrl.split('/').pop()?.split('?')[0] ?? 'documento.pdf'}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <a
+              href={pdfLightboxUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              download
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-semibold transition-colors"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Baixar
+            </a>
+            <button
+              onClick={() => setPdfLightboxUrl(null)}
+              className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Iframe do PDF */}
+        <motion.iframe
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ delay: 0.1 }}
+          src={pdfLightboxUrl}
+          className="flex-1 w-full border-0"
+          title="Visualização do PDF"
+          onClick={e => e.stopPropagation()}
+        />
+      </motion.div>
+    </AnimatePresence>,
+    document.body
+  ) : null;
+
   // Lightbox de vídeo renderizado em portal separado
   const videoLightboxPortal = videoLightboxUrl ? createPortal(
     <AnimatePresence>
@@ -1881,6 +1955,7 @@ const CardModal: React.FC<CardModalProps> = ({
       {modalPortal}
       {lightboxPortal}
       {videoLightboxPortal}
+      {pdfLightboxPortal}
     </>
   );
 };
