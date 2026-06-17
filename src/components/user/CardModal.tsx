@@ -443,7 +443,7 @@ const CardModal: React.FC<CardModalProps> = ({
   }, [task.id, currentUserId]);
 
   const handleDeleteAttachment = async (attachment: Attachment) => {
-    if (currentUserRole !== 'admin') return;
+    if (currentUserRole !== 'admin' && currentUserRole !== 'developer') return;
     try {
       // Se o anexo deletado for a capa atual, removemos ela da task
       if (taskData.cover_image === attachment.file_url) {
@@ -498,7 +498,7 @@ const CardModal: React.FC<CardModalProps> = ({
                 />
               </>
             )}
-            {currentUserRole === 'admin' && (
+            {(currentUserRole === 'admin' || currentUserRole === 'developer') && (
               <button 
                 onClick={() => update({ cover_color: null, cover_image: null })} 
                 className="absolute bottom-2 right-2 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1.5 bg-black/60 hover:bg-black/80 text-white rounded-xl transition-all opacity-0 group-hover:opacity-100 z-20"
@@ -534,8 +534,8 @@ const CardModal: React.FC<CardModalProps> = ({
                 <input type="text" value={cardTitle} onChange={e => setCardTitle(e.target.value)}
                   onBlur={() => update({ title: cardTitle })}
                   onKeyDown={e => { if (e.key === 'Enter') update({ title: cardTitle }); }}
-                  readOnly={currentUserRole !== 'admin'}
-                  className={`w-full bg-transparent border-b border-transparent ${currentUserRole === 'admin' ? 'focus:border-primary' : ''} text-2xl font-bold outline-none pb-1 transition-colors ${
+                  readOnly={currentUserRole !== 'admin' && currentUserRole !== 'developer'}
+                  className={`w-full bg-transparent border-b border-transparent ${(currentUserRole === 'admin' || currentUserRole === 'developer') ? 'focus:border-primary' : ''} text-2xl font-bold outline-none pb-1 transition-colors ${
                     taskData.is_done ? 'line-through text-muted-foreground/60' : 'text-white'
                   }`} 
                 />
@@ -543,7 +543,7 @@ const CardModal: React.FC<CardModalProps> = ({
             </div>
             <div className="flex items-center gap-2">
               {/* Botão de 3 pontinhos - apenas mobile */}
-              {currentUserRole === 'admin' && (
+              {(currentUserRole === 'admin' || currentUserRole === 'developer') && (
                 <button
                   onClick={() => setShowMobileActions(true)}
                   className="md:hidden p-1.5 bg-[#2c333a] hover:bg-[#38414a] text-muted-foreground hover:text-white rounded-xl transition-colors"
@@ -565,26 +565,26 @@ const CardModal: React.FC<CardModalProps> = ({
             <div className={`${currentUserRole === 'admin' ? 'md:col-span-3' : 'md:col-span-4'} h-full overflow-y-auto pr-4 custom-scrollbar space-y-6`}>
 
               {/* Fileira de Badges (Membros, Etiquetas) */}
-              {(taskData.assignees.length > 0 || taskData.labels.length > 0 || currentUserRole === 'admin') && (
+              {(taskData.assignees.length > 0 || taskData.labels.length > 0 || currentUserRole === 'admin' || currentUserRole === 'developer') && (
                 <div className="flex flex-wrap gap-6 pb-2">
                   
                   {/* Membros / Responsáveis */}
-                  {(taskData.assignees.length > 0 || currentUserRole === 'admin') && (
+                  {(taskData.assignees.length > 0 || currentUserRole === 'admin' || currentUserRole === 'developer') && (
                     <div className="space-y-1.5">
                       <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Responsáveis</span>
                       <div className="flex flex-wrap gap-1 items-center">
                         {taskData.assignees.map(a => (
                           <div 
                             key={a.user_id} 
-                            className={`w-7 h-7 rounded-full text-[10px] font-bold text-white flex items-center justify-center ${currentUserRole === 'admin' ? 'cursor-pointer hover:opacity-80' : ''} transition-opacity`}
+                            className={`w-7 h-7 rounded-full text-[10px] font-bold text-white flex items-center justify-center ${(currentUserRole === 'admin' || currentUserRole === 'developer') ? 'cursor-pointer hover:opacity-80' : ''} transition-opacity`}
                             style={{ backgroundColor: avatarColor(a.user_id) }}
                             title={a.full_name}
-                            onClick={() => { if (currentUserRole === 'admin') setActivePopover('members'); }}
+                            onClick={() => { if (currentUserRole === 'admin' || currentUserRole === 'developer') setActivePopover('members'); }}
                           >
                             {initials(a.full_name)}
                           </div>
                         ))}
-                        {currentUserRole === 'admin' && (
+                        {(currentUserRole === 'admin' || currentUserRole === 'developer') && (
                           <button 
                             onClick={() => setActivePopover('members')}
                             className="w-7 h-7 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-muted-foreground hover:text-white border border-dashed border-white/20 transition-colors"
@@ -597,19 +597,19 @@ const CardModal: React.FC<CardModalProps> = ({
                   )}
 
                   {/* Etiquetas */}
-                  {(taskData.labels.length > 0 || currentUserRole === 'admin') && (
+                  {(taskData.labels.length > 0 || currentUserRole === 'admin' || currentUserRole === 'developer') && (
                     <div className="space-y-1.5">
                       <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Etiquetas</span>
                       <div className="flex flex-wrap gap-1.5 items-center">
                         {taskData.labels.map(l => (
                           <div 
                             key={l.id} 
-                            className={`group px-2.5 py-1 rounded-xl text-[11px] font-bold text-black ${currentUserRole === 'admin' ? 'cursor-pointer hover:brightness-110' : ''} transition-all shadow-sm flex items-center gap-1.5`}
+                            className={`group px-2.5 py-1 rounded-xl text-[11px] font-bold text-black ${(currentUserRole === 'admin' || currentUserRole === 'developer') ? 'cursor-pointer hover:brightness-110' : ''} transition-all shadow-sm flex items-center gap-1.5`}
                             style={getLabelStyle(l)}
-                            onClick={() => { if (currentUserRole === 'admin') setActivePopover('labels'); }}
+                            onClick={() => { if (currentUserRole === 'admin' || currentUserRole === 'developer') setActivePopover('labels'); }}
                           >
                             <span>{l.text}</span>
-                            {currentUserRole === 'admin' && (
+                            {(currentUserRole === 'admin' || currentUserRole === 'developer') && (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -623,7 +623,7 @@ const CardModal: React.FC<CardModalProps> = ({
                             )}
                           </div>
                         ))}
-                        {currentUserRole === 'admin' && (
+                        {(currentUserRole === 'admin' || currentUserRole === 'developer') && (
                           <button 
                             onClick={() => setActivePopover('labels')}
                             className="px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-muted-foreground hover:text-white border border-dashed border-white/20 transition-colors"
@@ -636,11 +636,11 @@ const CardModal: React.FC<CardModalProps> = ({
                   )}
 
                   {/* Prazo */}
-                  {(taskData.due_date || currentUserRole === 'admin') && (
+                  {(taskData.due_date || currentUserRole === 'admin' || currentUserRole === 'developer') && (
                     <div className="space-y-1.5">
                       <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Prazo</span>
                       <div className="flex items-center gap-2">
-                        {currentUserRole === 'admin' ? (
+                        {(currentUserRole === 'admin' || currentUserRole === 'developer') ? (
                           <input 
                             type="date"
                             value={taskData.due_date ? taskData.due_date.substring(0, 10) : ''}
@@ -679,7 +679,7 @@ const CardModal: React.FC<CardModalProps> = ({
                     <AlignLeft className="w-4 h-4 text-muted-foreground" />
                     <span>Descrição</span>
                   </div>
-                  {!isEditingDesc && taskData.description && currentUserRole === 'admin' && (
+                  {!isEditingDesc && taskData.description && (currentUserRole === 'admin' || currentUserRole === 'developer') && (
                     <button 
                       onClick={() => setIsEditingDesc(true)} 
                       className="px-3 py-1 bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-white rounded-xl text-xs font-semibold transition-all"
@@ -706,12 +706,12 @@ const CardModal: React.FC<CardModalProps> = ({
                   <div className="space-y-3">
                     <div 
                       ref={descViewRef}
-                      onClick={() => { if (currentUserRole === 'admin') setIsEditingDesc(true); }}
-                      className={`relative p-4 bg-[#1d2125] hover:bg-[#1d2125]/80 rounded-xl border border-white/5 ${currentUserRole === 'admin' ? 'cursor-pointer' : ''} text-sm text-white/90 leading-relaxed transition-all whitespace-pre-wrap overflow-hidden ${
+                      onClick={() => { if (currentUserRole === 'admin' || currentUserRole === 'developer') setIsEditingDesc(true); }}
+                      className={`relative p-4 bg-[#1d2125] hover:bg-[#1d2125]/80 rounded-xl border border-white/5 ${(currentUserRole === 'admin' || currentUserRole === 'developer') ? 'cursor-pointer' : ''} text-sm text-white/90 leading-relaxed transition-all whitespace-pre-wrap overflow-hidden ${
                         !isDescExpanded && showExpandButton ? 'max-h-[400px]' : ''
                       }`}
                     >
-                      {taskData.description || (currentUserRole === 'admin' ? <span className="text-muted-foreground italic text-xs">Clique para adicionar uma descrição detalhada da tarefa...</span> : <span className="text-muted-foreground italic text-xs">Sem descrição.</span>)}
+                      {taskData.description || ((currentUserRole === 'admin' || currentUserRole === 'developer') ? <span className="text-muted-foreground italic text-xs">Clique para adicionar uma descrição detalhada da tarefa...</span> : <span className="text-muted-foreground italic text-xs">Sem descrição.</span>)}
                       
                       {/* Gradiente de fade quando recolhido */}
                       {!isDescExpanded && showExpandButton && (
@@ -770,9 +770,9 @@ const CardModal: React.FC<CardModalProps> = ({
                         />
                       ) : (
                         <span
-                          onClick={() => { if (currentUserRole === 'admin') setIsEditingChecklistTitle(true); }}
-                          className={`${currentUserRole === 'admin' ? 'cursor-pointer hover:text-white/70' : ''} transition-colors truncate`}
-                          title={currentUserRole === 'admin' ? "Clique para renomear" : undefined}
+                          onClick={() => { if (currentUserRole === 'admin' || currentUserRole === 'developer') setIsEditingChecklistTitle(true); }}
+                          className={`font-bold text-white text-sm truncate ${(currentUserRole === 'admin' || currentUserRole === 'developer') ? 'cursor-pointer hover:text-white/70' : ''} transition-colors`}
+                          title={(currentUserRole === 'admin' || currentUserRole === 'developer') ? "Clique para renomear" : undefined}
                         >
                           {checklistTitle}
                         </span>
@@ -788,7 +788,7 @@ const CardModal: React.FC<CardModalProps> = ({
                           {hideCheckedItems ? 'Mostrar itens marcados' : 'Ocultar itens marcados'}
                         </button>
                       )}
-                      {currentUserRole === 'admin' && (
+                      {(currentUserRole === 'admin' || currentUserRole === 'developer') && (
                         <button
                           onClick={handleDeleteEntireChecklist}
                           className="px-3 py-1.5 bg-[#2c333a] hover:bg-[#38414a] text-[#c7d1db] hover:text-white rounded-lg text-xs font-semibold border border-white/5 transition-all"
@@ -817,8 +817,8 @@ const CardModal: React.FC<CardModalProps> = ({
                         <div className="flex items-center gap-3 select-none flex-1 min-w-0">
                           {/* Checkbox independente */}
                           <div 
-                            onClick={() => { if (currentUserRole === 'admin') handleToggleChecklist(item.id); }} 
-                            className={`${currentUserRole === 'admin' ? 'cursor-pointer hover:opacity-80' : ''} transition-opacity shrink-0`}
+                            onClick={() => { if (currentUserRole === 'admin' || currentUserRole === 'developer') handleToggleChecklist(item.id); }} 
+                            className={`${(currentUserRole === 'admin' || currentUserRole === 'developer') ? 'cursor-pointer hover:opacity-80' : ''} transition-opacity shrink-0`}
                           >
                             {item.done ? <CheckSquare className="w-5 h-5 text-primary" /> : <Square className="w-5 h-5 text-muted-foreground" />}
                           </div>
@@ -840,18 +840,18 @@ const CardModal: React.FC<CardModalProps> = ({
                           ) : (
                             <span 
                               onClick={() => {
-                                if (currentUserRole === 'admin') {
+                                if (currentUserRole === 'admin' || currentUserRole === 'developer') {
                                   setEditingItemId(item.id);
                                   setEditingItemText(item.text);
                                 }
                               }}
-                              className={`text-sm flex-1 ${currentUserRole === 'admin' ? 'cursor-text hover:text-white/80' : ''} truncate ${item.done ? 'line-through text-muted-foreground' : 'text-white'}`}
+                              className={`text-sm flex-1 ${(currentUserRole === 'admin' || currentUserRole === 'developer') ? 'cursor-text hover:text-white/80' : ''} truncate ${item.done ? 'line-through text-muted-foreground' : 'text-white'}`}
                             >
                               {item.text}
                             </span>
                           )}
                         </div>
-                        {currentUserRole === 'admin' && (
+                        {(currentUserRole === 'admin' || currentUserRole === 'developer') && (
                           <button onClick={() => handleDeleteChecklist(item.id)} className="p-1 opacity-0 group-hover:opacity-100 hover:bg-destructive/10 text-muted-foreground hover:text-destructive rounded-lg transition-all shrink-0">
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -861,7 +861,7 @@ const CardModal: React.FC<CardModalProps> = ({
                     {totalChecklist === 0 && <p className="text-xs text-muted-foreground italic text-center py-2">Sem subtarefas adicionadas.</p>}
                   </div>
                   {/* Input de adicionar item - estilo Trello */}
-                  {currentUserRole === 'admin' && (
+                  {(currentUserRole === 'admin' || currentUserRole === 'developer') && (
                     <div className="space-y-2">
                       {isAddingChecklistItem ? (
                         <div className="space-y-2">
@@ -914,7 +914,7 @@ const CardModal: React.FC<CardModalProps> = ({
                       <Paperclip className="w-4 h-4 text-muted-foreground" /><span>Anexos</span>
                       {attachments.length > 0 && <span className="text-[10px] font-bold bg-white/10 text-white/70 px-1.5 py-0.5 rounded-full">{attachments.length}</span>}
                     </div>
-                    {currentUserRole === 'admin' && (
+                    {(currentUserRole === 'admin' || currentUserRole === 'developer') && (
                       <button
                         onClick={() => fileInputRef.current?.click()}
                         disabled={isUploading}
@@ -1002,7 +1002,7 @@ const CardModal: React.FC<CardModalProps> = ({
                             </div>
 
                             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                              {isImage && currentUserRole === 'admin' && (
+                              {isImage && (currentUserRole === 'admin' || currentUserRole === 'developer') && (
                                 <button
                                   onClick={async () => {
                                     const isCurrentCover = taskData.cover_image === att.file_url;
@@ -1025,7 +1025,7 @@ const CardModal: React.FC<CardModalProps> = ({
                                 className="p-1.5 hover:bg-white/10 text-muted-foreground hover:text-white rounded-xl transition-colors" title="Baixar">
                                 <Download className="w-3.5 h-3.5" />
                               </a>
-                              {currentUserRole === 'admin' && (
+                              {(currentUserRole === 'admin' || currentUserRole === 'developer') && (
                                 <button onClick={() => handleDeleteAttachment(att)}
                                   className="p-1.5 hover:bg-destructive/10 text-muted-foreground hover:text-destructive rounded-xl transition-colors" title="Remover">
                                   <Trash2 className="w-3.5 h-3.5" />
@@ -1119,7 +1119,7 @@ const CardModal: React.FC<CardModalProps> = ({
             </div>
 
             {/* Coluna Direita: Sidebar de Ações (Estilo Trello) - apenas desktop */}
-            {currentUserRole === 'admin' && (
+            {(currentUserRole === 'admin' || currentUserRole === 'developer') && (
               <div className="hidden md:block md:col-span-1 space-y-4">
               
               <div className="space-y-2">

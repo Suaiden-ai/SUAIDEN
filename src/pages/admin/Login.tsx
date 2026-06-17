@@ -34,9 +34,9 @@ const AdminLogin: React.FC = () => {
         .eq('id', data.user.id)
         .single();
 
-      if (profileError || !profile || (profile.role !== 'admin' && profile.role !== 'user')) {
+      if (profileError || !profile || (profile.role !== 'admin' && profile.role !== 'user' && profile.role !== 'developer')) {
         await supabase.auth.signOut();
-        throw new Error('Acesso restrito a administradores e usuários cadastrados.');
+        throw new Error('Acesso restrito a administradores, desenvolvedores e usuários cadastrados.');
       }
 
       toast({

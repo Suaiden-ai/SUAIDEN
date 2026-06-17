@@ -1,140 +1,41 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../services/supabase';
-import { 
-  Plus, 
-  Loader2,
-  Check,
-  X,
-  LayoutGrid
-} from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Loader2 } from 'lucide-react';
+import UserDashboard from './UserDashboard';
+import DeveloperDashboard from './DeveloperDashboard';
 
-interface UserProfile {
-  id: string;
-  full_name: string;
-  email: string;
-  role: string;
-}
 
-interface Board {
-  id: string;
-  title: string;
-  bg_type: 'gradient' | 'image';
-  background: string;
-  cover_image?: string | null;
-}
-
-const UserDashboard: React.FC = () => {
-  const navigate = useNavigate();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [boards, setBoards] = useState<Board[]>([]);
+const DashboardWrapper: React.FC = () => {
+  const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Estados para criação de novo quadro inline
-  const [isCreating, setIsCreating] = useState(false);
-  const [newBoardTitle, setNewBoardTitle] = useState('');
-
-  // Gradientes padrões para novos quadros
-  const defaultGradients = [
-    'linear-gradient(135deg, #6d28d9 0%, #a78bfa 100%)', // Roxo/Lilás Suaiden
-    'linear-gradient(135deg, #0284c7 0%, #06b6d4 100%)', // Azul
-    'linear-gradient(135deg, #10b981 0%, #059669 100%)', // Verde
-    'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', // Laranja
-    'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', // Vermelho
-    'linear-gradient(135deg, #1e293b 0%, #334155 100%)'  // Cinza Escuro
-  ];
-
-  // Buscar perfil e quadros
-  const fetchData = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      const userId = session.user.id;
-
-      // Buscar perfil
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('id, full_name, email, role')
-        .eq('id', userId)
-        .single();
-      
-      if (profileData) {
-        setProfile(profileData);
-      }
-
-      // Buscar quadros que o usuário é dono ou membro
-      // Nota: As regras de RLS do Supabase já restringem o SELECT apenas para quadros autorizados,
-      // então um select global na tabela 'boards' trará exatamente os quadros corretos!
-      const { data: boardsData, error } = await supabase
-        .from('boards')
-        .select('id, title, bg_type, background, cover_image')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setBoards(boardsData || []);
-
-    } catch (err) {
-      console.error('Erro ao buscar dados do Dashboard:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchData();
-
-    // Habilitar escuta realtime para atualizar a lista de quadros
-    const subscription = supabase
-      .channel('dashboard-boards-changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'boards' },
-        () => {
-          fetchData();
+    const fetchUserRole = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          setLoading(false);
+          return;
         }
-      )
-      .subscribe();
 
-    return () => {
-      supabase.removeChannel(subscription);
-    };
-  }, []);
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
 
-  // Criar novo quadro no Supabase
-  const handleCreateBoard = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!profile || profile.role !== 'admin' || !newBoardTitle.trim()) return;
-
-    try {
-      // Escolher gradiente aleatório para o fundo
-      const randomGradient = defaultGradients[Math.floor(Math.random() * defaultGradients.length)];
-
-      const { data, error } = await supabase
-        .from('boards')
-        .insert({
-          title: newBoardTitle.trim(),
-          bg_type: 'gradient',
-          background: randomGradient,
-          owner_id: profile.id
-        })
-        .select('id')
-        .single();
-
-      if (error) throw error;
-
-      setIsCreating(false);
-      setNewBoardTitle('');
-      
-      // Opcional: Redirecionar diretamente para o quadro recém-criado
-      if (data) {
-        navigate(`/quadro/${data.id}`);
+        if (profileData) {
+          setRole(profileData.role);
+        }
+      } catch (err) {
+        console.error('Erro ao obter a role do usuário no DashboardWrapper:', err);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error('Erro ao criar quadro:', err);
-    }
-  };
+    };
+
+    fetchUserRole();
+  }, []);
 
   if (loading) {
     return (
@@ -144,124 +45,12 @@ const UserDashboard: React.FC = () => {
     );
   }
 
-  return (
-    <div className="space-y-12">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/5 pb-6">
-        <div>
-          <h1 className="text-3xl font-extrabold text-white mt-1 tracking-tight">
-            Olá, {profile?.full_name || 'Usuário'}
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Selecione um projeto para gerenciar.
-          </p>
-        </div>
-      </div>
+  if (role === 'developer') {
+    return <DeveloperDashboard />;
+  }
 
-
-
-      {/* Seção: SEUS QUADROS */}
-      <section className="space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/5 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded bg-primary flex items-center justify-center text-white font-bold shadow-[0_0_15px_rgba(131,52,255,0.3)]">
-              <LayoutGrid className="w-4 h-4 text-white" />
-            </div>
-            <div>
-              <h2 className="text-white font-extrabold text-sm tracking-wider uppercase">Seus Projetos</h2>
-            </div>
-          </div>
-        </div>
-
-        {/* Grid de todos os quadros */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          {boards.map((board) => (
-            <motion.div
-              key={`all-${board.id}`}
-              onClick={() => navigate(`/quadro/${board.id}`)}
-              whileHover={{ scale: 1.02, y: -2 }}
-              className="group relative h-28 rounded-2xl overflow-hidden cursor-pointer shadow-lg border border-white/5 flex flex-col bg-[#1d2125]"
-            >
-              {/* Parte Superior: Background do Quadro */}
-              <div className="relative flex-1 w-full overflow-hidden">
-                {board.cover_image ? (
-                  <div 
-                    className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" 
-                    style={{ backgroundImage: `url(${board.cover_image})` }}
-                  />
-                ) : board.bg_type === 'gradient' ? (
-                  <div className="absolute inset-0" style={{ background: board.background }} />
-                ) : (
-                  <div 
-                    className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" 
-                    style={{ backgroundImage: `url(${board.background})` }}
-                  />
-                )}
-                {/* Overlay suave para hover */}
-                <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors" />
-              </div>
-              
-              {/* Parte Inferior: Faixa Cinza com o Título */}
-              <div className="h-10 bg-[#1d2125] border-t border-white/5 px-3 flex items-center">
-                <span className="text-white font-semibold text-xs tracking-wide truncate">
-                  {board.title}
-                </span>
-              </div>
-            </motion.div>
-          ))}
-
-          {/* Card: Criar novo quadro */}
-          {profile?.role === 'admin' && (
-            isCreating ? (
-              <motion.form
-                onSubmit={handleCreateBoard}
-                initial={{ scale: 0.98, opacity: 0.8 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="flex flex-col h-28 rounded-2xl bg-[#1d2125] border border-primary/30 p-3 text-center justify-between"
-              >
-                <input
-                  type="text"
-                  autoFocus
-                  placeholder="Título do projeto..."
-                  value={newBoardTitle}
-                  onChange={(e) => setNewBoardTitle(e.target.value)}
-                  className="bg-black/30 border border-white/10 rounded-lg px-2 py-1 text-xs text-white placeholder:text-muted-foreground outline-none focus:border-primary/50"
-                />
-                <div className="flex gap-2 justify-end">
-                  <button
-                    type="button"
-                    onClick={() => setIsCreating(false)}
-                    className="p-1 hover:bg-white/5 text-muted-foreground hover:text-white rounded-lg"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                  <button
-                    type="submit"
-                    className="p-1 bg-primary hover:bg-primary/90 text-white rounded-lg shadow-md shadow-primary/20"
-                  >
-                    <Check className="w-4 h-4" />
-                  </button>
-                </div>
-              </motion.form>
-            ) : (
-              <motion.div
-                onClick={() => setIsCreating(true)}
-                whileHover={{ scale: 1.02, y: -2 }}
-                className="flex flex-col items-center justify-center h-28 rounded-2xl bg-white/[0.02] border border-dashed border-white/10 hover:border-white/20 hover:bg-white/[0.04] cursor-pointer transition-all p-4 text-center group"
-              >
-                <span className="text-sm font-semibold text-white/70 group-hover:text-white transition-colors flex items-center gap-2">
-                  <Plus className="w-4 h-4 text-muted-foreground group-hover:text-white" />
-                  Criar novo projeto
-                </span>
-              </motion.div>
-            )
-          )}
-        </div>
-      </section>
-
-
-    </div>
-  );
+  // Padrão para 'user', 'admin' ou qualquer outro perfil
+  return <UserDashboard />;
 };
 
-export default UserDashboard;
+export default DashboardWrapper;
