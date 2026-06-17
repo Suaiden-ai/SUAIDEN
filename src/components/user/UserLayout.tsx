@@ -96,7 +96,7 @@ const UserLayout: React.FC<UserLayoutProps> = ({ children, fluid }) => {
           <div>
             <h1 className="font-bold text-sm tracking-tight text-white leading-none">Suaiden</h1>
             <span className="text-[8px] text-primary font-black uppercase tracking-[0.15em] leading-none mt-0.5 block">
-              {profile?.role === 'admin' ? 'Painel Administrativo' : 'Painel do Usuário'}
+              {profile?.role === 'admin' ? 'Painel Administrativo' : profile?.role === 'developer' ? 'Painel do Desenvolvedor' : 'Painel do Usuário'}
             </span>
           </div>
         </div>

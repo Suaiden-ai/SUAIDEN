@@ -495,7 +495,7 @@ const KanbanPage: React.FC = () => {
   // ── Colunas ──
   const handleAddColumn = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!boardId || currentUserRole !== 'admin' || !newColumnTitle.trim()) return;
+    if (!boardId || (currentUserRole !== 'admin' && currentUserRole !== 'developer') || !newColumnTitle.trim()) return;
     try {
       await supabase.from('columns').insert({ board_id: boardId, title: newColumnTitle.trim(), position: columns.length });
       setNewColumnTitle('');
@@ -608,7 +608,7 @@ const KanbanPage: React.FC = () => {
   };
 
   const handleSetTicketColumn = async (colId: string) => {
-    if (!boardId || currentUserRole !== 'admin') return;
+    if (!boardId || (currentUserRole !== 'admin' && currentUserRole !== 'developer')) return;
     try {
       const newTicketColId = board?.ticket_column_id === colId ? null : colId;
       await supabase.from('boards').update({ ticket_column_id: newTicketColId }).eq('id', boardId);
@@ -620,7 +620,7 @@ const KanbanPage: React.FC = () => {
   };
 
   const handleToggleCardChecklistItem = async (taskId: string, colId: string, itemId: string) => {
-    if (currentUserRole !== 'admin') return;
+    if (currentUserRole !== 'admin' && currentUserRole !== 'developer') return;
     const col = columns.find(c => c.id === colId);
     const task = col?.tasks.find(t => t.id === taskId);
     if (!task) return;
@@ -653,7 +653,7 @@ const KanbanPage: React.FC = () => {
 
   // ── Cards ──
   const handleAddCard = async (columnId: string) => {
-    if (currentUserRole !== 'admin') return;
+    if (currentUserRole !== 'admin' && currentUserRole !== 'developer') return;
     const title = newCardTitles[columnId];
     if (!title?.trim()) return;
     try {
@@ -752,7 +752,7 @@ const KanbanPage: React.FC = () => {
 
   // ── Membros do quadro ──
   const handleAddMember = async (userId: string) => {
-    if (!boardId || currentUserRole !== 'admin') return;
+    if (!boardId || (currentUserRole !== 'admin' && currentUserRole !== 'developer')) return;
     try {
       const { error } = await supabase
         .from('board_members')
@@ -765,7 +765,7 @@ const KanbanPage: React.FC = () => {
   };
 
   const handleRemoveMember = async (userId: string) => {
-    if (!boardId || currentUserRole !== 'admin') return;
+    if (!boardId || (currentUserRole !== 'admin' && currentUserRole !== 'developer')) return;
     try {
       const { error } = await supabase
         .from('board_members')
@@ -823,7 +823,7 @@ const KanbanPage: React.FC = () => {
   };
 
   const handleSaveBoardTitle = async () => {
-    if (!boardId || !editingBoardTitle.trim() || editingBoardTitle.trim() === board?.title || currentUserRole !== 'admin') {
+    if (!boardId || !editingBoardTitle.trim() || editingBoardTitle.trim() === board?.title || (currentUserRole !== 'admin' && currentUserRole !== 'developer')) {
       setIsEditingBoardTitle(false);
       return;
     }
@@ -899,13 +899,13 @@ const KanbanPage: React.FC = () => {
           ) : (
             <h1 
               onClick={() => {
-                if (currentUserRole === 'admin') {
+                if (currentUserRole === 'admin' || currentUserRole === 'developer') {
                   setEditingBoardTitle(board?.title || '');
                   setIsEditingBoardTitle(true);
                 }
               }}
-              className={`text-lg font-bold text-white tracking-tight ${currentUserRole === 'admin' ? 'cursor-pointer hover:underline' : ''}`}
-              title={currentUserRole === 'admin' ? "Clique para renomear o quadro" : undefined}
+              className={`text-lg font-bold text-white tracking-tight ${(currentUserRole === 'admin' || currentUserRole === 'developer') ? 'cursor-pointer hover:underline' : ''}`}
+              title={(currentUserRole === 'admin' || currentUserRole === 'developer') ? "Clique para renomear o quadro" : undefined}
             >
               {board?.title || 'Projeto'}
             </h1>
@@ -913,7 +913,7 @@ const KanbanPage: React.FC = () => {
         </div>
 
         {/* Meio: Botão Abrir Chamado (Apenas User) */}
-        {currentUserRole !== 'admin' && (
+        {(currentUserRole !== 'admin' && currentUserRole !== 'developer') && (
           <div className="flex justify-center shrink-0">
             <button 
               onClick={() => setIsTicketModalOpen(true)}
@@ -1044,7 +1044,7 @@ const KanbanPage: React.FC = () => {
                              <p className="text-[10px] text-muted-foreground truncate">{m.email}</p>
                            </div>
                          </div>
-                         {currentUserRole === 'admin' && m.user_id !== board?.owner_id && (
+                         {(currentUserRole === 'admin' || currentUserRole === 'developer') && m.user_id !== board?.owner_id && (
                            <button 
                              onClick={() => handleRemoveMember(m.user_id)}
                              className="p-1 hover:bg-red-500/10 text-muted-foreground hover:text-red-400 rounded-lg transition-colors shrink-0"
@@ -1057,8 +1057,8 @@ const KanbanPage: React.FC = () => {
                      ))}
                    </div>
  
-                   {/* Adicionar Membros (Apenas se for Admin) */}
-                   {currentUserRole === 'admin' && (
+                   {/* Adicionar Membros (Apenas se for Admin ou Desenvolvedor) */}
+                   {(currentUserRole === 'admin' || currentUserRole === 'developer') && (
                      <div className="border-t border-white/5 pt-3 space-y-3">
                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Adicionar Usuários</span>
                        
@@ -1107,7 +1107,7 @@ const KanbanPage: React.FC = () => {
            </div>
  
            {/* Editar Background */}
-           {currentUserRole === 'admin' && (
+           {(currentUserRole === 'admin' || currentUserRole === 'developer') && (
              <div className="relative" ref={bgPanelRef}>
                <button
                  onClick={() => setIsBackgroundPanelOpen(!isBackgroundPanelOpen)}
@@ -1221,7 +1221,7 @@ const KanbanPage: React.FC = () => {
         <div className="flex-1 flex gap-4 overflow-x-auto pb-4 items-start select-none overflow-y-hidden custom-scrollbar">
           {filteredColumns.map(column => (
             <div key={column.id} 
-              draggable={currentUserRole === 'admin' && draggableColId === column.id}
+              draggable={(currentUserRole === 'admin' || currentUserRole === 'developer') && draggableColId === column.id}
               onDragStart={e => handleColDragStart(e, column.id)}
               onDragEnd={() => setDraggableColId(null)}
               onDragOver={e => e.preventDefault()}
@@ -1230,9 +1230,9 @@ const KanbanPage: React.FC = () => {
 
               {/* Header da coluna */}
               <div 
-                onMouseDown={() => { if (currentUserRole === 'admin') setDraggableColId(column.id); }}
-                onMouseUp={() => { if (currentUserRole === 'admin') setDraggableColId(null); }}
-                className={`p-3 flex items-center justify-between ${currentUserRole === 'admin' ? 'cursor-grab active:cursor-grabbing' : ''}`}
+                onMouseDown={() => { if (currentUserRole === 'admin' || currentUserRole === 'developer') setDraggableColId(column.id); }}
+                onMouseUp={() => { if (currentUserRole === 'admin' || currentUserRole === 'developer') setDraggableColId(null); }}
+                className={`p-3 flex items-center justify-between ${(currentUserRole === 'admin' || currentUserRole === 'developer') ? 'cursor-grab active:cursor-grabbing' : ''}`}
               >
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   {editingColumnId === column.id ? (
@@ -1241,8 +1241,8 @@ const KanbanPage: React.FC = () => {
                       onKeyDown={e => { if (e.key === 'Enter') handleSaveColumnTitle(column.id); if (e.key === 'Escape') setEditingColumnId(null); }}
                       className="flex-1 bg-black/30 border border-white/10 rounded-xl px-2 py-0.5 text-xs text-white outline-none focus:border-primary/50 font-bold" />
                   ) : (
-                    <span onClick={() => { if (currentUserRole === 'admin') { setEditingColumnId(column.id); setEditingColumnTitle(column.title); } }}
-                      className={`font-bold text-white text-sm truncate ${currentUserRole === 'admin' ? 'cursor-pointer hover:underline' : ''}`} title={currentUserRole === 'admin' ? "Clique para renomear" : undefined}>
+                    <span onClick={() => { if (currentUserRole === 'admin' || currentUserRole === 'developer') { setEditingColumnId(column.id); setEditingColumnTitle(column.title); } }}
+                      className={`font-bold text-white text-sm truncate ${(currentUserRole === 'admin' || currentUserRole === 'developer') ? 'cursor-pointer hover:underline' : ''}`} title={(currentUserRole === 'admin' || currentUserRole === 'developer') ? "Clique para renomear" : undefined}>
                       {column.title}
                     </span>
                   )}
@@ -1255,7 +1255,7 @@ const KanbanPage: React.FC = () => {
                 </div>
 
                 {/* Menu "..." da coluna */}
-                {currentUserRole === 'admin' && (
+                {(currentUserRole === 'admin' || currentUserRole === 'developer') && (
                   <div className="relative" ref={openColMenuId === column.id ? colMenuRef : undefined}>
                     <button onClick={e => { e.stopPropagation(); setOpenColMenuId(openColMenuId === column.id ? null : column.id); setConfirmClearColId(null); }}
                       className="ml-1 p-1.5 hover:bg-white/10 text-muted-foreground hover:text-white rounded-xl transition-colors">
@@ -1334,12 +1334,12 @@ const KanbanPage: React.FC = () => {
               <div className="flex-1 p-2.5 space-y-2 overflow-y-auto min-h-0">
                 {column.tasks.map((task, index) => {
                   return (
-                    <div key={task.id} draggable={currentUserRole === 'admin'}
+                    <div key={task.id} draggable={currentUserRole === 'admin' || currentUserRole === 'developer'}
                       onDragStart={e => handleCardDragStart(e, task.id, column.id)}
                       onDragOver={e => e.preventDefault()}
                       onDrop={e => handleCardDrop(e, column.id, index)}
                       onClick={() => { setActiveTask(task); setActiveTaskColId(column.id); }}
-                      className={`bg-[#22252a] hover:bg-[#2b2e35] border border-white/5 hover:border-white/10 rounded-2xl shadow transition-all duration-200 group overflow-hidden flex flex-col ${currentUserRole === 'admin' ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'}`}>
+                      className={`bg-[#22252a] hover:bg-[#2b2e35] border border-white/5 hover:border-white/10 rounded-2xl shadow transition-all duration-200 group overflow-hidden flex flex-col ${(currentUserRole === 'admin' || currentUserRole === 'developer') ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'}`}>
                       {task.cover_image ? (
                         <TaskCardCover imageUrl={task.cover_image} />
                       ) : task.cover_color ? (
@@ -1357,7 +1357,7 @@ const KanbanPage: React.FC = () => {
                           <div className="flex items-start gap-2 flex-1 min-w-0">
                             <button
                               onClick={async (e) => {
-                                if (currentUserRole !== 'admin') return;
+                                if (currentUserRole !== 'admin' && currentUserRole !== 'developer') return;
                                 e.stopPropagation();
                                 const nextDone = !task.is_done;
                                 try {
@@ -1465,23 +1465,23 @@ const KanbanPage: React.FC = () => {
                                 key={item.id}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  if (currentUserRole === 'admin') {
+                                  if (currentUserRole === 'admin' || currentUserRole === 'developer') {
                                     handleToggleCardChecklistItem(task.id, column.id, item.id);
                                   }
                                 }}
                                 className={`flex items-center gap-2 p-1 rounded-xl transition-colors ${
-                                  currentUserRole === 'admin'
+                                  (currentUserRole === 'admin' || currentUserRole === 'developer')
                                     ? 'hover:bg-white/5 cursor-pointer group/item'
                                     : 'cursor-default'
                                 }`}
                               >
                                 <button
-                                  disabled={currentUserRole !== 'admin'}
+                                  disabled={currentUserRole !== 'admin' && currentUserRole !== 'developer'}
                                   className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 transition-all ${
                                     item.done
                                       ? 'bg-blue-500 border-blue-500 text-white shadow-md shadow-blue-500/20'
                                       : 'bg-transparent border-white/20'
-                                  } ${currentUserRole === 'admin' ? 'group-hover/item:border-blue-500/50' : ''}`}
+                                  } ${(currentUserRole === 'admin' || currentUserRole === 'developer') ? 'group-hover/item:border-blue-500/50' : ''}`}
                                 >
                                   {item.done && <Check className="w-2.5 h-2.5 stroke-[3]" />}
                                 </button>
@@ -1529,7 +1529,7 @@ const KanbanPage: React.FC = () => {
               </div>
 
               {/* Adicionar card */}
-              {currentUserRole === 'admin' && (
+              {(currentUserRole === 'admin' || currentUserRole === 'developer') && (
                 <div className="p-2 rounded-b-2xl">
                   {activeAddCardColId === column.id ? (
                     <div className="flex items-center gap-2">
@@ -1564,7 +1564,7 @@ const KanbanPage: React.FC = () => {
           ))}
 
           {/* Nova coluna */}
-          {currentUserRole === 'admin' && (
+          {(currentUserRole === 'admin' || currentUserRole === 'developer') && (
             !isAddingColumn ? (
             <button
               onClick={() => setIsAddingColumn(true)}
