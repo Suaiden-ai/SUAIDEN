@@ -6,9 +6,11 @@ import {
   Loader2,
   Check,
   X,
-  LayoutGrid
+  LayoutGrid,
+  MoreVertical,
+  Trash2
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '../../components/jobs/ui/badge';
 
 interface UserProfile {
@@ -34,6 +36,10 @@ const BoardsManagement: React.FC = () => {
   // Estados para criação de novo quadro inline
   const [isCreating, setIsCreating] = useState(false);
   const [newBoardTitle, setNewBoardTitle] = useState('');
+
+  // Estados para deleção e menu de opções
+  const [activeMenuBoardId, setActiveMenuBoardId] = useState<string | null>(null);
+  const [boardToDelete, setBoardToDelete] = useState<Board | null>(null);
 
   // Gradientes padrões para novos quadros
   const defaultGradients = [
@@ -134,6 +140,21 @@ const BoardsManagement: React.FC = () => {
     }
   };
 
+  // Deletar quadro no Supabase
+  const handleDeleteBoard = async (boardId: string) => {
+    try {
+      const { error } = await supabase
+        .from('boards')
+        .delete()
+        .eq('id', boardId);
+
+      if (error) throw error;
+    } catch (err) {
+      console.error('Erro ao deletar projeto:', err);
+      alert('Ocorreu um erro ao excluir o projeto. Por favor, tente novamente.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
@@ -143,7 +164,7 @@ const BoardsManagement: React.FC = () => {
   }
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-12 relative">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 pb-10 border-b border-white/5">
         <div className="space-y-4">
@@ -177,7 +198,9 @@ const BoardsManagement: React.FC = () => {
               key={`admin-board-${board.id}`}
               onClick={() => navigate(`/quadro/${board.id}`)}
               whileHover={{ scale: 1.02, y: -2 }}
-              className="group relative h-28 rounded-2xl overflow-hidden cursor-pointer shadow-lg border border-white/5 flex flex-col bg-[#1d2125]"
+              className={`group relative h-28 rounded-2xl overflow-hidden cursor-pointer shadow-lg border border-white/5 flex flex-col bg-[#1d2125] ${
+                activeMenuBoardId === board.id ? 'z-20 ring-1 ring-primary/30' : 'z-0'
+              }`}
             >
               {/* Parte Superior: Background do Quadro */}
               <div className="relative flex-1 w-full overflow-hidden">
@@ -203,6 +226,37 @@ const BoardsManagement: React.FC = () => {
                 <span className="text-white font-semibold text-xs tracking-wide truncate">
                   {board.title}
                 </span>
+              </div>
+
+              {/* Botão de 3 pontinhos (Opções do Admin) - Fora das sub-divisões para não ser cortado */}
+              <div className="absolute top-2 right-2 z-20">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveMenuBoardId(activeMenuBoardId === board.id ? null : board.id);
+                  }}
+                  className="w-7 h-7 flex items-center justify-center bg-black/50 hover:bg-[#1d2125] text-white/70 hover:text-white rounded-lg transition-all border border-white/10"
+                  title="Opções do projeto"
+                >
+                  <MoreVertical className="w-4 h-4" />
+                </button>
+
+                {/* Dropdown Menu */}
+                {activeMenuBoardId === board.id && (
+                  <div className="absolute right-0 mt-1 w-36 bg-[#1d2125] border border-white/10 rounded-xl shadow-2xl p-1 z-30 animate-in fade-in slide-in-from-top-1 duration-150">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setBoardToDelete(board);
+                        setActiveMenuBoardId(null);
+                      }}
+                      className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-red-400 hover:bg-red-500/10 transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Excluir Projeto
+                    </button>
+                  </div>
+                )}
               </div>
             </motion.div>
           ))}
@@ -253,6 +307,57 @@ const BoardsManagement: React.FC = () => {
           )}
         </div>
       </section>
+
+      {/* Modal de confirmação de exclusão */}
+      <AnimatePresence>
+        {boardToDelete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-md bg-[#1d2125] border border-white/10 rounded-2xl p-6 shadow-2xl space-y-6"
+            >
+              <div className="space-y-2">
+                <h3 className="text-lg font-bold text-white">Excluir Projeto</h3>
+                <p className="text-sm text-white/60">
+                  Tem certeza de que deseja excluir o projeto <strong className="text-white">"{boardToDelete.title}"</strong>?
+                </p>
+              </div>
+              
+              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs leading-relaxed">
+                <strong>Aviso importante:</strong> Esta ação é irreversível e excluirá permanentemente o quadro, todas as suas colunas, tarefas, checklists e comentários vinculados.
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setBoardToDelete(null)}
+                  className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white font-medium rounded-xl text-xs transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => {
+                    handleDeleteBoard(boardToDelete.id);
+                    setBoardToDelete(null);
+                  }}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-medium rounded-xl text-xs shadow-lg shadow-red-600/20 transition-colors"
+                >
+                  Excluir
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Overlay transparente para fechar o menu de 3 pontinhos ao clicar fora */}
+      {activeMenuBoardId && (
+        <div 
+          className="fixed inset-0 z-10 cursor-default" 
+          onClick={() => setActiveMenuBoardId(null)}
+        />
+      )}
     </div>
   );
 };
