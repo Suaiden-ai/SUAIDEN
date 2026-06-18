@@ -66,12 +66,19 @@ const BoardListView: React.FC<BoardListViewProps> = ({ columns, onTaskClick }) =
             const completedItems = hasChecklist ? task.checklist.filter(i => i.done).length : 0;
             
             let taskDate: Date | null = null;
+            let isDueDateOverdue = false;
+            let isToday = false;
             if (task.due_date) {
               const cleanDateStr = task.due_date.split('T')[0];
               const [year, month, day] = cleanDateStr.split('-').map(Number);
               taskDate = new Date(year, month - 1, day);
+              
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              
+              isDueDateOverdue = taskDate < today && !task.is_done;
+              isToday = taskDate.getTime() === today.getTime() && !task.is_done;
             }
-            const isDueDateOverdue = taskDate && taskDate < new Date() && !task.is_done;
 
             return (
               <div 
@@ -142,7 +149,15 @@ const BoardListView: React.FC<BoardListViewProps> = ({ columns, onTaskClick }) =
                 {/* Infos (Data, Checklist) */}
                 <div className="col-span-2 flex items-center justify-end gap-3 text-xs text-white/50">
                   {taskDate && (
-                    <div className={`flex items-center gap-1 ${task.is_done ? 'bg-green-500/20 text-green-400' : isDueDateOverdue ? 'bg-red-500/20 text-red-400' : 'bg-white/5 text-white/70'} px-2 py-1 rounded`}>
+                    <div className={`flex items-center gap-1 ${
+                      task.is_done 
+                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
+                        : isDueDateOverdue 
+                          ? 'bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse' 
+                          : isToday 
+                            ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' 
+                            : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                    } px-2 py-1 rounded`}>
                       <Calendar className="w-3.5 h-3.5" />
                       <span>{format(taskDate, "d MMM", { locale: ptBR })}</span>
                     </div>

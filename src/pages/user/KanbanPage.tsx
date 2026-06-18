@@ -279,20 +279,24 @@ const KanbanPage: React.FC = () => {
 
   const getDueDateInfo = (dueDate: string | null, isDone: boolean) => {
     if (!dueDate) return null;
-    const now = new Date();
     
     // Tratamento para evitar que fusos horários mudem o dia (ex: GMT-3 puxa 1 dia atrás)
     const cleanDateStr = dueDate.split('T')[0];
     const [year, month, day] = cleanDateStr.split('-').map(Number);
     const date = new Date(year, month - 1, day);
     
-    const diff = date.getTime() - now.getTime();
-    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const diffTime = date.getTime() - today.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
     const formattedDate = date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' }).replace('.', '');
+    
     if (isDone) return { text: formattedDate, className: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' };
-    if (diff < 0) return { text: `${formattedDate} (Atrasado)`, className: 'bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse' };
-    if (days <= 1) return { text: `${formattedDate} (Breve)`, className: 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' };
-    return { text: formattedDate, className: 'bg-white/5 text-muted-foreground border border-white/5' };
+    if (diffDays < 0) return { text: `${formattedDate} (Atrasado)`, className: 'bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse' };
+    if (diffDays === 0) return { text: `${formattedDate} (Breve)`, className: 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' };
+    
+    return { text: formattedDate, className: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' };
   };
 
   const fetchBoardData = async () => {
