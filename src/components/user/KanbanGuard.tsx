@@ -26,7 +26,24 @@ const KanbanGuard: React.FC<KanbanGuardProps> = ({ children }) => {
 
       const userId = session.user.id;
 
-      // 1. Verificar se é dono do quadro
+      // 1. Verificar se o usuário é administrador
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (profileError) {
+        setStatus('unauthorized');
+        return;
+      }
+
+      if (profile && profile.role === 'admin') {
+        setStatus('authorized');
+        return;
+      }
+
+      // 2. Verificar se é dono do quadro
       const { data: board, error: boardError } = await supabase
         .from('boards')
         .select('owner_id')
@@ -43,7 +60,7 @@ const KanbanGuard: React.FC<KanbanGuardProps> = ({ children }) => {
         return;
       }
 
-      // 2. Verificar se é membro do quadro
+      // 3. Verificar se é membro do quadro
       const { data: member, error: memberError } = await supabase
         .from('board_members')
         .select('board_id')
