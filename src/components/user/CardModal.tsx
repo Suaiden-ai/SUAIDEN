@@ -1490,13 +1490,15 @@ const CardModal: React.FC<CardModalProps> = ({
                 </div>
 
               {/* Botão Excluir */}
-              <button 
-                onClick={() => onDeleteTask(task.id)}
-                className="w-full flex items-center gap-2.5 px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-xl text-xs font-semibold border border-red-500/20 hover:border-red-500/30 transition-all text-left"
-              >
-                <Trash2 className="w-4 h-4" />
-                <span>Excluir Card</span>
-              </button>
+              {currentUserRole === 'admin' && (
+                <button 
+                  onClick={() => onDeleteTask(task.id)}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-xl text-xs font-semibold border border-red-500/20 hover:border-red-500/30 transition-all text-left"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Excluir Card</span>
+                </button>
+              )}
 
             </div>
 
@@ -1802,13 +1804,15 @@ const CardModal: React.FC<CardModalProps> = ({
                     </div>
 
                     {/* Excluir */}
-                    <button
-                      onClick={() => { onDeleteTask(task.id); setShowMobileActions(false); }}
-                      className="w-full flex items-center gap-2.5 px-3 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-xl text-sm font-semibold border border-red-500/20 hover:border-red-500/30 transition-all text-left"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      <span>Excluir Card</span>
-                    </button>
+                    {currentUserRole === 'admin' && (
+                      <button
+                        onClick={() => { onDeleteTask(task.id); setShowMobileActions(false); }}
+                        className="w-full flex items-center gap-2.5 px-3 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-xl text-sm font-semibold border border-red-500/20 hover:border-red-500/30 transition-all text-left"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        <span>Excluir Card</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               </motion.div>

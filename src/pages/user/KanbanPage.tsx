@@ -480,6 +480,7 @@ const KanbanPage: React.FC = () => {
   };
 
   const handleDeleteTask = async (taskId: string) => {
+    if (currentUserRole !== 'admin') return;
     await supabase.from('tasks').delete().eq('id', taskId);
     setActiveTask(null);
   };
@@ -508,6 +509,7 @@ const KanbanPage: React.FC = () => {
     catch (err) { console.error(err); }
   };
   const handleDeleteColumn = async (columnId: string) => {
+    if (currentUserRole !== 'admin') return;
     try { await supabase.from('columns').delete().eq('id', columnId); } catch (err) { console.error(err); }
   };
 
@@ -526,6 +528,7 @@ const KanbanPage: React.FC = () => {
   };
 
   const handleClearColumn = async (colId: string) => {
+    if (currentUserRole !== 'admin') return;
     const col = columns.find(c => c.id === colId);
     if (!col?.tasks.length) return;
     try { await Promise.all(col.tasks.map(t => supabase.from('tasks').delete().eq('id', t.id))); }
@@ -1044,7 +1047,7 @@ const KanbanPage: React.FC = () => {
                              <p className="text-[10px] text-muted-foreground truncate">{m.email}</p>
                            </div>
                          </div>
-                         {(currentUserRole === 'admin' || currentUserRole === 'developer') && m.user_id !== board?.owner_id && (
+                         {currentUserRole === 'admin' && m.user_id !== board?.owner_id && (
                            <button 
                              onClick={() => handleRemoveMember(m.user_id)}
                              className="p-1 hover:bg-red-500/10 text-muted-foreground hover:text-red-400 rounded-lg transition-colors shrink-0"
@@ -1057,8 +1060,8 @@ const KanbanPage: React.FC = () => {
                      ))}
                    </div>
  
-                   {/* Adicionar Membros (Apenas se for Admin ou Desenvolvedor) */}
-                   {(currentUserRole === 'admin' || currentUserRole === 'developer') && (
+                   {/* Adicionar Membros (Apenas se for Admin) */}
+                   {currentUserRole === 'admin' && (
                      <div className="border-t border-white/5 pt-3 space-y-3">
                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Adicionar Usuários</span>
                        
@@ -1303,24 +1306,28 @@ const KanbanPage: React.FC = () => {
                               <SortDesc className="w-3.5 h-3.5 text-muted-foreground" /> Z → A (título)
                             </button>
                             
-                            <div className="h-px bg-white/5 my-1" />
-                            <button onClick={() => { handleDeleteColumn(column.id); setOpenColMenuId(null); }}
-                              className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-red-400/80 hover:text-red-400 hover:bg-red-500/10 rounded-xl text-left">
-                              <Trash2 className="w-3.5 h-3.5" /> Excluir lista
-                            </button>
-                            <div className="h-px bg-white/5 my-0.5" />
-                            {confirmClearColId === column.id ? (
-                              <div className="px-2 py-1.5 space-y-2">
-                                <p className="text-[10px] text-red-400 font-semibold">Remover todos os {column.tasks.length} card(s). Confirma?</p>
-                                <div className="flex gap-2">
-                                  <button onClick={() => handleClearColumn(column.id)} className="flex-1 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-xl text-[10px] font-bold">Sim, limpar</button>
-                                  <button onClick={() => setConfirmClearColId(null)} className="flex-1 py-1 bg-white/5 hover:bg-white/10 text-white rounded-xl text-[10px] font-bold">Cancelar</button>
-                                </div>
-                              </div>
-                            ) : (
-                              <button onClick={() => setConfirmClearColId(column.id)} className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-red-400/80 hover:text-red-400 hover:bg-red-500/10 rounded-xl text-left">
-                                <Trash2 className="w-3.5 h-3.5" /> Limpar todos os cards
-                              </button>
+                            {currentUserRole === 'admin' && (
+                              <>
+                                <div className="h-px bg-white/5 my-1" />
+                                <button onClick={() => { handleDeleteColumn(column.id); setOpenColMenuId(null); }}
+                                  className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-red-400/80 hover:text-red-400 hover:bg-red-500/10 rounded-xl text-left">
+                                  <Trash2 className="w-3.5 h-3.5" /> Excluir lista
+                                </button>
+                                <div className="h-px bg-white/5 my-0.5" />
+                                {confirmClearColId === column.id ? (
+                                  <div className="px-2 py-1.5 space-y-2">
+                                    <p className="text-[10px] text-red-400 font-semibold">Remover todos os {column.tasks.length} card(s). Confirma?</p>
+                                    <div className="flex gap-2">
+                                      <button onClick={() => handleClearColumn(column.id)} className="flex-1 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-xl text-[10px] font-bold">Sim, limpar</button>
+                                      <button onClick={() => setConfirmClearColId(null)} className="flex-1 py-1 bg-white/5 hover:bg-white/10 text-white rounded-xl text-[10px] font-bold">Cancelar</button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <button onClick={() => setConfirmClearColId(column.id)} className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-red-400/80 hover:text-red-400 hover:bg-red-500/10 rounded-xl text-left">
+                                    <Trash2 className="w-3.5 h-3.5" /> Limpar todos os cards
+                                  </button>
+                                )}
+                              </>
                             )}
                           </div>
                         </motion.div>
