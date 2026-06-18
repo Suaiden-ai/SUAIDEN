@@ -2,10 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../services/supabase';
 import { 
-  Plus, 
   Loader2,
-  Check,
-  X,
   LayoutGrid
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -31,19 +28,7 @@ const DeveloperDashboard: React.FC = () => {
   const [boards, setBoards] = useState<Board[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Estados para criação de novo quadro inline
-  const [isCreating, setIsCreating] = useState(false);
-  const [newBoardTitle, setNewBoardTitle] = useState('');
-
-  // Gradientes padrões para novos quadros
-  const defaultGradients = [
-    'linear-gradient(135deg, #6d28d9 0%, #a78bfa 100%)', // Roxo/Lilás Suaiden
-    'linear-gradient(135deg, #0284c7 0%, #06b6d4 100%)', // Azul
-    'linear-gradient(135deg, #10b981 0%, #059669 100%)', // Verde
-    'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', // Laranja
-    'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', // Vermelho
-    'linear-gradient(135deg, #1e293b 0%, #334155 100%)'  // Cinza Escuro
-  ];
+  // Criação de novos projetos desativada para a role developer
 
   // Buscar perfil e quadros
   const fetchData = async () => {
@@ -100,39 +85,7 @@ const DeveloperDashboard: React.FC = () => {
     };
   }, []);
 
-  // Criar novo quadro no Supabase
-  const handleCreateBoard = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!profile || !newBoardTitle.trim()) return;
 
-    try {
-      // Escolher gradiente aleatório para o fundo
-      const randomGradient = defaultGradients[Math.floor(Math.random() * defaultGradients.length)];
-
-      const { data, error } = await supabase
-        .from('boards')
-        .insert({
-          title: newBoardTitle.trim(),
-          bg_type: 'gradient',
-          background: randomGradient,
-          owner_id: profile.id
-        })
-        .select('id')
-        .single();
-
-      if (error) throw error;
-
-      setIsCreating(false);
-      setNewBoardTitle('');
-      
-      // Redirecionar diretamente para o quadro recém-criado
-      if (data) {
-        navigate(`/quadro/${data.id}`);
-      }
-    } catch (err) {
-      console.error('Erro ao criar quadro pelo Desenvolvedor:', err);
-    }
-  };
 
   if (loading) {
     return (
@@ -151,7 +104,7 @@ const DeveloperDashboard: React.FC = () => {
             Olá, {profile?.full_name || 'Desenvolvedor'}
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Selecione um projeto para trabalhar ou crie um novo quadro.
+            Selecione um projeto para trabalhar.
           </p>
         </div>
       </div>
@@ -206,50 +159,7 @@ const DeveloperDashboard: React.FC = () => {
             </motion.div>
           ))}
 
-          {/* Card: Criar novo quadro (Sempre ativo para o Desenvolvedor) */}
-          {isCreating ? (
-            <motion.form
-              onSubmit={handleCreateBoard}
-              initial={{ scale: 0.98, opacity: 0.8 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="flex flex-col h-28 rounded-2xl bg-[#1d2125] border border-primary/30 p-3 text-center justify-between"
-            >
-              <input
-                type="text"
-                autoFocus
-                placeholder="Título do projeto..."
-                value={newBoardTitle}
-                onChange={(e) => setNewBoardTitle(e.target.value)}
-                className="bg-black/30 border border-white/10 rounded-lg px-2 py-1 text-xs text-white placeholder:text-muted-foreground outline-none focus:border-primary/50"
-              />
-              <div className="flex gap-2 justify-end">
-                <button
-                  type="button"
-                  onClick={() => setIsCreating(false)}
-                  className="p-1 hover:bg-white/5 text-muted-foreground hover:text-white rounded-lg"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-                <button
-                  type="submit"
-                  className="p-1 bg-primary hover:bg-primary/90 text-white rounded-lg shadow-md shadow-primary/20"
-                >
-                  <Check className="w-4 h-4" />
-                </button>
-              </div>
-            </motion.form>
-          ) : (
-            <motion.div
-              onClick={() => setIsCreating(true)}
-              whileHover={{ scale: 1.02, y: -2 }}
-              className="flex flex-col items-center justify-center h-28 rounded-2xl bg-white/[0.02] border border-dashed border-white/10 hover:border-white/20 hover:bg-white/[0.04] cursor-pointer transition-all p-4 text-center group"
-            >
-              <span className="text-sm font-semibold text-white/70 group-hover:text-white transition-colors flex items-center gap-2">
-                <Plus className="w-4 h-4 text-muted-foreground group-hover:text-white" />
-                Criar novo projeto
-              </span>
-            </motion.div>
-          )}
+
         </div>
       </section>
     </div>
