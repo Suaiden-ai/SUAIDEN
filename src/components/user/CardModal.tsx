@@ -159,6 +159,10 @@ const CardModal: React.FC<CardModalProps> = ({
   const descTextareaRef = useRef<HTMLTextAreaElement>(null);
   const checklistInputRef = useRef<HTMLInputElement>(null);
 
+  // Menu de 3 pontinhos no header (desktop)
+  const [cardMenuView, setCardMenuView] = useState<null | 'main' | 'cover' | 'move'>(null);
+  const cardMenuRef = useRef<HTMLDivElement>(null);
+
   const [newLabelText, setNewLabelText] = useState('');
   const [newLabelColor, setNewLabelColor] = useState(LABEL_COLORS[0].value);
   const [searchLabelQuery, setSearchLabelQuery] = useState('');
@@ -218,6 +222,10 @@ const CardModal: React.FC<CardModalProps> = ({
   // Fechar popovers clicando fora
   useEffect(() => {
     const handleClickOutsidePopovers = (e: MouseEvent) => {
+      // Fechar card menu
+      if (cardMenuView && cardMenuRef.current && !cardMenuRef.current.contains(e.target as Node)) {
+        setCardMenuView(null);
+      }
       if (!activePopover) return;
       
       const refs: { [key: string]: React.RefObject<HTMLDivElement> } = {
@@ -236,7 +244,7 @@ const CardModal: React.FC<CardModalProps> = ({
     };
     document.addEventListener('mousedown', handleClickOutsidePopovers);
     return () => document.removeEventListener('mousedown', handleClickOutsidePopovers);
-  }, [activePopover]);
+  }, [activePopover, cardMenuView]);
 
   // Ajuste automático de altura da descrição
   useEffect(() => {
@@ -552,17 +560,134 @@ const CardModal: React.FC<CardModalProps> = ({
                   <MoreHorizontal className="w-5 h-5" />
                 </button>
               )}
+              {/* Botão de 3 pontinhos - desktop (Capa + Mover) */}
+              {(currentUserRole === 'admin' || currentUserRole === 'developer') && (
+                <div className="relative hidden md:block" ref={cardMenuRef}>
+                  <button
+                    onClick={() => setCardMenuView(cardMenuView ? null : 'main')}
+                    className="p-1.5 bg-[#2c333a] hover:bg-[#38414a] text-muted-foreground hover:text-white rounded-xl transition-colors"
+                    title="Mais opções"
+                  >
+                    <MoreHorizontal className="w-5 h-5" />
+                  </button>
+                  <AnimatePresence>
+                    {cardMenuView && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: -8 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: -8 }}
+                        className="absolute right-0 top-full mt-2 z-50 w-64 bg-[#2c333a] border border-white/10 rounded-2xl shadow-2xl overflow-hidden"
+                      >
+                        {/* View principal */}
+                        {cardMenuView === 'main' && (
+                          <div className="p-3 space-y-1">
+                            <div className="flex items-center justify-between pb-2 mb-1 border-b border-white/5">
+                              <span className="text-xs font-bold text-white">Opções do card</span>
+                              <button onClick={() => setCardMenuView(null)} className="p-0.5 hover:bg-white/10 rounded-lg transition-colors">
+                                <X className="w-3.5 h-3.5 text-muted-foreground" />
+                              </button>
+                            </div>
+                            <button
+                              onClick={() => setCardMenuView('cover')}
+                              className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-white/5 text-white rounded-xl text-xs font-semibold transition-all text-left"
+                            >
+                              <Palette className="w-4 h-4 text-muted-foreground" />
+                              <span>Capa</span>
+                            </button>
+                            <button
+                              onClick={() => setCardMenuView('move')}
+                              className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-white/5 text-white rounded-xl text-xs font-semibold transition-all text-left"
+                            >
+                              <ArrowRightLeft className="w-4 h-4 text-muted-foreground" />
+                              <span>Mover</span>
+                            </button>
+                            {currentUserRole === 'admin' && (
+                              <>
+                                <div className="border-t border-white/5 my-1" />
+                                <button
+                                  onClick={() => { onDeleteTask(task.id); setCardMenuView(null); }}
+                                  className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-red-500/10 text-red-400 hover:text-red-300 rounded-xl text-xs font-semibold transition-all text-left"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                  <span>Excluir Card</span>
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        )}
+                        {/* Sub-view: Capa */}
+                        {cardMenuView === 'cover' && (
+                          <div className="p-3 space-y-3">
+                            <div className="flex items-center gap-2 pb-2 border-b border-white/5">
+                              <button onClick={() => setCardMenuView('main')} className="p-0.5 hover:bg-white/10 rounded-lg transition-colors">
+                                <ArrowRightLeft className="w-3.5 h-3.5 text-muted-foreground rotate-180" />
+                              </button>
+                              <span className="text-xs font-bold text-white flex-1">Cor da Capa</span>
+                              <button onClick={() => setCardMenuView(null)} className="p-0.5 hover:bg-white/10 rounded-lg transition-colors">
+                                <X className="w-3.5 h-3.5 text-muted-foreground" />
+                              </button>
+                            </div>
+                            <div className="grid grid-cols-4 gap-1.5">
+                              {COVER_COLORS.map(color => (
+                                <button
+                                  key={color}
+                                  onClick={() => { update({ cover_color: color, cover_image: null }); setCardMenuView(null); }}
+                                  className={`w-full h-8 rounded-xl transition-all hover:scale-105 ${taskData.cover_color === color ? 'ring-2 ring-white scale-105' : ''}`}
+                                  style={{ backgroundColor: color }}
+                                />
+                              ))}
+                            </div>
+                            {(taskData.cover_color || taskData.cover_image) && (
+                              <button
+                                onClick={() => { update({ cover_color: null, cover_image: null }); setCardMenuView(null); }}
+                                className="w-full py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-muted-foreground hover:text-white rounded-xl text-xs font-bold transition-all"
+                              >
+                                Remover Capa
+                              </button>
+                            )}
+                          </div>
+                        )}
+                        {/* Sub-view: Mover */}
+                        {cardMenuView === 'move' && (
+                          <div className="p-3 space-y-3">
+                            <div className="flex items-center gap-2 pb-2 border-b border-white/5">
+                              <button onClick={() => setCardMenuView('main')} className="p-0.5 hover:bg-white/10 rounded-lg transition-colors">
+                                <ArrowRightLeft className="w-3.5 h-3.5 text-muted-foreground rotate-180" />
+                              </button>
+                              <span className="text-xs font-bold text-white flex-1">Mover para Lista</span>
+                              <button onClick={() => setCardMenuView(null)} className="p-0.5 hover:bg-white/10 rounded-lg transition-colors">
+                                <X className="w-3.5 h-3.5 text-muted-foreground" />
+                              </button>
+                            </div>
+                            <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                              {columns.filter(c => c.id !== colId).map(col => (
+                                <button
+                                  key={col.id}
+                                  onClick={() => { onMoveTask(col.id); setCardMenuView(null); }}
+                                  className="w-full text-left p-2.5 bg-[#22272b] hover:bg-primary/20 hover:text-white border border-white/5 hover:border-primary/30 text-xs text-muted-foreground rounded-xl font-medium transition-all"
+                                >
+                                  {col.title}
+                                </button>
+                              ))}
+                              {columns.filter(c => c.id !== colId).length === 0 && (
+                                <p className="text-xs text-muted-foreground italic text-center py-2">Nenhuma outra lista.</p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
               <button onClick={onClose} className="p-1.5 bg-[#2c333a] hover:bg-[#38414a] text-muted-foreground hover:text-white rounded-xl transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
           </div>
 
-          {/* Grid de Conteúdo Principal & Sidebar */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 flex-1 min-h-0 overflow-hidden items-start">
-            
-            {/* Coluna Esquerda: Conteúdo Principal */}
-            <div className={`${currentUserRole === 'admin' ? 'md:col-span-3' : 'md:col-span-4'} h-full overflow-y-auto pr-4 custom-scrollbar space-y-6`}>
+          {/* Conteúdo Principal */}
+          <div className="h-full flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-6">
 
               {/* Fileira de Badges (Membros, Etiquetas) */}
               {(taskData.assignees.length > 0 || taskData.labels.length > 0 || currentUserRole === 'admin' || currentUserRole === 'developer') && (
@@ -570,68 +695,237 @@ const CardModal: React.FC<CardModalProps> = ({
                   
                   {/* Membros / Responsáveis */}
                   {(taskData.assignees.length > 0 || currentUserRole === 'admin' || currentUserRole === 'developer') && (
-                    <div className="space-y-1.5">
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Responsáveis</span>
-                      <div className="flex flex-wrap gap-1 items-center">
-                        {taskData.assignees.map(a => (
-                          <div 
-                            key={a.user_id} 
-                            className={`w-7 h-7 rounded-full text-[10px] font-bold text-white flex items-center justify-center ${(currentUserRole === 'admin' || currentUserRole === 'developer') ? 'cursor-pointer hover:opacity-80' : ''} transition-opacity`}
-                            style={{ backgroundColor: avatarColor(a.user_id) }}
-                            title={a.full_name}
-                            onClick={() => { if (currentUserRole === 'admin' || currentUserRole === 'developer') setActivePopover('members'); }}
-                          >
-                            {initials(a.full_name)}
-                          </div>
-                        ))}
-                        {(currentUserRole === 'admin' || currentUserRole === 'developer') && (
-                          <button 
-                            onClick={() => setActivePopover('members')}
-                            className="w-7 h-7 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-muted-foreground hover:text-white border border-dashed border-white/20 transition-colors"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                          </button>
-                        )}
+                    <div className="relative" ref={membersPopoverRef}>
+                      <div className="space-y-1.5">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Responsáveis</span>
+                        <div className="flex flex-wrap gap-1 items-center">
+                          {taskData.assignees.map(a => (
+                            <div 
+                              key={a.user_id} 
+                              className={`w-7 h-7 rounded-full text-[10px] font-bold text-white flex items-center justify-center ${(currentUserRole === 'admin' || currentUserRole === 'developer') ? 'cursor-pointer hover:opacity-80' : ''} transition-opacity`}
+                              style={{ backgroundColor: avatarColor(a.user_id) }}
+                              title={a.full_name}
+                              onClick={() => { if (currentUserRole === 'admin' || currentUserRole === 'developer') setActivePopover(activePopover === 'members' ? null : 'members'); }}
+                            >
+                              {initials(a.full_name)}
+                            </div>
+                          ))}
+                          {(currentUserRole === 'admin' || currentUserRole === 'developer') && (
+                            <button 
+                              onClick={() => setActivePopover(activePopover === 'members' ? null : 'members')}
+                              className="w-7 h-7 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-muted-foreground hover:text-white border border-dashed border-white/20 transition-colors"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
                       </div>
+                      <AnimatePresence>
+                        {activePopover === 'members' && (
+                          <motion.div 
+                            initial={{ opacity: 0, scale: 0.95, y: -10 }} 
+                            animate={{ opacity: 1, scale: 1, y: 0 }} 
+                            exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                            className="absolute left-0 top-full mt-2 z-50 w-72 bg-[#2c333a] border border-white/10 rounded-2xl p-4 shadow-2xl space-y-3"
+                          >
+                            <div className="flex items-center justify-between pb-2 border-b border-white/5">
+                              <span className="text-xs font-bold text-white">Membros do Projeto</span>
+                              <button onClick={() => setActivePopover(null)} className="p-0.5 hover:bg-white/10 rounded-lg transition-colors">
+                                <X className="w-3.5 h-3.5 text-muted-foreground" />
+                              </button>
+                            </div>
+                            <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
+                              {members.map(m => {
+                                const isAssigned = taskData.assignees.some(a => a.user_id === m.user_id);
+                                return (
+                                  <button
+                                    key={m.user_id}
+                                    onClick={() => handleToggleAssignee(m)}
+                                    className="w-full flex items-center justify-between p-2 rounded-xl text-left hover:bg-white/5 transition-all"
+                                  >
+                                    <div className="flex items-center gap-2.5">
+                                      <div className="w-6 h-6 rounded-full text-[10px] font-bold text-white flex items-center justify-center" style={{ backgroundColor: avatarColor(m.user_id) }}>
+                                        {initials(m.full_name)}
+                                      </div>
+                                      <span className="text-xs text-white font-medium truncate max-w-[150px]">{m.full_name.replace(' (Dono)', '')}</span>
+                                    </div>
+                                    {isAssigned && <Check className="w-4 h-4 text-primary shrink-0" />}
+                                  </button>
+                                );
+                              })}
+                              {members.length === 0 && <p className="text-xs text-muted-foreground italic text-center py-2">Nenhum membro.</p>}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   )}
 
                   {/* Etiquetas */}
                   {(taskData.labels.length > 0 || currentUserRole === 'admin' || currentUserRole === 'developer') && (
-                    <div className="space-y-1.5">
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Etiquetas</span>
-                      <div className="flex flex-wrap gap-1.5 items-center">
-                        {taskData.labels.map(l => (
-                          <div 
-                            key={l.id} 
-                            className={`group px-2.5 py-1 rounded-xl text-[11px] font-bold text-black ${(currentUserRole === 'admin' || currentUserRole === 'developer') ? 'cursor-pointer hover:brightness-110' : ''} transition-all shadow-sm flex items-center gap-1.5`}
-                            style={getLabelStyle(l)}
-                            onClick={() => { if (currentUserRole === 'admin' || currentUserRole === 'developer') setActivePopover('labels'); }}
-                          >
-                            <span>{l.text}</span>
-                            {(currentUserRole === 'admin' || currentUserRole === 'developer') && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleRemoveLabel(l.id);
-                                }}
-                                className="p-0.5 hover:bg-black/20 rounded-md transition-colors text-black/70 hover:text-black flex items-center justify-center"
-                                title="Remover etiqueta"
-                              >
-                                <X className="w-2.5 h-2.5" />
-                              </button>
-                            )}
-                          </div>
-                        ))}
-                        {(currentUserRole === 'admin' || currentUserRole === 'developer') && (
-                          <button 
-                            onClick={() => setActivePopover('labels')}
-                            className="px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-muted-foreground hover:text-white border border-dashed border-white/20 transition-colors"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                          </button>
-                        )}
+                    <div className="relative" ref={labelsPopoverRef}>
+                      <div className="space-y-1.5">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Etiquetas</span>
+                        <div className="flex flex-wrap gap-1.5 items-center">
+                          {taskData.labels.map(l => (
+                            <div 
+                              key={l.id} 
+                              className={`group px-2.5 py-1 rounded-xl text-[11px] font-bold text-black ${(currentUserRole === 'admin' || currentUserRole === 'developer') ? 'cursor-pointer hover:brightness-110' : ''} transition-all shadow-sm flex items-center gap-1.5`}
+                              style={getLabelStyle(l)}
+                              onClick={() => { if (currentUserRole === 'admin' || currentUserRole === 'developer') setActivePopover(activePopover === 'labels' ? null : 'labels'); }}
+                            >
+                              <span>{l.text}</span>
+                              {(currentUserRole === 'admin' || currentUserRole === 'developer') && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRemoveLabel(l.id);
+                                  }}
+                                  className="p-0.5 hover:bg-black/20 rounded-md transition-colors text-black/70 hover:text-black flex items-center justify-center"
+                                  title="Remover etiqueta"
+                                >
+                                  <X className="w-2.5 h-2.5" />
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                          {(currentUserRole === 'admin' || currentUserRole === 'developer') && (
+                            <button 
+                              onClick={() => setActivePopover(activePopover === 'labels' ? null : 'labels')}
+                              className="px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-muted-foreground hover:text-white border border-dashed border-white/20 transition-colors"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
                       </div>
+                      <AnimatePresence>
+                        {activePopover === 'labels' && (
+                          <motion.div 
+                            initial={{ opacity: 0, scale: 0.95, y: -10 }} 
+                            animate={{ opacity: 1, scale: 1, y: 0 }} 
+                            exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                            className="absolute left-0 top-full mt-2 z-50 w-72 bg-[#2c333a] border border-white/10 rounded-2xl p-4 shadow-2xl space-y-4"
+                          >
+                            <div className="flex items-center justify-between pb-2 border-b border-white/5">
+                              <span className="text-xs font-bold text-white">Etiquetas</span>
+                              <button onClick={() => { setActivePopover(null); setSearchLabelQuery(''); setShowCreateLabel(false); }} className="p-0.5 hover:bg-white/10 rounded-lg transition-colors">
+                                <X className="w-3.5 h-3.5 text-muted-foreground" />
+                              </button>
+                            </div>
+
+                            {/* Input de busca */}
+                            <input 
+                              type="text" 
+                              placeholder="Buscar etiquetas..." 
+                              value={searchLabelQuery}
+                              onChange={e => setSearchLabelQuery(e.target.value)}
+                              className="w-full bg-[#1d2125] border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder:text-muted-foreground focus:border-primary/50 focus:ring-1 focus:ring-primary/50 outline-none transition-all" 
+                            />
+                            
+                            {/* Seção de Prioridades */}
+                            <div className="space-y-2">
+                              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Etiquetas de Prioridade</span>
+                              <div className="space-y-1.5">
+                                {PRESET_LABELS.filter(p => p.text.toLowerCase().includes(searchLabelQuery.toLowerCase())).map(preset => {
+                                  const isSelected = taskData.labels.some(l => l.text.toLowerCase() === preset.text.toLowerCase());
+                                  return (
+                                    <div key={preset.text} className="flex items-center gap-2 group">
+                                      <button
+                                        onClick={() => handleTogglePresetLabel(preset)}
+                                        className="w-4 h-4 rounded-md border border-white/20 bg-black/40 flex items-center justify-center cursor-pointer hover:border-primary shrink-0 transition-colors"
+                                      >
+                                        {isSelected && <Check className="w-3 h-3 text-primary" />}
+                                      </button>
+                                      <button
+                                        onClick={() => handleTogglePresetLabel(preset)}
+                                        style={getLabelStyle({ id: '', text: preset.text, color: preset.color })}
+                                        className="flex-1 h-8 px-3 rounded-xl text-xs font-bold text-black text-left hover:brightness-110 active:scale-[0.98] transition-all flex items-center shadow-sm"
+                                      >
+                                        {preset.text}
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          setNewLabelText(preset.text);
+                                          setNewLabelColor(preset.color);
+                                          setShowCreateLabel(true);
+                                        }}
+                                        className="p-1.5 hover:bg-white/5 text-muted-foreground hover:text-white rounded-xl opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                                        title="Editar ou usar como base"
+                                      >
+                                        <Edit2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                  );
+                                })}
+                                {PRESET_LABELS.filter(p => p.text.toLowerCase().includes(searchLabelQuery.toLowerCase())).length === 0 && (
+                                  <p className="text-[11px] text-muted-foreground italic py-1 text-center">Nenhuma prioridade correspondente.</p>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Etiquetas Personalizadas */}
+                            {taskData.labels.filter(l => !PRESET_LABELS.some(p => p.text.toLowerCase() === l.text.toLowerCase())).filter(l => l.text.toLowerCase().includes(searchLabelQuery.toLowerCase())).length > 0 && (
+                              <div className="space-y-2 pt-2 border-t border-white/5">
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Etiquetas Personalizadas</span>
+                                <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+                                  {taskData.labels
+                                    .filter(l => !PRESET_LABELS.some(p => p.text.toLowerCase() === l.text.toLowerCase()))
+                                    .filter(l => l.text.toLowerCase().includes(searchLabelQuery.toLowerCase()))
+                                    .map(label => (
+                                      <div key={label.id} className="flex items-center gap-2 group">
+                                        <button onClick={() => handleRemoveLabel(label.id)} className="w-4 h-4 rounded-md border border-white/20 bg-black/40 flex items-center justify-center cursor-pointer hover:border-primary shrink-0 transition-colors">
+                                          <Check className="w-3 h-3 text-primary" />
+                                        </button>
+                                        <div style={getLabelStyle(label)} className="flex-1 h-8 px-3 rounded-xl text-xs font-bold text-black flex items-center shadow-sm">
+                                          {label.text}
+                                        </div>
+                                        <button onClick={() => handleRemoveLabel(label.id)} className="p-1.5 hover:bg-destructive/10 text-muted-foreground hover:text-red-400 rounded-xl transition-all shrink-0" title="Remover">
+                                          <X className="w-3.5 h-3.5" />
+                                        </button>
+                                      </div>
+                                    ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Criar etiqueta */}
+                            <div className="space-y-2 pt-2 border-t border-white/5">
+                              <button
+                                onClick={() => setShowCreateLabel(!showCreateLabel)}
+                                className="w-full py-2 bg-[#2c333a] hover:bg-[#38414a] text-white border border-white/5 rounded-xl transition-all text-xs"
+                              >
+                                {showCreateLabel ? 'Ocultar criação' : 'Criar uma nova etiqueta'}
+                              </button>
+                              {showCreateLabel && (
+                                <div className="space-y-2.5 pt-2 border-t border-white/5 overflow-hidden">
+                                  <input 
+                                    type="text" 
+                                    placeholder="Nome da etiqueta..." 
+                                    value={newLabelText} 
+                                    onChange={e => setNewLabelText(e.target.value)}
+                                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddLabel(); } }}
+                                    className="w-full bg-[#1d2125] border border-white/10 focus:border-primary/50 rounded-xl px-3 py-1.5 text-xs text-white placeholder:text-muted-foreground outline-none transition-all" 
+                                  />
+                                  <div className="grid grid-cols-4 gap-1.5">
+                                    {LABEL_COLORS.map(c => (
+                                      <button 
+                                        key={c.value} 
+                                        onClick={() => setNewLabelColor(c.value)}
+                                        className={`w-full h-6 rounded-lg transition-all ${newLabelColor === c.value ? 'ring-2 ring-white scale-110' : ''}`}
+                                        style={{ backgroundColor: c.value }} 
+                                      />
+                                    ))}
+                                  </div>
+                                  <button onClick={handleAddLabel} className="w-full py-1.5 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold transition-colors">
+                                    Criar e Adicionar
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   )}
 
@@ -666,6 +960,70 @@ const CardModal: React.FC<CardModalProps> = ({
                           })()
                         ) : null}
                       </div>
+                    </div>
+                  )}
+
+                  {/* Checklist */}
+                  {(currentUserRole === 'admin' || currentUserRole === 'developer') && (
+                    <div className="relative" ref={checklistPopoverRef}>
+                      <div className="space-y-1.5">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Checklist</span>
+                        <button
+                          onClick={() => setActivePopover(activePopover === 'checklist' ? null : 'checklist')}
+                          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-muted-foreground hover:text-white text-xs font-semibold transition-colors"
+                        >
+                          <CheckSquare className="w-3.5 h-3.5" />
+                          <span>Checklist</span>
+                        </button>
+                      </div>
+                      <AnimatePresence>
+                        {activePopover === 'checklist' && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                            className="absolute left-0 top-full mt-2 z-50 w-72 bg-[#2c333a] border border-white/10 rounded-2xl p-4 shadow-2xl space-y-4"
+                          >
+                            <div className="flex items-center justify-between pb-2 border-b border-white/5">
+                              <span className="text-xs font-bold text-white">Adicionar Checklist</span>
+                              <button onClick={() => setActivePopover(null)} className="p-0.5 hover:bg-white/10 rounded-lg transition-colors">
+                                <X className="w-3.5 h-3.5 text-muted-foreground" />
+                              </button>
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Título</label>
+                              <input
+                                type="text"
+                                value={checklistTitle}
+                                onChange={e => setChecklistTitle(e.target.value)}
+                                onKeyDown={e => {
+                                  if (e.key === 'Enter') { e.preventDefault(); handleCreateChecklist(); }
+                                }}
+                                autoFocus
+                                className="w-full bg-[#1d2125] border border-white/10 focus:border-primary/50 rounded-xl px-3 py-2 text-sm text-white placeholder:text-muted-foreground outline-none transition-all"
+                              />
+                            </div>
+                            <button onClick={handleCreateChecklist} className="w-full py-2 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold transition-colors">
+                              Adicionar
+                            </button>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  )}
+
+                  {/* Anexos */}
+                  {(currentUserRole === 'admin' || currentUserRole === 'developer') && (
+                    <div className="space-y-1.5">
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Anexos</span>
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-muted-foreground hover:text-white text-xs font-semibold disabled:opacity-50 transition-colors"
+                      >
+                        {isUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Paperclip className="w-3.5 h-3.5" />}
+                        <span>{isUploading ? 'Enviando...' : 'Anexo'}</span>
+                      </button>
                     </div>
                   )}
 
@@ -1116,398 +1474,10 @@ const CardModal: React.FC<CardModalProps> = ({
                 )}
               </div>
 
-            </div>
-
-            {/* Coluna Direita: Sidebar de Ações (Estilo Trello) - apenas desktop */}
-            {(currentUserRole === 'admin' || currentUserRole === 'developer') && (
-              <div className="hidden md:block md:col-span-1 space-y-4">
-              
-              <div className="space-y-2">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Adicionar ao cartão</span>
-                
-                {/* Botão Membros */}
-                <div className="relative" ref={membersPopoverRef}>
-                  <button 
-                    onClick={() => setActivePopover(activePopover === 'members' ? null : 'members')}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 bg-[#2c333a] hover:bg-[#38414a] text-white rounded-xl text-xs font-semibold border border-white/5 transition-all text-left relative"
-                  >
-                    <UserCheck className="w-4 h-4 text-muted-foreground" />
-                    <span>Responsáveis</span>
-                  </button>
-                  <AnimatePresence>
-                    {activePopover === 'members' && (
-                      <motion.div 
-                        initial={{ opacity: 0, scale: 0.95, y: -10 }} 
-                        animate={{ opacity: 1, scale: 1, y: 0 }} 
-                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                        className="absolute right-0 top-full mt-2 z-50 w-72 bg-[#2c333a] border border-white/10 rounded-2xl p-4 shadow-2xl space-y-3"
-                      >
-                        <div className="flex items-center justify-between pb-2 border-b border-white/5">
-                           <span className="text-xs font-bold text-white">Membros do Projeto</span>
-                          <button onClick={() => setActivePopover(null)} className="p-0.5 hover:bg-white/10 rounded-lg transition-colors">
-                            <X className="w-3.5 h-3.5 text-muted-foreground" />
-                          </button>
-                        </div>
-                        <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
-                          {members.map(m => {
-                            const isAssigned = taskData.assignees.some(a => a.user_id === m.user_id);
-                            return (
-                              <button
-                                key={m.user_id}
-                                onClick={() => handleToggleAssignee(m)}
-                                className="w-full flex items-center justify-between p-2 rounded-xl text-left hover:bg-white/5 transition-all"
-                              >
-                                <div className="flex items-center gap-2.5">
-                                  <div className="w-6 h-6 rounded-full text-[10px] font-bold text-white flex items-center justify-center" style={{ backgroundColor: avatarColor(m.user_id) }}>
-                                    {initials(m.full_name)}
-                                  </div>
-                                  <span className="text-xs text-white font-medium truncate max-w-[150px]">{m.full_name.replace(' (Dono)', '')}</span>
-                                </div>
-                                {isAssigned && <Check className="w-4 h-4 text-primary shrink-0" />}
-                              </button>
-                            );
-                          })}
-                          {members.length === 0 && <p className="text-xs text-muted-foreground italic text-center py-2">Nenhum membro.</p>}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-
-                {/* Botão Etiquetas */}
-                <div className="relative" ref={labelsPopoverRef}>
-                  <button 
-                    onClick={() => setActivePopover(activePopover === 'labels' ? null : 'labels')}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 bg-[#2c333a] hover:bg-[#38414a] text-white rounded-xl text-xs font-semibold border border-white/5 transition-all text-left relative"
-                  >
-                    <Tag className="w-4 h-4 text-muted-foreground" />
-                    <span>Etiquetas</span>
-                  </button>
-                  <AnimatePresence>
-                    {activePopover === 'labels' && (
-                      <motion.div 
-                        initial={{ opacity: 0, scale: 0.95, y: -10 }} 
-                        animate={{ opacity: 1, scale: 1, y: 0 }} 
-                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                        className="absolute right-0 top-full mt-2 z-50 w-72 bg-[#2c333a] border border-white/10 rounded-2xl p-4 shadow-2xl space-y-4"
-                      >
-                        <div className="flex items-center justify-between pb-2 border-b border-white/5">
-                          <span className="text-xs font-bold text-white">Etiquetas</span>
-                          <button onClick={() => { setActivePopover(null); setSearchLabelQuery(''); setShowCreateLabel(false); }} className="p-0.5 hover:bg-white/10 rounded-lg transition-colors">
-                            <X className="w-3.5 h-3.5 text-muted-foreground" />
-                          </button>
-                        </div>
-
-                        {/* Input de busca */}
-                        <input 
-                          type="text" 
-                          placeholder="Buscar etiquetas..." 
-                          value={searchLabelQuery}
-                          onChange={e => setSearchLabelQuery(e.target.value)}
-                          className="w-full bg-[#1d2125] border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder:text-muted-foreground focus:border-primary/50 focus:ring-1 focus:ring-primary/50 outline-none transition-all" 
-                        />
-                        
-                        {/* Seção de Prioridades */}
-                        <div className="space-y-2">
-                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Etiquetas de Prioridade</span>
-                          <div className="space-y-1.5">
-                            {PRESET_LABELS.filter(p => p.text.toLowerCase().includes(searchLabelQuery.toLowerCase())).map(preset => {
-                              const isSelected = taskData.labels.some(l => l.text.toLowerCase() === preset.text.toLowerCase());
-                              return (
-                                <div key={preset.text} className="flex items-center gap-2 group">
-                                  {/* Checkbox */}
-                                  <button
-                                    onClick={() => handleTogglePresetLabel(preset)}
-                                    className="w-4 h-4 rounded-md border border-white/20 bg-black/40 flex items-center justify-center cursor-pointer hover:border-primary shrink-0 transition-colors"
-                                  >
-                                    {isSelected && <Check className="w-3 h-3 text-primary" />}
-                                  </button>
-
-                                  {/* Pílula colorida da prioridade */}
-                                  <button
-                                    onClick={() => handleTogglePresetLabel(preset)}
-                                    style={getLabelStyle({ id: '', text: preset.text, color: preset.color })}
-                                    className="flex-1 h-8 px-3 rounded-xl text-xs font-bold text-black text-left hover:brightness-110 active:scale-[0.98] transition-all flex items-center shadow-sm"
-                                  >
-                                    {preset.text}
-                                  </button>
-
-                                  {/* Lápis de edição */}
-                                  <button
-                                    onClick={() => {
-                                      setNewLabelText(preset.text);
-                                      setNewLabelColor(preset.color);
-                                      setShowCreateLabel(true);
-                                    }}
-                                    className="p-1.5 hover:bg-white/5 text-muted-foreground hover:text-white rounded-xl opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                                    title="Editar ou usar como base"
-                                  >
-                                    <Edit2 className="w-3.5 h-3.5" />
-                                  </button>
-                                </div>
-                              );
-                            })}
-                            {PRESET_LABELS.filter(p => p.text.toLowerCase().includes(searchLabelQuery.toLowerCase())).length === 0 && (
-                              <p className="text-[11px] text-muted-foreground italic py-1 text-center">Nenhuma prioridade correspondente.</p>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Outras Etiquetas (Customizadas) */}
-                        {taskData.labels.filter(l => !PRESET_LABELS.some(p => p.text.toLowerCase() === l.text.toLowerCase())).filter(l => l.text.toLowerCase().includes(searchLabelQuery.toLowerCase())).length > 0 && (
-                          <div className="space-y-2 pt-2 border-t border-white/5">
-                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Etiquetas Personalizadas</span>
-                            <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
-                              {taskData.labels
-                                .filter(l => !PRESET_LABELS.some(p => p.text.toLowerCase() === l.text.toLowerCase()))
-                                .filter(l => l.text.toLowerCase().includes(searchLabelQuery.toLowerCase()))
-                                .map(label => (
-                                  <div key={label.id} className="flex items-center gap-2 group">
-                                    <button
-                                      onClick={() => handleRemoveLabel(label.id)}
-                                      className="w-4 h-4 rounded-md border border-white/20 bg-black/40 flex items-center justify-center cursor-pointer hover:border-primary shrink-0 transition-colors"
-                                    >
-                                      <Check className="w-3 h-3 text-primary" />
-                                    </button>
-
-                                    <div
-                                      style={getLabelStyle(label)}
-                                      className="flex-1 h-8 px-3 rounded-xl text-xs font-bold text-black flex items-center shadow-sm"
-                                    >
-                                      {label.text}
-                                    </div>
-
-                                    <button
-                                      onClick={() => handleRemoveLabel(label.id)}
-                                      className="p-1.5 hover:bg-destructive/10 text-muted-foreground hover:text-red-400 rounded-xl transition-all shrink-0"
-                                      title="Remover"
-                                    >
-                                      <X className="w-3.5 h-3.5" />
-                                    </button>
-                                  </div>
-                                ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Ações */}
-                        <div className="space-y-2 pt-2 border-t border-white/5">
-                          <button
-                            onClick={() => setShowCreateLabel(!showCreateLabel)}
-                            className="w-full py-2 bg-[#2c333a] hover:bg-[#38414a] text-white border border-white/5 rounded-xl transition-all"
-                          >
-                            {showCreateLabel ? 'Ocultar criação' : 'Criar uma nova etiqueta'}
-                          </button>
-
-                          {showCreateLabel && (
-                            <div className="space-y-2.5 pt-2 border-t border-white/5 overflow-hidden">
-                              <input 
-                                type="text" 
-                                placeholder="Nome da etiqueta..." 
-                                value={newLabelText} 
-                                onChange={e => setNewLabelText(e.target.value)}
-                                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddLabel(); } }}
-                                className="w-full bg-[#1d2125] border border-white/10 focus:border-primary/50 rounded-xl px-3 py-1.5 text-xs text-white placeholder:text-muted-foreground outline-none transition-all" 
-                              />
-                              <div className="grid grid-cols-4 gap-1.5">
-                                {LABEL_COLORS.map(c => (
-                                  <button 
-                                    key={c.value} 
-                                    onClick={() => setNewLabelColor(c.value)}
-                                    className={`w-full h-6 rounded-lg transition-all ${newLabelColor === c.value ? 'ring-2 ring-white scale-110' : ''}`}
-                                    style={{ backgroundColor: c.value }} 
-                                  />
-                                ))}
-                              </div>
-                              <button 
-                                onClick={handleAddLabel} 
-                                className="w-full py-1.5 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold transition-colors"
-                              >
-                                Criar e Adicionar
-                              </button>
-                            </div>
-                          )}
-
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-
-                {/* Botão Checklist - Popover estilo Trello */}
-                <div className="relative" ref={checklistPopoverRef}>
-                  <button
-                    onClick={() => setActivePopover(activePopover === 'checklist' ? null : 'checklist')}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 bg-[#2c333a] hover:bg-[#38414a] text-white rounded-xl text-xs font-semibold border border-white/5 transition-all text-left"
-                  >
-                    <CheckSquare className="w-4 h-4 text-muted-foreground" />
-                    <span>Checklist</span>
-                  </button>
-                  <AnimatePresence>
-                    {activePopover === 'checklist' && (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                        className="absolute right-0 top-full mt-2 z-50 w-72 bg-[#2c333a] border border-white/10 rounded-2xl p-4 shadow-2xl space-y-4"
-                      >
-                        <div className="flex items-center justify-between pb-2 border-b border-white/5">
-                          <span className="text-xs font-bold text-white">Adicionar Checklist</span>
-                          <button onClick={() => setActivePopover(null)} className="p-0.5 hover:bg-white/10 rounded-lg transition-colors">
-                            <X className="w-3.5 h-3.5 text-muted-foreground" />
-                          </button>
-                        </div>
-                        <div className="space-y-1.5">
-                          <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Título</label>
-                          <input
-                            type="text"
-                            value={checklistTitle}
-                            onChange={e => setChecklistTitle(e.target.value)}
-                            onKeyDown={e => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                handleCreateChecklist();
-                              }
-                            }}
-                            autoFocus
-                            className="w-full bg-[#1d2125] border border-white/10 focus:border-primary/50 rounded-xl px-3 py-2 text-sm text-white placeholder:text-muted-foreground outline-none transition-all"
-                          />
-                        </div>
-                        <button
-                          onClick={handleCreateChecklist}
-                          className="w-full py-2 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold transition-colors"
-                        >
-                          Adicionar
-                        </button>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-
-
-
-                {/* Botão Anexos */}
-                <button 
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploading}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 bg-[#2c333a] hover:bg-[#38414a] disabled:opacity-50 text-white rounded-xl text-xs font-semibold border border-white/5 transition-all text-left"
-                >
-                  {isUploading ? <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /> : <Paperclip className="w-4 h-4 text-muted-foreground" />}
-                  <span>{isUploading ? 'Enviando...' : 'Anexos'}</span>
-                </button>
-
-                {/* Botão Capa */}
-                <div className="relative" ref={coverPopoverRef}>
-                  <button 
-                    onClick={() => setActivePopover(activePopover === 'cover' ? null : 'cover')}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 bg-[#2c333a] hover:bg-[#38414a] text-white rounded-xl text-xs font-semibold border border-white/5 transition-all text-left relative"
-                  >
-                    <Palette className="w-4 h-4 text-muted-foreground" />
-                    <span>Capa</span>
-                  </button>
-                  <AnimatePresence>
-                    {activePopover === 'cover' && (
-                      <motion.div 
-                        initial={{ opacity: 0, scale: 0.95, y: -10 }} 
-                        animate={{ opacity: 1, scale: 1, y: 0 }} 
-                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                        className="absolute right-0 top-full mt-2 z-50 w-72 bg-[#2c333a] border border-white/10 rounded-2xl p-4 shadow-2xl space-y-3"
-                      >
-                        <div className="flex items-center justify-between pb-2 border-b border-white/5">
-                          <span className="text-xs font-bold text-white">Escolha a Cor da Capa</span>
-                          <button onClick={() => setActivePopover(null)} className="p-0.5 hover:bg-white/10 rounded-lg transition-colors">
-                            <X className="w-3.5 h-3.5 text-muted-foreground" />
-                          </button>
-                        </div>
-                        <div className="grid grid-cols-4 gap-1.5">
-                          {COVER_COLORS.map(color => (
-                            <button 
-                              key={color} 
-                              onClick={() => update({ cover_color: color, cover_image: null })}
-                              className={`w-full h-8 rounded-xl transition-all hover:scale-105 ${taskData.cover_color === color ? 'ring-2 ring-white scale-105' : ''}`}
-                              style={{ backgroundColor: color }} 
-                            />
-                          ))}
-                        </div>
-                        {(taskData.cover_color || taskData.cover_image) && (
-                          <button 
-                            onClick={() => update({ cover_color: null, cover_image: null })}
-                            className="w-full py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-muted-foreground hover:text-white rounded-xl text-xs font-bold transition-all"
-                          >
-                            Remover Capa
-                          </button>
-                        )}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-
-              </div>
-
-              <div className="space-y-2">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Ações</span>
-                
-                {/* Botão Mover */}
-                <div className="relative" ref={movePopoverRef}>
-                  <button 
-                    onClick={() => setActivePopover(activePopover === 'move' ? null : 'move')}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 bg-[#2c333a] hover:bg-[#38414a] text-white rounded-xl text-xs font-semibold border border-white/5 transition-all text-left relative"
-                  >
-                    <ArrowRightLeft className="w-4 h-4 text-muted-foreground" />
-                    <span>Mover</span>
-                  </button>
-                  <AnimatePresence>
-                    {activePopover === 'move' && (
-                      <motion.div 
-                        initial={{ opacity: 0, scale: 0.95, y: -10 }} 
-                        animate={{ opacity: 1, scale: 1, y: 0 }} 
-                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                        className="absolute right-0 top-full mt-2 z-50 w-72 bg-[#2c333a] border border-white/10 rounded-2xl p-4 shadow-2xl space-y-3"
-                      >
-                        <div className="flex items-center justify-between pb-2 border-b border-white/5">
-                          <span className="text-xs font-bold text-white">Mover para Lista</span>
-                          <button onClick={() => setActivePopover(null)} className="p-0.5 hover:bg-white/10 rounded-lg transition-colors">
-                            <X className="w-3.5 h-3.5 text-muted-foreground" />
-                          </button>
-                        </div>
-                        <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                          {columns.filter(c => c.id !== colId).map(col => (
-                            <button 
-                              key={col.id} 
-                              onClick={() => { onMoveTask(col.id); setActivePopover(null); }}
-                              className="w-full text-left p-2.5 bg-[#2c333a] hover:bg-primary/20 hover:text-white border border-white/5 hover:border-primary/30 text-xs text-muted-foreground rounded-xl font-medium transition-all"
-                            >
-                              {col.title}
-                            </button>
-                          ))}
-                          {columns.filter(c => c.id !== colId).length === 0 && (
-                            <p className="text-xs text-muted-foreground italic text-center py-2">Nenhuma outra lista.</p>
-                          )}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-
-              {/* Botão Excluir */}
-              {currentUserRole === 'admin' && (
-                <button 
-                  onClick={() => onDeleteTask(task.id)}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-xl text-xs font-semibold border border-red-500/20 hover:border-red-500/30 transition-all text-left"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  <span>Excluir Card</span>
-                </button>
-              )}
-
-            </div>
-
-          </div>
-          )}
-
           </div>
 
         </div>
+
         <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} />
 
         {/* Bottom Sheet Mobile - Ações */}
@@ -1552,7 +1522,7 @@ const CardModal: React.FC<CardModalProps> = ({
                     <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Adicionar ao cartão</span>
 
                     {/* Responsáveis */}
-                    <div className="relative" ref={membersPopoverRef}>
+                    <div className="relative">
                       <button
                         onClick={() => setActivePopover(activePopover === 'members' ? null : 'members')}
                         className="w-full flex items-center gap-2.5 px-3 py-3 bg-[#2c333a] hover:bg-[#38414a] text-white rounded-xl text-sm font-semibold border border-white/5 transition-all text-left"
