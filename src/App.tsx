@@ -26,6 +26,12 @@ import JobsManagement from './pages/admin/JobsManagement';
 import CreateJobPage from './pages/admin/CreateJobPage';
 import EditJobPage from './pages/admin/EditJobPage';
 import BoardsManagement from './pages/admin/BoardsManagement';
+import DevelopersManagement from './pages/admin/DevelopersManagement';
+import UsersManagement from './pages/admin/UsersManagement';
+import MetricsManagement from './pages/admin/MetricsManagement';
+import DeveloperDetail from './pages/admin/DeveloperDetail';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import ProjectLogs from './pages/admin/ProjectLogs';
 import AdminGuard from './components/admin/AdminGuard';
 import AdminLayout from './components/admin/AdminLayout';
 
@@ -34,6 +40,7 @@ import UserGuard from './components/user/UserGuard';
 import UserLayout from './components/user/UserLayout';
 import { BoardBackgroundProvider } from './context/BoardBackgroundContext';
 import UserDashboard from './pages/user/Dashboard';
+import MyJourneyDashboard from './pages/user/MyJourneyDashboard';
 import KanbanGuard from './components/user/KanbanGuard';
 import KanbanPage from './pages/user/KanbanPage';
 
@@ -55,10 +62,11 @@ function HomePage() {
 
 function AppContent() {
   const location = useLocation();
-  const isAdminPath = 
-    location.pathname.startsWith('/admin') || 
-    location.pathname === '/login' || 
-    location.pathname === '/dashboard' || 
+  const isAdminPath =
+    location.pathname.startsWith('/admin') ||
+    location.pathname === '/login' ||
+    location.pathname === '/dashboard' ||
+    location.pathname === '/jornada' ||
     location.pathname.startsWith('/quadro');
 
   return (
@@ -86,8 +94,8 @@ function AppContent() {
             <Route path="/vaga/sucesso" element={<ApplicationSuccessPage />} />
             
             {/* User Routes */}
-            <Route 
-              path="/dashboard" 
+            <Route
+              path="/dashboard"
               element={
                 <UserGuard>
                   <BoardBackgroundProvider>
@@ -96,9 +104,22 @@ function AppContent() {
                     </UserLayout>
                   </BoardBackgroundProvider>
                 </UserGuard>
-              } 
+              }
             />
-            
+
+            <Route
+              path="/jornada"
+              element={
+                <UserGuard>
+                  <BoardBackgroundProvider>
+                    <UserLayout>
+                      <MyJourneyDashboard />
+                    </UserLayout>
+                  </BoardBackgroundProvider>
+                </UserGuard>
+              }
+            />
+
             <Route 
               path="/quadro/:boardId" 
               element={
@@ -122,12 +143,17 @@ function AppContent() {
                 <AdminGuard>
                   <AdminLayout>
                     <Routes>
-                      <Route path="dashboard" element={<CandidatesManagement />} />
+                      <Route path="dashboard" element={<AdminDashboard />} />
                       <Route path="candidates" element={<CandidatesManagement />} />
                       <Route path="jobs" element={<JobsManagement />} />
                       <Route path="jobs/new" element={<CreateJobPage />} />
                       <Route path="jobs/edit/:id" element={<EditJobPage />} />
                       <Route path="boards" element={<BoardsManagement />} />
+                      <Route path="boards/:boardId/logs" element={<ProjectLogs />} />
+                      <Route path="developers" element={<DevelopersManagement />} />
+                      <Route path="developers/:id" element={<DeveloperDetail />} />
+                      <Route path="users" element={<UsersManagement />} />
+                      <Route path="metrics" element={<MetricsManagement />} />
                     </Routes>
                   </AdminLayout>
                 </AdminGuard>
