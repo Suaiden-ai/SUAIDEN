@@ -552,38 +552,9 @@ const CardModal: React.FC<CardModalProps> = ({
           </div>
         )}
 
-        <div className="p-6 md:p-8 space-y-6 flex-1 flex flex-col min-h-0 overflow-hidden">
-          {/* Header */}
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1 flex items-center gap-3">
-              {/* Botão de Check Circular no Modal */}
-              <button
-                onClick={async () => {
-                  if (currentUserRole !== 'admin') return;
-                  const nextDone = !taskData.is_done;
-                  await update({ is_done: nextDone });
-                }}
-                className={`w-6 h-6 rounded-full border flex items-center justify-center shrink-0 transition-all ${
-                  taskData.is_done 
-                    ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/20' 
-                    : 'bg-transparent border-white/20 hover:border-emerald-500/50'
-                }`}
-                title={taskData.is_done ? "Marcar como não concluído" : "Marcar como concluído"}
-              >
-                {taskData.is_done && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-              </button>
-
-              <div className="flex-1">
-                <input type="text" value={cardTitle} onChange={e => setCardTitle(e.target.value)}
-                  onBlur={() => update({ title: cardTitle })}
-                  onKeyDown={e => { if (e.key === 'Enter') update({ title: cardTitle }); }}
-                  readOnly={currentUserRole !== 'admin' && currentUserRole !== 'developer'}
-                  className={`w-full bg-transparent border-b border-transparent ${(currentUserRole === 'admin' || currentUserRole === 'developer') ? 'focus:border-primary' : ''} text-2xl font-bold outline-none pb-1 transition-colors ${
-                    taskData.is_done ? 'line-through text-muted-foreground/60' : 'text-white'
-                  }`} 
-                />
-              </div>
-            </div>
+        <div className="p-6 md:p-8 space-y-2 flex-1 flex flex-col min-h-0 overflow-hidden">
+          {/* Header (apenas ações - fixo) */}
+          <div className="flex items-center justify-end gap-2 shrink-0">
             <div className="flex items-center gap-2">
               {/* Botão de 3 pontinhos - apenas mobile */}
               {(currentUserRole === 'admin' || currentUserRole === 'developer') && (
@@ -723,6 +694,37 @@ const CardModal: React.FC<CardModalProps> = ({
 
           {/* Conteúdo Principal */}
           <div className="h-full flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-6">
+
+              {/* Título (rola junto com o conteúdo) */}
+              <div className="flex items-start gap-3">
+                {/* Botão de Check Circular no Modal */}
+                <button
+                  onClick={async () => {
+                    if (currentUserRole !== 'admin') return;
+                    const nextDone = !taskData.is_done;
+                    await update({ is_done: nextDone });
+                  }}
+                  className={`w-6 h-6 mt-1.5 rounded-full border flex items-center justify-center shrink-0 transition-all ${
+                    taskData.is_done
+                      ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/20'
+                      : 'bg-transparent border-white/20 hover:border-emerald-500/50'
+                  }`}
+                  title={taskData.is_done ? "Marcar como não concluído" : "Marcar como concluído"}
+                >
+                  {taskData.is_done && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                </button>
+
+                <textarea value={cardTitle} onChange={e => setCardTitle(e.target.value)}
+                  ref={el => { if (el) { el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px`; } }}
+                  onBlur={() => update({ title: cardTitle })}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); update({ title: cardTitle }); } }}
+                  readOnly={currentUserRole !== 'admin' && currentUserRole !== 'developer'}
+                  rows={1}
+                  className={`flex-1 bg-transparent border-b border-transparent ${(currentUserRole === 'admin' || currentUserRole === 'developer') ? 'focus:border-primary' : ''} text-2xl font-bold outline-none pb-1 transition-colors resize-none overflow-hidden ${
+                    taskData.is_done ? 'line-through text-muted-foreground/60' : 'text-white'
+                  }`}
+                />
+              </div>
 
               {/* Fileira de Badges (Membros, Etiquetas) */}
               {(taskData.assignees.length > 0 || taskData.labels.length > 0 || currentUserRole === 'admin' || currentUserRole === 'developer') && (
