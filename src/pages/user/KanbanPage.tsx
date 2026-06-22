@@ -1520,9 +1520,19 @@ const KanbanPage: React.FC = () => {
                   <div className="bg-[#22252a] border border-white/5 rounded-2xl p-3 shadow-md">
                     <textarea
                       autoFocus
+                      ref={el => {
+                        if (el) {
+                          el.style.height = 'auto';
+                          el.style.height = `${el.scrollHeight}px`;
+                        }
+                      }}
                       placeholder="Insira um título ou cole um link"
                       value={newCardTitles[column.id] || ''}
-                      onChange={e => setNewCardTitles({ ...newCardTitles, [column.id]: e.target.value })}
+                      onChange={e => {
+                        setNewCardTitles({ ...newCardTitles, [column.id]: e.target.value });
+                        e.target.style.height = 'auto';
+                        e.target.style.height = `${e.target.scrollHeight}px`;
+                      }}
                       onKeyDown={e => {
                         if (e.key === 'Enter' && !e.shiftKey) {
                           e.preventDefault();
@@ -1532,8 +1542,8 @@ const KanbanPage: React.FC = () => {
                           setActiveAddCardColId(null);
                         }
                       }}
-                      rows={2}
-                      className="w-full bg-transparent text-xs text-white placeholder:text-muted-foreground outline-none focus:outline-none focus:ring-0 resize-none"
+                      rows={1}
+                      className="w-full bg-transparent text-sm text-white placeholder:text-muted-foreground outline-none focus:outline-none focus:ring-0 resize-none overflow-y-auto min-h-[40px] max-h-[200px]"
                     />
                   </div>
                 )}
