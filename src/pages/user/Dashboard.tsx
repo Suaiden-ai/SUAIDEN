@@ -45,7 +45,9 @@ const DashboardWrapper: React.FC = () => {
     );
   }
 
-  if (role === 'developer') {
+  const lowerRole = role?.toLowerCase();
+
+  if (lowerRole === 'developer') {
     return <DeveloperDashboard />;
   }
 

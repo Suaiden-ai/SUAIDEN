@@ -3,11 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Plus, X, LayoutGrid, List, Search,
   MoreHorizontal, SortAsc, SortDesc, Paintbrush, Copy,
-  Paperclip, FileIcon, Trash2, CheckSquare, AlignLeft as AlignLeftIcon, Check, Loader2, Upload, MessageSquare
+  Paperclip, FileIcon, Trash2, CheckSquare, AlignLeft as AlignLeftIcon, Check, Loader2, Upload, MessageSquare, Code2, ChevronDown, ScrollText
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../services/supabase';
 import CardModal, { Task, Column, MemberInfo, initials, avatarColor } from '../../components/user/CardModal';
+import { logActivity } from '../../lib/activityLog';
 import BoardListView from '../../components/user/BoardListView';
 import { useBoardBackground } from '../../context/BoardBackgroundContext';
 import { createPortal } from 'react-dom';
@@ -175,6 +176,7 @@ const KanbanPage: React.FC = () => {
   const [columns, setColumns] = useState<Column[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+  const [currentUserName, setCurrentUserName] = useState<string | null>(null);
   const [members, setMembers] = useState<MemberInfo[]>([]);
 
   // Edição de colunas
@@ -211,6 +213,11 @@ const KanbanPage: React.FC = () => {
   const [filterLabelColor, setFilterLabelColor] = useState<string | null>(null);
   const [filterAssigneeId, setFilterAssigneeId] = useState<string | null>(null);
   const [filterPriorities, setFilterPriorities] = useState<string[]>([]);
+
+  // Filtro por Responsáveis / Desenvolvedores
+  const [isDevFilterOpen, setIsDevFilterOpen] = useState(false);
+  const devFilterRef = useRef<HTMLDivElement>(null);
+  const developers = useMemo(() => members.filter(m => m.role === 'developer'), [members]);
 
   // Modo de Visualização
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
@@ -307,10 +314,13 @@ const KanbanPage: React.FC = () => {
         setCurrentUserId(session.user.id);
         const { data: profile } = await supabase
           .from('profiles')
-          .select('role')
+          .select('role, full_name')
           .eq('id', session.user.id)
           .single();
-        if (profile) setCurrentUserRole(profile.role);
+        if (profile) {
+          setCurrentUserRole(profile.role);
+          setCurrentUserName(profile.full_name);
+        }
       }
 
       const { data: boardData, error: boardError } = await supabase
@@ -320,16 +330,16 @@ const KanbanPage: React.FC = () => {
       setBoardBackground({ bg_type: boardData.bg_type, background: boardData.background });
 
       const { data: membersData } = await supabase
-        .from('board_members').select('user_id, profiles:user_id (full_name, email)').eq('board_id', boardId);
+        .from('board_members').select('user_id, profiles:user_id (full_name, email, role)').eq('board_id', boardId);
       const { data: ownerProfile } = await supabase
-        .from('profiles').select('id, full_name, email').eq('id', boardData.owner_id).single();
+        .from('profiles').select('id, full_name, email, role').eq('id', boardData.owner_id).single();
 
       const formattedMembers: MemberInfo[] = [];
-      if (ownerProfile) formattedMembers.push({ user_id: ownerProfile.id, full_name: ownerProfile.full_name, email: ownerProfile.email });
+      if (ownerProfile) formattedMembers.push({ user_id: ownerProfile.id, full_name: ownerProfile.full_name, email: ownerProfile.email, role: ownerProfile.role });
       if (membersData) {
         membersData.forEach((m: any) => {
           if (m.user_id !== boardData.owner_id && m.profiles)
-            formattedMembers.push({ user_id: m.user_id, full_name: m.profiles.full_name, email: m.profiles.email });
+            formattedMembers.push({ user_id: m.user_id, full_name: m.profiles.full_name, email: m.profiles.email, role: m.profiles.role });
         });
       }
       setMembers(formattedMembers);
@@ -378,6 +388,7 @@ const KanbanPage: React.FC = () => {
 
     const handleClickOutside = (e: MouseEvent) => {
       if (membersRef.current && !membersRef.current.contains(e.target as Node)) setIsMembersModalOpen(false);
+      if (devFilterRef.current && !devFilterRef.current.contains(e.target as Node)) setIsDevFilterOpen(false);
       if (colMenuRef.current && !colMenuRef.current.contains(e.target as Node)) {
         setOpenColMenuId(null); setConfirmClearColId(null);
       }
@@ -475,25 +486,97 @@ const KanbanPage: React.FC = () => {
   const totalFilteredCards = hasActiveFilter ? filteredColumns.reduce((s, c) => s + c.tasks.length, 0) : null;
 
 
+  // ── Métricas: registro de atividade da task (tabela task_activity) ──
+  const logTaskActivity = async (payload: {
+    taskId: string;
+    action: 'created' | 'completed' | 'reopened' | 'moved' | 'assigned';
+    fromColumnId?: string | null;
+    toColumnId?: string | null;
+  }) => {
+    try {
+      await supabase.from('task_activity').insert({
+        task_id: payload.taskId,
+        board_id: boardId ?? null,
+        user_id: currentUserId,
+        action: payload.action,
+        from_column_id: payload.fromColumnId ?? null,
+        to_column_id: payload.toColumnId ?? null,
+      });
+    } catch (err) {
+      // Não bloquear o fluxo do usuário caso o log falhe
+      console.error('Erro ao registrar atividade da task:', err);
+    }
+  };
+
+  // ── Logs do projeto (tabela activity_log) ──
+  const log = (
+    entityType: Parameters<typeof logActivity>[0]['entityType'],
+    action: Parameters<typeof logActivity>[0]['action'],
+    opts: { taskId?: string | null; columnId?: string | null; entityLabel?: string | null; metadata?: Record<string, unknown> } = {}
+  ) => {
+    if (!boardId) return;
+    void logActivity({
+      boardId,
+      entityType,
+      action,
+      actorId: currentUserId,
+      actorName: currentUserName,
+      taskId: opts.taskId ?? null,
+      columnId: opts.columnId ?? null,
+      entityLabel: opts.entityLabel ?? null,
+      metadata: opts.metadata ?? {},
+    });
+  };
+
+
   // ── Callbacks do Modal ──
   const handleUpdateTask = async (updates: Partial<Task>) => {
     if (!activeTask) return;
     const { error } = await supabase.from('tasks').update(updates).eq('id', activeTask.id);
     if (error) throw error;
+    // Registrar conclusão/reabertura quando is_done mudar
+    if (typeof updates.is_done === 'boolean' && updates.is_done !== activeTask.is_done) {
+      logTaskActivity({ taskId: activeTask.id, action: updates.is_done ? 'completed' : 'reopened' });
+      log('card', updates.is_done ? 'completed' : 'reopened', { taskId: activeTask.id, columnId: activeTask.column_id, entityLabel: activeTask.title });
+    }
+    // Renomeio do card
+    if (typeof updates.title === 'string' && updates.title !== activeTask.title) {
+      log('card', 'renamed', { taskId: activeTask.id, columnId: activeTask.column_id, entityLabel: updates.title, metadata: { from: activeTask.title, to: updates.title } });
+    }
+    // Edições gerais (descrição, prazo, labels, capa) — exceto título/is_done/posição já cobertos
+    const trackedKeys = Object.keys(updates).filter(k => !['title', 'is_done', 'position', 'column_id'].includes(k));
+    if (trackedKeys.length > 0) {
+      log('card', 'updated', { taskId: activeTask.id, columnId: activeTask.column_id, entityLabel: activeTask.title, metadata: { fields: trackedKeys } });
+    }
     setActiveTask(prev => prev ? { ...prev, ...updates } : null);
   };
 
   const handleDeleteTask = async (taskId: string) => {
     if (currentUserRole !== 'admin') return;
+    const deleted = columns.flatMap(c => c.tasks).find(t => t.id === taskId) ?? activeTask;
     await supabase.from('tasks').delete().eq('id', taskId);
+    log('card', 'deleted', { columnId: deleted?.column_id ?? null, entityLabel: deleted?.title ?? null });
     setActiveTask(null);
   };
 
   const handleMoveTask = async (targetColId: string) => {
     if (!activeTask) return;
+    const fromColId = activeTask.column_id;
     const newPosition = columns.find(c => c.id === targetColId)?.tasks.length || 0;
     const { error } = await supabase.from('tasks').update({ column_id: targetColId, position: newPosition }).eq('id', activeTask.id);
     if (error) throw error;
+    if (fromColId !== targetColId) {
+      logTaskActivity({ taskId: activeTask.id, action: 'moved', fromColumnId: fromColId, toColumnId: targetColId });
+      log('card', 'moved', {
+        taskId: activeTask.id,
+        columnId: targetColId,
+        entityLabel: activeTask.title,
+        metadata: {
+          from_column: columns.find(c => c.id === fromColId)?.title ?? null,
+          to_column: columns.find(c => c.id === targetColId)?.title ?? null,
+        },
+      });
+    }
     setActiveTaskColId(targetColId);
   };
 
@@ -501,20 +584,32 @@ const KanbanPage: React.FC = () => {
   const handleAddColumn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!boardId || (currentUserRole !== 'admin' && currentUserRole !== 'developer') || !newColumnTitle.trim()) return;
+    const title = newColumnTitle.trim();
     try {
-      await supabase.from('columns').insert({ board_id: boardId, title: newColumnTitle.trim(), position: columns.length });
+      const { data: newCol } = await supabase.from('columns').insert({ board_id: boardId, title, position: columns.length }).select('id').single();
+      log('column', 'created', { columnId: newCol?.id ?? null, entityLabel: title });
       setNewColumnTitle('');
       setIsAddingColumn(false);
     } catch (err) { console.error(err); }
   };
   const handleSaveColumnTitle = async (colId: string) => {
     if (!editingColumnTitle.trim()) { setEditingColumnId(null); return; }
-    try { await supabase.from('columns').update({ title: editingColumnTitle.trim() }).eq('id', colId); setEditingColumnId(null); }
+    const prevTitle = columns.find(c => c.id === colId)?.title ?? null;
+    const newTitle = editingColumnTitle.trim();
+    try {
+      await supabase.from('columns').update({ title: newTitle }).eq('id', colId);
+      if (prevTitle !== newTitle) log('column', 'renamed', { columnId: colId, entityLabel: newTitle, metadata: { from: prevTitle, to: newTitle } });
+      setEditingColumnId(null);
+    }
     catch (err) { console.error(err); }
   };
   const handleDeleteColumn = async (columnId: string) => {
     if (currentUserRole !== 'admin') return;
-    try { await supabase.from('columns').delete().eq('id', columnId); } catch (err) { console.error(err); }
+    const colTitle = columns.find(c => c.id === columnId)?.title ?? null;
+    try {
+      await supabase.from('columns').delete().eq('id', columnId);
+      log('column', 'deleted', { entityLabel: colTitle });
+    } catch (err) { console.error(err); }
   };
 
   // ── Menu da Coluna: Ordenar ──
@@ -665,11 +760,15 @@ const KanbanPage: React.FC = () => {
     if (!title?.trim()) return;
     try {
       const position = columns.find(c => c.id === columnId)?.tasks.length || 0;
-      await supabase.from('tasks').insert({
+      const { data: createdCard } = await supabase.from('tasks').insert({
         column_id: columnId, title: title.trim(), position,
         description: '', checklist: [], labels: [], assignees: [], due_date: null, cover_color: null,
         is_done: false
-      });
+      }).select('id').single();
+      if (createdCard) {
+        logTaskActivity({ taskId: createdCard.id, action: 'created', toColumnId: columnId });
+        log('card', 'created', { taskId: createdCard.id, columnId, entityLabel: title.trim() });
+      }
       setNewCardTitles(prev => ({ ...prev, [columnId]: '' }));
     } catch (err) { console.error(err); }
   };
@@ -716,15 +815,20 @@ const KanbanPage: React.FC = () => {
 
       if (taskError) throw taskError;
 
+      if (newTask) {
+        logTaskActivity({ taskId: newTask.id, action: 'created', toColumnId: board.ticket_column_id });
+        log('card', 'created', { taskId: newTask.id, columnId: board.ticket_column_id, entityLabel: ticketTitle.trim(), metadata: { source: 'ticket' } });
+      }
+
       if (ticketFiles.length > 0 && currentUserId && newTask) {
         for (const file of ticketFiles) {
           const fileExt = file.name.split('.').pop();
           const fileName = `${Math.random()}.${fileExt}`;
           const filePath = `${newTask.id}/${fileName}`;
-          
+
           await supabase.storage.from('card-attachments').upload(filePath, file);
           const { data: { publicUrl } } = supabase.storage.from('card-attachments').getPublicUrl(filePath);
-          
+
           await supabase.from('card_attachments').insert({
             task_id: newTask.id,
             user_id: currentUserId,
@@ -733,6 +837,7 @@ const KanbanPage: React.FC = () => {
             file_size: file.size,
             file_type: file.type
           });
+          log('attachment', 'uploaded', { taskId: newTask.id, columnId: board.ticket_column_id, entityLabel: file.name, metadata: { file_size: file.size, file_type: file.type, source: 'ticket' } });
         }
       }
 
@@ -765,6 +870,8 @@ const KanbanPage: React.FC = () => {
         .from('board_members')
         .insert({ board_id: boardId, user_id: userId });
       if (error) throw error;
+      const memberName = members.find(m => m.user_id === userId)?.full_name ?? null;
+      log('member', 'member_added', { entityLabel: memberName, metadata: { user_id: userId } });
       fetchBoardData();
     } catch (err) {
       console.error('Erro ao adicionar membro:', err);
@@ -774,12 +881,14 @@ const KanbanPage: React.FC = () => {
   const handleRemoveMember = async (userId: string) => {
     if (!boardId || (currentUserRole !== 'admin' && currentUserRole !== 'developer')) return;
     try {
+      const memberName = members.find(m => m.user_id === userId)?.full_name ?? null;
       const { error } = await supabase
         .from('board_members')
         .delete()
         .eq('board_id', boardId)
         .eq('user_id', userId);
       if (error) throw error;
+      log('member', 'member_removed', { entityLabel: memberName, metadata: { user_id: userId } });
       fetchBoardData();
     } catch (err) {
       console.error('Erro ao remover membro:', err);
@@ -823,6 +932,18 @@ const KanbanPage: React.FC = () => {
       else targetTasks = targetTasks.filter(t => t.id !== draggedTaskId);
       targetTasks.splice(targetIndex ?? targetTasks.length, 0, { ...movedTask, column_id: targetColId });
       await supabase.from('tasks').update({ column_id: targetColId, position: targetIndex ?? targetTasks.length - 1 }).eq('id', draggedTaskId);
+      if (draggedSourceColId !== targetColId) {
+        logTaskActivity({ taskId: draggedTaskId, action: 'moved', fromColumnId: draggedSourceColId, toColumnId: targetColId });
+        log('card', 'moved', {
+          taskId: draggedTaskId,
+          columnId: targetColId,
+          entityLabel: movedTask.title,
+          metadata: {
+            from_column: columns.find(c => c.id === draggedSourceColId)?.title ?? null,
+            to_column: targetCol.title,
+          },
+        });
+      }
       const updatePos = (list: Task[]) => Promise.all(list.map((t, i) => supabase.from('tasks').update({ position: i }).eq('id', t.id)));
       await updatePos(targetTasks);
       if (draggedSourceColId !== targetColId) await updatePos(sourceTasks);
@@ -836,7 +957,9 @@ const KanbanPage: React.FC = () => {
     }
     try {
       const newTitle = editingBoardTitle.trim();
+      const prevTitle = board?.title ?? null;
       await supabase.from('boards').update({ title: newTitle }).eq('id', boardId);
+      log('board', 'renamed', { entityLabel: newTitle, metadata: { from: prevTitle, to: newTitle } });
       setBoard(prev => prev ? { ...prev, title: newTitle } : null);
     } catch (err) {
       console.error('Erro ao salvar título do quadro:', err);
@@ -952,7 +1075,19 @@ const KanbanPage: React.FC = () => {
               <List className="w-4 h-4" />
             </button>
           </div>
-          
+
+          {/* Ver Logs do Projeto (Apenas Admin) */}
+          {currentUserRole === 'admin' && (
+            <button
+              onClick={() => navigate(`/admin/boards/${boardId}/logs`)}
+              title="Ver logs do projeto"
+              className="flex items-center gap-1.5 h-8 px-2.5 rounded-xl border border-white/10 bg-black/20 text-white/60 hover:text-white hover:border-white/20 text-xs font-bold transition-all"
+            >
+              <ScrollText className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">Logs</span>
+            </button>
+          )}
+
           {/* Buscar cards */}
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
@@ -992,6 +1127,81 @@ const KanbanPage: React.FC = () => {
             })}
           </div>
  
+          {/* Filtro por Responsáveis / Desenvolvedores */}
+          {developers.length > 0 && (
+            <div className="relative" ref={devFilterRef}>
+              <button
+                onClick={() => setIsDevFilterOpen(!isDevFilterOpen)}
+                title="Filtrar tasks por responsável / desenvolvedor"
+                className={`flex items-center gap-1.5 h-8 px-2.5 rounded-xl border text-xs font-bold transition-all ${
+                  filterAssigneeId && developers.some(d => d.user_id === filterAssigneeId)
+                    ? 'bg-primary/20 border-primary/40 text-primary'
+                    : 'bg-black/20 border-white/10 text-white/60 hover:text-white'
+                }`}
+              >
+                <Code2 className="w-3.5 h-3.5" />
+                <span className="hidden md:inline">
+                  {filterAssigneeId && developers.some(d => d.user_id === filterAssigneeId)
+                    ? (developers.find(d => d.user_id === filterAssigneeId)?.full_name?.split(' ')[0] || 'Dev')
+                    : 'Responsáveis'}
+                </span>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isDevFilterOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              <AnimatePresence>
+                {isDevFilterOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute right-0 mt-2 w-64 rounded-2xl bg-[#0c0c0c] border border-white/10 shadow-2xl p-2 z-40 backdrop-blur-xl"
+                  >
+                    <div className="flex items-center justify-between px-2 py-1.5 border-b border-white/5 mb-1">
+                      <span className="font-bold text-[10px] text-muted-foreground uppercase tracking-wider">Desenvolvedores</span>
+                      {filterAssigneeId && developers.some(d => d.user_id === filterAssigneeId) && (
+                        <button
+                          onClick={() => { setFilterAssigneeId(null); setIsDevFilterOpen(false); }}
+                          className="text-[10px] font-bold text-primary hover:underline"
+                        >
+                          Limpar
+                        </button>
+                      )}
+                    </div>
+                    <div className="space-y-0.5 max-h-60 overflow-y-auto pr-0.5">
+                      {developers.map(dev => {
+                        const isActive = filterAssigneeId === dev.user_id;
+                        return (
+                          <button
+                            key={dev.user_id}
+                            onClick={() => {
+                              setFilterAssigneeId(isActive ? null : dev.user_id);
+                              setIsDevFilterOpen(false);
+                            }}
+                            className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-xl transition-colors text-left ${
+                              isActive ? 'bg-primary/15' : 'hover:bg-white/5'
+                            }`}
+                          >
+                            <div
+                              className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
+                              style={{ backgroundColor: avatarColor(dev.user_id) }}
+                            >
+                              {initials(dev.full_name)}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-bold text-white truncate">{dev.full_name}</p>
+                              <p className="text-[10px] text-muted-foreground truncate">{dev.email}</p>
+                            </div>
+                            {isActive && <Check className="w-4 h-4 text-primary shrink-0" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
           {/* Filtro de Membros & Gerenciar */}
           <div className="relative" ref={membersRef}>
             <div className="flex items-center gap-2 bg-black/30 border border-white/10 rounded-xl px-2 py-0.5 h-8">
@@ -1373,6 +1583,7 @@ const KanbanPage: React.FC = () => {
                                 const nextDone = !task.is_done;
                                 try {
                                   await supabase.from('tasks').update({ is_done: nextDone }).eq('id', task.id);
+                                  logTaskActivity({ taskId: task.id, action: nextDone ? 'completed' : 'reopened', toColumnId: column.id });
                                   setColumns(prev => prev.map(c => {
                                     if (c.id === column.id) {
                                       return {
@@ -1630,7 +1841,7 @@ const KanbanPage: React.FC = () => {
         </div>
       ) : (
         <BoardListView
-          columns={columns}
+          columns={filteredColumns}
           onTaskClick={(task, colId) => {
             setActiveTask(task);
             setActiveTaskColId(colId);
@@ -1648,6 +1859,8 @@ const KanbanPage: React.FC = () => {
             members={members}
             currentUserId={currentUserId}
             currentUserRole={currentUserRole}
+            currentUserName={currentUserName}
+            boardId={boardId}
             onClose={() => setActiveTask(null)}
             onUpdateTask={handleUpdateTask}
             onDeleteTask={handleDeleteTask}

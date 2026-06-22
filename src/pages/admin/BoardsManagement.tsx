@@ -8,7 +8,8 @@ import {
   X,
   LayoutGrid,
   MoreVertical,
-  Trash2
+  Trash2,
+  ScrollText
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '../../components/jobs/ui/badge';
@@ -243,7 +244,18 @@ const BoardsManagement: React.FC = () => {
 
                 {/* Dropdown Menu */}
                 {activeMenuBoardId === board.id && (
-                  <div className="absolute right-0 mt-1 w-36 bg-[#1d2125] border border-white/10 rounded-xl shadow-2xl p-1 z-30 animate-in fade-in slide-in-from-top-1 duration-150">
+                  <div className="absolute right-0 mt-1 w-40 bg-[#1d2125] border border-white/10 rounded-xl shadow-2xl p-1 z-30 animate-in fade-in slide-in-from-top-1 duration-150">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveMenuBoardId(null);
+                        navigate(`/admin/boards/${board.id}/logs`);
+                      }}
+                      className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-white/80 hover:bg-white/5 hover:text-white transition-colors"
+                    >
+                      <ScrollText className="w-3.5 h-3.5" />
+                      Ver Logs
+                    </button>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();

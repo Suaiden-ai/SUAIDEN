@@ -8,6 +8,7 @@ import {
   Edit2, ChevronDown, ChevronUp, MoreHorizontal
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { logActivity } from '../../lib/activityLog';
 
 // ────────────────────────────────────────────
 // Tipos
@@ -25,10 +26,12 @@ export interface Task {
   checklist_title?: string | null;
   cover_image?: string | null;
   comments_count?: number;
+  created_at?: string | null;
+  completed_at?: string | null;
 }
 
 export interface Column { id: string; title: string; position: number; tasks: Task[]; }
-export interface MemberInfo { user_id: string; full_name: string; email: string; }
+export interface MemberInfo { user_id: string; full_name: string; email: string; role?: string; }
 
 interface Comment {
   id: string; task_id: string; user_id: string; content: string; created_at: string;
@@ -47,6 +50,8 @@ interface CardModalProps {
   members: MemberInfo[];
   currentUserId: string | null;
   currentUserRole?: string | null;
+  currentUserName?: string | null;
+  boardId?: string | null;
   onClose: () => void;
   onUpdateTask: (updates: Partial<Task>) => Promise<void>;
   onDeleteTask: (taskId: string) => void;
@@ -111,7 +116,7 @@ export function avatarColor(userId: string) {
 // ────────────────────────────────────────────
 
 const CardModal: React.FC<CardModalProps> = ({
-  task, colId, columns, members, currentUserId, currentUserRole,
+  task, colId, columns, members, currentUserId, currentUserRole, currentUserName, boardId,
   onClose, onUpdateTask, onDeleteTask, onMoveTask
 }) => {
   const [taskData, setTaskData] = useState<Task>(task);
@@ -261,6 +266,26 @@ const CardModal: React.FC<CardModalProps> = ({
     setTaskData(prev => ({ ...prev, ...updates }));
   };
 
+  // ── Logs do projeto (activity_log) — comentários e anexos ──
+  const log = (
+    entityType: Parameters<typeof logActivity>[0]['entityType'],
+    action: Parameters<typeof logActivity>[0]['action'],
+    opts: { entityLabel?: string | null; metadata?: Record<string, unknown> } = {}
+  ) => {
+    if (!boardId) return;
+    void logActivity({
+      boardId,
+      entityType,
+      action,
+      actorId: currentUserId,
+      actorName: currentUserName,
+      taskId: task.id,
+      columnId: task.column_id,
+      entityLabel: opts.entityLabel ?? task.title,
+      metadata: opts.metadata ?? {},
+    });
+  };
+
   // ── Checklist ──
   const handleAddChecklist = async () => {
     if (!newChecklistItem.trim()) return;
@@ -377,6 +402,10 @@ const CardModal: React.FC<CardModalProps> = ({
       } else {
         fetchExtras();
       }
+      if (!error) {
+        const text = commentText.trim();
+        log('comment', 'commented', { metadata: { excerpt: text.length > 120 ? `${text.slice(0, 120)}…` : text } });
+      }
       setCommentText('');
     } finally {
       setIsSendingComment(false);
@@ -386,6 +415,7 @@ const CardModal: React.FC<CardModalProps> = ({
   const handleDeleteComment = async (commentId: string) => {
     await supabase.from('card_comments').delete().eq('id', commentId);
     setComments(prev => prev.filter(c => c.id !== commentId));
+    log('comment', 'comment_deleted');
   };
 
   // ── Anexos ──
@@ -408,6 +438,9 @@ const CardModal: React.FC<CardModalProps> = ({
         setAttachments(prev => [newAtt, ...prev]);
       } else {
         fetchExtras();
+      }
+      if (!insertError) {
+        log('attachment', 'uploaded', { entityLabel: file.name, metadata: { file_size: file.size, file_type: file.type, card: task.title } });
       }
     } catch (err) {
       console.error('Erro ao fazer upload:', err);
@@ -461,7 +494,9 @@ const CardModal: React.FC<CardModalProps> = ({
       const filePath = attachment.file_url.split('/card-attachments/')[1];
       await supabase.storage.from('card-attachments').remove([filePath]);
       await supabase.from('card_attachments').delete().eq('id', attachment.id);
-      
+
+      log('attachment', 'attachment_deleted', { entityLabel: attachment.file_name, metadata: { card: task.title } });
+
       // Atualizar o estado local imediatamente
       setAttachments(prev => prev.filter(a => a.id !== attachment.id));
     } catch (err) {

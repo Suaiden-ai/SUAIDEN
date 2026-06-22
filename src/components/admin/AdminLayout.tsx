@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { 
   Users, 
   Briefcase, 
@@ -7,9 +7,15 @@ import {
   LogOut, 
   LayoutDashboard,
   ChevronRight,
+  ChevronDown,
   Menu,
   X,
-  LayoutGrid
+  LayoutGrid,
+  UserCog,
+  Code2,
+  UsersRound,
+  BarChart3,
+  Wallet
 } from 'lucide-react';
 import { Button } from '../jobs/ui/button';
 import { supabase } from '../../services/supabase';
@@ -19,22 +25,60 @@ interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
+type MenuChild = {
+  icon: React.ElementType;
+  label: string;
+  path: string;
+};
+
+type MenuItem = {
+  icon: React.ElementType;
+  label: string;
+  path?: string;
+  children?: MenuChild[];
+};
+
+const menuItems: MenuItem[] = [
+  { icon: LayoutDashboard, label: 'Dashboard', path: '/admin/dashboard' },
+  { icon: LayoutGrid, label: 'Projetos', path: '/admin/boards' },
+  { icon: BarChart3, label: 'Métricas', path: '/admin/metrics' },
+  { icon: Wallet, label: 'Financeiro', path: '/admin/finance' },
+  { icon: Code2, label: 'Desenvolvedores', path: '/admin/developers' },
+  { icon: UsersRound, label: 'Usuários', path: '/admin/users' },
+  {
+    icon: UserCog,
+    label: 'RH',
+    children: [
+      { icon: Briefcase, label: 'Gerenciar Vagas', path: '/admin/jobs' },
+      { icon: PlusCircle, label: 'Criar Vaga', path: '/admin/jobs/new' },
+      { icon: Users, label: 'Candidatos', path: '/admin/candidates' },
+    ],
+  },
+];
+
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+
+  const isChildActive = (children: MenuChild[]) =>
+    children.some((child) => location.pathname.startsWith(child.path));
+
+  const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {};
+    menuItems.forEach((item) => {
+      if (item.children) initial[item.label] = isChildActive(item.children);
+    });
+    return initial;
+  });
+
+  const toggleGroup = (label: string) =>
+    setOpenGroups((prev) => ({ ...prev, [label]: !prev[label] }));
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate('/login');
   };
-
-  const menuItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/admin/dashboard' },
-    { icon: LayoutGrid, label: 'Projetos', path: '/admin/boards' },
-    { icon: Users, label: 'Candidatos', path: '/admin/candidates' },
-    { icon: Briefcase, label: 'Gerenciar Vagas', path: '/admin/jobs' },
-    { icon: PlusCircle, label: 'Criar Vaga', path: '/admin/jobs/new' },
-  ];
 
   return (
     <div className="flex min-h-screen bg-[#050505] text-foreground overflow-hidden">
@@ -57,36 +101,95 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         </div>
 
         <nav className="flex-1 p-6 space-y-3">
-          {menuItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={({ isActive }) => `
-                flex items-center justify-between px-5 py-4 rounded-2xl transition-all duration-300 group relative overflow-hidden
-                ${isActive 
-                  ? 'bg-primary/10 text-white border border-primary/30 shadow-[0_0_20px_rgba(131,52,255,0.1)]' 
-                  : 'text-muted-foreground hover:bg-white/5 hover:text-white border border-transparent'}
-              `}
-            >
-              {({ isActive }) => (
-                <>
-                  <div className="flex items-center gap-4 relative z-10">
-                    <item.icon className={`w-5 h-5 transition-colors ${isActive ? 'text-primary' : 'group-hover:text-primary'}`} />
-                    <span className="font-bold tracking-tight">{item.label}</span>
-                  </div>
-                  <ChevronRight className={`w-4 h-4 transition-all duration-300 ${isActive ? 'opacity-100 text-primary translate-x-0' : 'opacity-0 -translate-x-2'}`} />
-                  
-                  {/* Active Indicator Bar */}
-                  {isActive && (
-                    <motion.div 
-                      layoutId="activeSideBar"
-                      className="absolute left-0 top-0 bottom-0 w-1 bg-primary shadow-[0_0_15px_rgba(131,52,255,1)]"
-                    />
-                  )}
-                </>
-              )}
-            </NavLink>
-          ))}
+          {menuItems.map((item) => {
+            if (item.children) {
+              const isOpen = openGroups[item.label];
+              const groupActive = isChildActive(item.children);
+              return (
+                <div key={item.label}>
+                  <button
+                    type="button"
+                    onClick={() => toggleGroup(item.label)}
+                    className={`
+                      w-full flex items-center justify-between px-5 py-4 rounded-2xl transition-all duration-300 group relative overflow-hidden border
+                      ${groupActive
+                        ? 'bg-primary/10 text-white border-primary/30 shadow-[0_0_20px_rgba(131,52,255,0.1)]'
+                        : 'text-muted-foreground hover:bg-white/5 hover:text-white border-transparent'}
+                    `}
+                  >
+                    <div className="flex items-center gap-4 relative z-10">
+                      <item.icon className={`w-5 h-5 transition-colors ${groupActive ? 'text-primary' : 'group-hover:text-primary'}`} />
+                      <span className="font-bold tracking-tight">{item.label}</span>
+                    </div>
+                    <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isOpen ? 'rotate-180 text-primary' : ''}`} />
+                  </button>
+
+                  <AnimatePresence initial={false}>
+                    {isOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden ml-4 mt-2 space-y-2 border-l border-white/10 pl-4"
+                      >
+                        {item.children.map((child) => (
+                          <NavLink
+                            key={child.path}
+                            to={child.path}
+                            end
+                            className={({ isActive }) => `
+                              flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group relative
+                              ${isActive
+                                ? 'bg-primary/10 text-white border border-primary/30'
+                                : 'text-muted-foreground hover:bg-white/5 hover:text-white border border-transparent'}
+                            `}
+                          >
+                            {({ isActive }) => (
+                              <>
+                                <child.icon className={`w-4 h-4 transition-colors ${isActive ? 'text-primary' : 'group-hover:text-primary'}`} />
+                                <span className="font-semibold tracking-tight text-sm">{child.label}</span>
+                              </>
+                            )}
+                          </NavLink>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            }
+
+            return (
+              <NavLink
+                key={item.path}
+                to={item.path!}
+                className={({ isActive }) => `
+                  flex items-center justify-between px-5 py-4 rounded-2xl transition-all duration-300 group relative overflow-hidden
+                  ${isActive
+                    ? 'bg-primary/10 text-white border border-primary/30 shadow-[0_0_20px_rgba(131,52,255,0.1)]'
+                    : 'text-muted-foreground hover:bg-white/5 hover:text-white border border-transparent'}
+                `}
+              >
+                {({ isActive }) => (
+                  <>
+                    <div className="flex items-center gap-4 relative z-10">
+                      <item.icon className={`w-5 h-5 transition-colors ${isActive ? 'text-primary' : 'group-hover:text-primary'}`} />
+                      <span className="font-bold tracking-tight">{item.label}</span>
+                    </div>
+                    <ChevronRight className={`w-4 h-4 transition-all duration-300 ${isActive ? 'opacity-100 text-primary translate-x-0' : 'opacity-0 -translate-x-2'}`} />
+
+                    {/* Active Indicator Bar */}
+                    {isActive && (
+                      <motion.div
+                        layoutId="activeSideBar"
+                        className="absolute left-0 top-0 bottom-0 w-1 bg-primary shadow-[0_0_15px_rgba(131,52,255,1)]"
+                      />
+                    )}
+                  </>
+                )}
+              </NavLink>
+            );
+          })}
         </nav>
 
         <div className="p-6 border-t border-white/5 bg-black/20">
@@ -124,22 +227,74 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             initial={{ opacity: 0, x: -100 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -100 }}
-            className="lg:hidden fixed inset-0 z-[40] bg-black p-8 pt-28 space-y-4"
+            className="lg:hidden fixed inset-0 z-[40] bg-black p-8 pt-28 space-y-4 overflow-y-auto"
           >
-            {menuItems.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className={({ isActive }) => `
-                  flex items-center gap-4 p-5 rounded-2xl border
-                  ${isActive ? 'bg-primary/10 text-white border-primary/30' : 'text-muted-foreground border-transparent bg-white/5'}
-                `}
-              >
-                <item.icon className="w-6 h-6" />
-                <span className="text-lg font-bold">{item.label}</span>
-              </NavLink>
-            ))}
+            {menuItems.map((item) => {
+              if (item.children) {
+                const isOpen = openGroups[item.label];
+                const groupActive = isChildActive(item.children);
+                return (
+                  <div key={item.label} className="space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleGroup(item.label)}
+                      className={`
+                        w-full flex items-center justify-between gap-4 p-5 rounded-2xl border
+                        ${groupActive ? 'bg-primary/10 text-white border-primary/30' : 'text-muted-foreground border-transparent bg-white/5'}
+                      `}
+                    >
+                      <div className="flex items-center gap-4">
+                        <item.icon className="w-6 h-6" />
+                        <span className="text-lg font-bold">{item.label}</span>
+                      </div>
+                      <ChevronDown className={`w-5 h-5 transition-transform duration-300 ${isOpen ? 'rotate-180 text-primary' : ''}`} />
+                    </button>
+
+                    <AnimatePresence initial={false}>
+                      {isOpen && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="overflow-hidden ml-4 space-y-2 border-l border-white/10 pl-4"
+                        >
+                          {item.children.map((child) => (
+                            <NavLink
+                              key={child.path}
+                              to={child.path}
+                              end
+                              onClick={() => setIsMobileMenuOpen(false)}
+                              className={({ isActive }) => `
+                                flex items-center gap-3 p-4 rounded-xl border
+                                ${isActive ? 'bg-primary/10 text-white border-primary/30' : 'text-muted-foreground border-transparent bg-white/5'}
+                              `}
+                            >
+                              <child.icon className="w-5 h-5" />
+                              <span className="text-base font-bold">{child.label}</span>
+                            </NavLink>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              }
+
+              return (
+                <NavLink
+                  key={item.path}
+                  to={item.path!}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={({ isActive }) => `
+                    flex items-center gap-4 p-5 rounded-2xl border
+                    ${isActive ? 'bg-primary/10 text-white border-primary/30' : 'text-muted-foreground border-transparent bg-white/5'}
+                  `}
+                >
+                  <item.icon className="w-6 h-6" />
+                  <span className="text-lg font-bold">{item.label}</span>
+                </NavLink>
+              );
+            })}
             <div className="pt-8 mt-8 border-t border-white/5">
               <Button 
                 variant="destructive" 

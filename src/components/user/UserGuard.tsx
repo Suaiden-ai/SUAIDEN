@@ -26,7 +26,8 @@ const UserGuard: React.FC<UserGuardProps> = ({ children }) => {
         .eq('id', session.user.id)
         .single();
 
-      if (error || (profile?.role !== 'user' && profile?.role !== 'admin' && profile?.role !== 'developer')) {
+      const lowerRole = profile?.role?.toLowerCase();
+      if (error || (lowerRole !== 'user' && lowerRole !== 'admin' && lowerRole !== 'developer')) {
         setStatus('unauthorized');
       } else {
         setStatus('authorized');
