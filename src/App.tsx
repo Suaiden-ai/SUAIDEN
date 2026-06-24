@@ -32,7 +32,6 @@ import MetricsManagement from './pages/admin/MetricsManagement';
 import DeveloperDetail from './pages/admin/DeveloperDetail';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import ProjectLogs from './pages/admin/ProjectLogs';
-import FinanceManagement from './pages/admin/FinanceManagement';
 import AdminGuard from './components/admin/AdminGuard';
 import AdminLayout from './components/admin/AdminLayout';
 
@@ -155,7 +154,6 @@ function AppContent() {
                       <Route path="developers/:id" element={<DeveloperDetail />} />
                       <Route path="users" element={<UsersManagement />} />
                       <Route path="metrics" element={<MetricsManagement />} />
-                      <Route path="finance" element={<FinanceManagement />} />
                     </Routes>
                   </AdminLayout>
                 </AdminGuard>

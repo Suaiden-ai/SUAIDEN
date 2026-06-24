@@ -14,8 +14,7 @@ import {
   UserCog,
   Code2,
   UsersRound,
-  BarChart3,
-  Wallet
+  BarChart3
 } from 'lucide-react';
 import { Button } from '../jobs/ui/button';
 import { supabase } from '../../services/supabase';
@@ -42,7 +41,6 @@ const menuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/admin/dashboard' },
   { icon: LayoutGrid, label: 'Projetos', path: '/admin/boards' },
   { icon: BarChart3, label: 'Métricas', path: '/admin/metrics' },
-  { icon: Wallet, label: 'Financeiro', path: '/admin/finance' },
   { icon: Code2, label: 'Desenvolvedores', path: '/admin/developers' },
   { icon: UsersRound, label: 'Usuários', path: '/admin/users' },
   {
