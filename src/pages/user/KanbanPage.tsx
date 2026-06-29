@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../services/supabase';
 import CardModal, { Task, Column, MemberInfo, initials, avatarColor } from '../../components/user/CardModal';
 import { logActivity } from '../../lib/activityLog';
+import { notifyNewTicket, notifyTaskCompleted } from '../../lib/notifications';
 import BoardListView from '../../components/user/BoardListView';
 import { useBoardBackground } from '../../context/BoardBackgroundContext';
 import { createPortal } from 'react-dom';
@@ -538,6 +539,17 @@ const KanbanPage: React.FC = () => {
     if (typeof updates.is_done === 'boolean' && updates.is_done !== activeTask.is_done) {
       logTaskActivity({ taskId: activeTask.id, action: updates.is_done ? 'completed' : 'reopened' });
       log('card', updates.is_done ? 'completed' : 'reopened', { taskId: activeTask.id, columnId: activeTask.column_id, entityLabel: activeTask.title });
+      // Notifica cliente (dono) e admins quando a tarefa é concluída.
+      if (updates.is_done && boardId) {
+        void notifyTaskCompleted({
+          boardId,
+          boardTitle: board?.title,
+          taskId: activeTask.id,
+          taskTitle: activeTask.title,
+          actorId: currentUserId,
+          actorName: currentUserName,
+        });
+      }
     }
     // Renomeio do card
     if (typeof updates.title === 'string' && updates.title !== activeTask.title) {
@@ -818,6 +830,15 @@ const KanbanPage: React.FC = () => {
       if (newTask) {
         logTaskActivity({ taskId: newTask.id, action: 'created', toColumnId: board.ticket_column_id });
         log('card', 'created', { taskId: newTask.id, columnId: board.ticket_column_id, entityLabel: ticketTitle.trim(), metadata: { source: 'ticket' } });
+        // Notifica os desenvolvedores do quadro sobre o novo chamado.
+        void notifyNewTicket({
+          boardId: board.id,
+          boardTitle: board.title,
+          taskId: newTask.id,
+          taskTitle: ticketTitle.trim(),
+          actorId: currentUserId,
+          actorName: currentUserName,
+        });
       }
 
       if (ticketFiles.length > 0 && currentUserId && newTask) {
@@ -1257,7 +1278,14 @@ const KanbanPage: React.FC = () => {
                               {initials(m.full_name)}
                            </div>
                            <div className="min-w-0 flex-1">
-                             <p className="text-xs font-bold text-white truncate">{m.full_name}</p>
+                             <div className="flex items-center gap-1.5">
+                               <p className="text-xs font-bold text-white truncate">{m.full_name}</p>
+                               {(m.role === 'developer' || m.role === 'admin') ? (
+                                 <span className="shrink-0 px-1.5 py-px rounded-md text-[9px] font-bold uppercase tracking-wide bg-blue-500/20 text-blue-300 border border-blue-500/30">Dev</span>
+                               ) : (
+                                 <span className="shrink-0 px-1.5 py-px rounded-md text-[9px] font-bold uppercase tracking-wide bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Cliente</span>
+                               )}
+                             </div>
                              <p className="text-[10px] text-muted-foreground truncate">{m.email}</p>
                            </div>
                          </div>
@@ -1584,6 +1612,18 @@ const KanbanPage: React.FC = () => {
                                 try {
                                   await supabase.from('tasks').update({ is_done: nextDone }).eq('id', task.id);
                                   logTaskActivity({ taskId: task.id, action: nextDone ? 'completed' : 'reopened', toColumnId: column.id });
+                                  log('card', nextDone ? 'completed' : 'reopened', { taskId: task.id, columnId: column.id, entityLabel: task.title });
+                                  // Notifica cliente (dono) e admins quando a tarefa é concluída.
+                                  if (nextDone && boardId) {
+                                    void notifyTaskCompleted({
+                                      boardId,
+                                      boardTitle: board?.title,
+                                      taskId: task.id,
+                                      taskTitle: task.title,
+                                      actorId: currentUserId,
+                                      actorName: currentUserName,
+                                    });
+                                  }
                                   setColumns(prev => prev.map(c => {
                                     if (c.id === column.id) {
                                       return {

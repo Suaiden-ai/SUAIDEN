@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useBoardBackground } from '../../context/BoardBackgroundContext';
 import WorkJourneyWidget from './WorkJourneyWidget';
 import ProfileModal from './ProfileModal';
+import NotificationBell from '../notifications/NotificationBell';
 
 interface UserLayoutProps {
   children: React.ReactNode;
@@ -143,6 +144,10 @@ const UserLayout: React.FC<UserLayoutProps> = ({ children, fluid }) => {
         <div className="flex items-center gap-2 sm:gap-3">
           {userId && isDevOrAdmin && (
             <WorkJourneyWidget userId={userId} />
+          )}
+
+          {userId && (
+            <NotificationBell userId={userId} dark={!!boardBackground.background} />
           )}
 
           {/* User Actions & Dropdown */}

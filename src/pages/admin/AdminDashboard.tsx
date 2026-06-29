@@ -95,6 +95,12 @@ const AdminDashboard: React.FC = () => {
 
   const fetchData = useCallback(async () => {
     try {
+      // Rede de segurança caso o pg_cron não esteja ativo: encerra
+      // sessões paradas há mais de 60 min antes de ler o estado, para
+      // que sessões "penduradas" não apareçam como ativas. Falha aqui
+      // não bloqueia o carregamento do painel.
+      await supabase.rpc('auto_close_stale_sessions').catch(() => {});
+
       const [profilesRes, boardsRes, colsRes, tasksRes, sessRes] = await Promise.all([
         // `avatar_url` pode ainda não existir (migration 0005 não aplicada).
         // Tenta com a coluna; se falhar, refaz sem ela para não zerar a lista de devs.

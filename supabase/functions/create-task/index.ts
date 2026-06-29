@@ -254,6 +254,53 @@ serve(async (req) => {
       );
     }
 
+    // 13. Notificar os desenvolvedores do quadro e os admins sobre o
+    //     novo chamado. Falhas aqui NÃO devem invalidar a criação da tarefa.
+    try {
+      const [{ data: members }, { data: admins }] = await Promise.all([
+        supabase
+          .from("board_members")
+          .select("user_id, profiles:user_id (role)")
+          .eq("board_id", board_id),
+        supabase
+          .from("profiles")
+          .select("id")
+          .eq("role", "admin"),
+      ]);
+
+      const devIds = (members ?? [])
+        .filter((m: any) => (m.profiles?.role ?? "").toLowerCase() === "developer")
+        .map((m: any) => m.user_id as string);
+      const adminIds = (admins ?? []).map((a: any) => a.id as string);
+
+      // Dedup: devs do quadro + admins.
+      const recipientIds = Array.from(new Set([...devIds, ...adminIds]));
+
+      // Título do quadro para contexto na notificação.
+      const { data: boardInfo } = await supabase
+        .from("boards")
+        .select("title")
+        .eq("id", board_id)
+        .maybeSingle();
+
+      if (recipientIds.length > 0) {
+        const notifications = recipientIds.map((recipientId) => ({
+          recipient_id: recipientId,
+          type: "new_ticket",
+          title: "Novo chamado",
+          body: newTask.title,
+          board_id: board_id,
+          task_id: newTask.id,
+          actor_id: null,
+          actor_name: "Webhook",
+          metadata: { boardTitle: boardInfo?.title ?? null, source: "webhook" },
+        }));
+        await supabase.from("notifications").insert(notifications);
+      }
+    } catch (notifyError) {
+      console.error("Falha ao criar notificações do novo chamado:", notifyError);
+    }
+
     // Retornar a tarefa criada com sucesso
     return new Response(
       JSON.stringify({

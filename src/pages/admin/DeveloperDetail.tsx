@@ -26,6 +26,7 @@ import {
 import { Badge } from '../../components/jobs/ui/badge';
 import { Progress } from '../../components/jobs/ui/progress';
 import DeveloperJourneyPanel from '../../components/admin/DeveloperJourneyPanel';
+import DeveloperDailyHistory from '../../components/admin/DeveloperDailyHistory';
 
 interface Profile {
   id: string;
@@ -271,7 +272,12 @@ const DeveloperDetail: React.FC = () => {
       </div>
 
       {/* Conteúdo */}
-      {tab === 'time' && <DeveloperJourneyPanel devId={dev.id} />}
+      {tab === 'time' && (
+        <div className="space-y-5">
+          <DeveloperJourneyPanel devId={dev.id} />
+          <DeveloperDailyHistory devId={dev.id} />
+        </div>
+      )}
 
       {tab === 'tasks' && (
         <div className="space-y-4">

@@ -21,6 +21,7 @@ import ApplicationSuccessPage from './pages/jobs/ApplicationSuccess';
 
 // Páginas de Admin
 import AdminLogin from './pages/admin/Login';
+import ResetPassword from './pages/admin/ResetPassword';
 import CandidatesManagement from './pages/admin/CandidatesManagement';
 import JobsManagement from './pages/admin/JobsManagement';
 import CreateJobPage from './pages/admin/CreateJobPage';
@@ -65,6 +66,7 @@ function AppContent() {
   const isAdminPath =
     location.pathname.startsWith('/admin') ||
     location.pathname === '/login' ||
+    location.pathname === '/reset-password' ||
     location.pathname === '/dashboard' ||
     location.pathname === '/jornada' ||
     location.pathname.startsWith('/quadro');
@@ -137,6 +139,7 @@ function AppContent() {
 
             {/* Admin Routes */}
             <Route path="/login" element={<AdminLogin />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route 
               path="/admin/*" 
               element={

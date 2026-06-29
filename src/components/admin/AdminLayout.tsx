@@ -19,6 +19,7 @@ import {
 import { Button } from '../jobs/ui/button';
 import { supabase } from '../../services/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
+import NotificationBell from '../notifications/NotificationBell';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -58,6 +59,18 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const [userId, setUserId] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUserId(session?.user.id ?? null);
+    });
+    // A sessão pode chegar depois do mount; mantém o userId sincronizado.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserId(session?.user.id ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   const isChildActive = (children: MenuChild[]) =>
     children.some((child) => location.pathname.startsWith(child.path));
@@ -87,14 +100,17 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       {/* Sidebar Desktop */}
       <aside className="hidden lg:flex flex-col w-72 border-r border-white/5 bg-black/40 backdrop-blur-2xl sticky top-0 h-screen z-20">
         <div className="p-8 border-b border-white/5">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-[0_0_20px_rgba(131,52,255,0.6)]">
-              <span className="text-white font-bold text-xl">S</span>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-[0_0_20px_rgba(131,52,255,0.6)]">
+                <span className="text-white font-bold text-xl">S</span>
+              </div>
+              <div>
+                <h1 className="font-bold text-lg tracking-tight text-white">Suaiden</h1>
+                <span className="text-[10px] text-primary font-black uppercase tracking-[0.2em] leading-none">Admin Panel</span>
+              </div>
             </div>
-            <div>
-              <h1 className="font-bold text-lg tracking-tight text-white">Suaiden</h1>
-              <span className="text-[10px] text-primary font-black uppercase tracking-[0.2em] leading-none">Admin Panel</span>
-            </div>
+            {userId && <NotificationBell userId={userId} />}
           </div>
         </div>
 
@@ -210,12 +226,15 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           </div>
           <span className="font-bold text-white">Suaiden Admin</span>
         </div>
-        <button 
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="p-2 bg-white/5 rounded-lg border border-white/10"
-        >
-          {isMobileMenuOpen ? <X className="text-white" /> : <Menu className="text-white" />}
-        </button>
+        <div className="flex items-center gap-2">
+          {userId && <NotificationBell userId={userId} />}
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="p-2 bg-white/5 rounded-lg border border-white/10"
+          >
+            {isMobileMenuOpen ? <X className="text-white" /> : <Menu className="text-white" />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Menu Overlay */}
